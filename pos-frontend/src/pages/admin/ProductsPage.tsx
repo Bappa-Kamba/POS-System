@@ -272,6 +272,7 @@ export const ProductsPage: React.FC = () => {
           onSubmit={handleCreate}
           onCancel={() => setIsCreateModalOpen(false)}
           isLoading={createProduct.isPending}
+          branchId={user?.branchId}
         />
       </Modal>
 

@@ -43,6 +43,7 @@ interface ProductFormProps {
   onSubmit: (data: ProductFormValues) => void;
   onCancel: () => void;
   isLoading?: boolean;
+  branchId?: string;
 }
 
 export const ProductForm: React.FC<ProductFormProps> = ({
@@ -50,6 +51,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   onSubmit,
   onCancel,
   isLoading = false,
+  branchId,
 }) => {
   const generateBarcode = useGenerateBarcode();
 
@@ -84,6 +86,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
           unitType: 'PIECE',
           quantityInStock: 0,
           lowStockThreshold: 10,
+          branchId: branchId || '',
         },
   });
 
