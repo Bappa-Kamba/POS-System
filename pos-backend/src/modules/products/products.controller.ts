@@ -58,14 +58,33 @@ export class ProductsController {
 
   @Get('generate-barcode')
   @Roles(UserRole.ADMIN)
-  generateBarcode() {
-    const barcode = this.productsService.generateBarcode();
+  async generateBarcode() {
+    const barcode = await this.productsService.generateBarcode();
     return {
       success: true,
       data: {
         barcode,
         format: 'EAN-13',
       },
+    };
+  }
+
+  @Get('by-barcode/:barcode')
+  async findByBarcode(@Param('barcode') barcode: string) {
+    const result = await this.productsService.findByBarcode(barcode);
+    if (!result) {
+      return {
+        success: false,
+        error: {
+          code: 'NOT_FOUND',
+          message: 'Product or variant with this barcode not found',
+        },
+        statusCode: 404,
+      };
+    }
+    return {
+      success: true,
+      data: result,
     };
   }
 

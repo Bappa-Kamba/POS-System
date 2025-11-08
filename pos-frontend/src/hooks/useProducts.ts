@@ -59,3 +59,9 @@ export const useGenerateBarcode = () => {
     mutationFn: () => productService.generateBarcode(),
   });
 };
+
+export const useFindByBarcode = () => {
+  return useMutation({
+    mutationFn: (barcode: string) => productService.findByBarcode(barcode),
+  });
+};

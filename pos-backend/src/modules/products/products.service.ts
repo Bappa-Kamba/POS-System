@@ -279,23 +279,105 @@ export class ProductsService {
 
   /**
    * Generate unique barcode (EAN-13 format)
+   * Ensures uniqueness by checking against existing products and variants
    */
-  generateBarcode(): string {
-    const prefix = '200'; // Internal use prefix
-    const random = Math.floor(Math.random() * 1000000000)
-      .toString()
-      .padStart(9, '0');
-    const code = prefix + random;
+  async generateBarcode(): Promise<string> {
+    const maxAttempts = 10;
+    let attempts = 0;
 
-    // Calculate EAN-13 check digit
-    let sum = 0;
-    for (let i = 0; i < 12; i++) {
-      const digit = parseInt(code[i]);
-      sum += i % 2 === 0 ? digit : digit * 3;
+    while (attempts < maxAttempts) {
+      const prefix = '200'; // Internal use prefix
+      const random = Math.floor(Math.random() * 1000000000)
+        .toString()
+        .padStart(9, '0');
+      const code = prefix + random;
+
+      // Calculate EAN-13 check digit
+      let sum = 0;
+      for (let i = 0; i < 12; i++) {
+        const digit = parseInt(code[i]);
+        sum += i % 2 === 0 ? digit : digit * 3;
+      }
+      const checkDigit = (10 - (sum % 10)) % 10;
+
+      const barcode = code + checkDigit;
+
+      // Check if barcode already exists in products
+      const existingProduct = await this.prisma.product.findUnique({
+        where: { barcode },
+      });
+
+      if (existingProduct) {
+        attempts++;
+        continue;
+      }
+
+      // Check if barcode already exists in variants
+      const existingVariant = await this.prisma.productVariant.findUnique({
+        where: { barcode },
+      });
+
+      if (existingVariant) {
+        attempts++;
+        continue;
+      }
+
+      // Barcode is unique
+      return barcode;
     }
-    const checkDigit = (10 - (sum % 10)) % 10;
 
-    return code + checkDigit;
+    // If we couldn't generate a unique barcode after max attempts, throw error
+    throw new Error(
+      'Failed to generate unique barcode after multiple attempts. Please try again.',
+    );
+  }
+
+  /**
+   * Find product or variant by barcode
+   */
+  async findByBarcode(barcode: string) {
+    // First check products
+    const product = await this.prisma.product.findUnique({
+      where: { barcode },
+      include: {
+        variants: {
+          where: { isActive: true },
+        },
+        branch: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    if (product) {
+      return { type: 'product' as const, data: product };
+    }
+
+    // Check variants
+    const variant = await this.prisma.productVariant.findUnique({
+      where: { barcode },
+      include: {
+        product: {
+          include: {
+            branch: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (variant) {
+      return { type: 'variant' as const, data: variant };
+    }
+
+    return null;
   }
 
   /**

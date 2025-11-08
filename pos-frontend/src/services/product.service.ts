@@ -107,6 +107,21 @@ const productService = {
     >("/products/generate-barcode");
     return response.data;
   },
+
+  async findByBarcode(barcode: string): Promise<
+    ApiResponse<{
+      type: 'product' | 'variant';
+      data: Product | any; // Variant type would need to be defined
+    }>
+  > {
+    const response = await api.get<
+      ApiResponse<{
+        type: 'product' | 'variant';
+        data: Product | any;
+      }>
+    >(`/products/by-barcode/${barcode}`);
+    return response.data;
+  },
 };
 
 export default productService;

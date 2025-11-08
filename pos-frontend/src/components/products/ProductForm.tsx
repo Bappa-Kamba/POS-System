@@ -1,12 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Input } from '../common/Input';
 import { Button } from '../common/Button';
-import { Barcode } from 'lucide-react';
+import { Barcode, Printer } from 'lucide-react';
 import type { Product } from '../../services/product.service';
 import { useGenerateBarcode } from '../../hooks/useProducts';
+import { BarcodePrint } from './BarcodePrint';
 
 const productSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -59,6 +60,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   branchId,
 }) => {
   const generateBarcode = useGenerateBarcode();
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
 
   const {
     register,
@@ -204,6 +206,16 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                 >
                   <Barcode className="w-5 h-5" />
                 </Button>
+                {watch('barcode') && (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => setIsPrintModalOpen(true)}
+                    title="Print Barcode"
+                  >
+                    <Printer className="w-5 h-5" />
+                  </Button>
+                )}
               </div>
             </div>
           </div>
@@ -335,6 +347,20 @@ export const ProductForm: React.FC<ProductFormProps> = ({
           {product ? 'Update Product' : 'Create Product'}
         </Button>
       </div>
+
+      {/* Barcode Print Modal */}
+      {(() => {
+        const barcode = watch('barcode');
+        return barcode && barcode.trim() !== '' ? (
+          <BarcodePrint
+            barcode={barcode}
+            productName={watch('name')}
+            sku={watch('sku')}
+            isOpen={isPrintModalOpen}
+            onClose={() => setIsPrintModalOpen(false)}
+          />
+        ) : null;
+      })()}
     </form>
   );
 };

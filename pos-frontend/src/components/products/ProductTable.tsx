@@ -1,8 +1,8 @@
-import React from 'react';
-import { Edit, Trash2, Eye } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Edit, Trash2 } from 'lucide-react';
 import { Badge } from '../common/Badge';
 import { Button } from '../common/Button';
+import { ProductViewModal } from './ProductViewModal';
 import type { Product } from '../../services/product.service';
 
 interface ProductTableProps {
@@ -18,7 +18,8 @@ export const ProductTable: React.FC<ProductTableProps> = ({
   onDelete,
   isLoading = false,
 }) => {
-  const navigate = useNavigate();
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
 
   const formatCurrency = (amount?: number) => {
     if (amount == null) return 'N/A';
@@ -109,7 +110,14 @@ export const ProductTable: React.FC<ProductTableProps> = ({
         </thead>
         <tbody className="bg-white dark:bg-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-700">
           {products.map((product) => (
-            <tr key={product.id} className="hover:bg-neutral-50 dark:hover:bg-neutral-700">
+            <tr
+              key={product.id}
+              className="hover:bg-neutral-50 dark:hover:bg-neutral-700 cursor-pointer transition-colors"
+              onClick={() => {
+                setSelectedProduct(product);
+                setIsViewModalOpen(true);
+              }}
+            >
               <td className="px-6 py-4 whitespace-nowrap">
                 <div className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
                   {product.name}
@@ -123,8 +131,17 @@ export const ProductTable: React.FC<ProductTableProps> = ({
               <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900 dark:text-neutral-100">
                 {product.sku}
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
-                {product.barcode || '-'}
+              <td className="px-6 py-4 whitespace-nowrap">
+                {product.barcode ? (
+                  <div className="flex flex-col">
+                    <span className="text-sm font-mono text-neutral-900 dark:text-neutral-100">
+                      {product.barcode}
+                    </span>
+                    <span className="text-xs text-neutral-500">EAN-13</span>
+                  </div>
+                ) : (
+                  <span className="text-sm text-neutral-400">-</span>
+                )}
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
                 {getCategoryBadge(product.category)}
@@ -143,19 +160,29 @@ export const ProductTable: React.FC<ProductTableProps> = ({
                 </Badge>
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                <div className="flex justify-end gap-2">
+                <div
+                  className="flex justify-end gap-2"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => navigate(`/products/${product.id}`)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedProduct(product);
+                      setIsViewModalOpen(true);
+                    }}
                     title="View Details"
                   >
-                    <Eye className="w-4 h-4" />
+                    View
                   </Button>
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => onEdit(product)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onEdit(product);
+                    }}
                     title="Edit Product"
                   >
                     <Edit className="w-4 h-4" />
@@ -163,7 +190,10 @@ export const ProductTable: React.FC<ProductTableProps> = ({
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => onDelete(product)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete(product);
+                    }}
                     title="Delete Product"
                     className="text-red-600 hover:bg-red-50"
                   >
@@ -175,6 +205,23 @@ export const ProductTable: React.FC<ProductTableProps> = ({
           ))}
         </tbody>
       </table>
+
+      {/* Product View Modal */}
+      {selectedProduct && (
+        <ProductViewModal
+          product={selectedProduct}
+          isOpen={isViewModalOpen}
+          onClose={() => {
+            setIsViewModalOpen(false);
+            setSelectedProduct(null);
+          }}
+          onEdit={(product: Product) => {
+            setIsViewModalOpen(false);
+            setSelectedProduct(null);
+            onEdit(product);
+          }}
+        />
+      )}
     </div>
   );
 };

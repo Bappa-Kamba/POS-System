@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Plus, Edit, Trash2, Package } from 'lucide-react';
+import { Plus, Edit, Trash2, Package, Printer } from 'lucide-react';
 import { Button } from '../common/Button';
 import { Modal } from '../common/Modal';
 import { Badge } from '../common/Badge';
 import { VariantForm } from './VariantForm';
+import { BarcodePrint } from './BarcodePrint';
 import {
   useVariants,
   useDeleteVariant,
@@ -24,6 +25,7 @@ export const VariantManager: React.FC<VariantManagerProps> = ({
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedVariant, setSelectedVariant] = useState<Variant | null>(null);
+  const [printVariant, setPrintVariant] = useState<Variant | null>(null);
 
   const { data, isLoading, refetch } = useVariants(productId);
   const deleteVariant = useDeleteVariant();
@@ -204,6 +206,15 @@ export const VariantManager: React.FC<VariantManagerProps> = ({
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center justify-end gap-2">
+                        {variant.barcode && (
+                          <button
+                            onClick={() => setPrintVariant(variant)}
+                            className="text-neutral-600 hover:text-neutral-900 dark:hover:text-neutral-400"
+                            title="Print Barcode"
+                          >
+                            <Printer className="w-4 h-4" />
+                          </button>
+                        )}
                         <button
                           onClick={() => handleEdit(variant)}
                           className="text-primary-600 hover:text-primary-900 dark:hover:text-primary-400"
@@ -273,6 +284,17 @@ export const VariantManager: React.FC<VariantManagerProps> = ({
           />
         )}
       </Modal>
+
+      {/* Barcode Print Modal */}
+      {printVariant && printVariant.barcode && (
+        <BarcodePrint
+          barcode={printVariant.barcode}
+          productName={printVariant.name}
+          sku={printVariant.sku}
+          isOpen={!!printVariant}
+          onClose={() => setPrintVariant(null)}
+        />
+      )}
     </div>
   );
 };

@@ -1,13 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Input } from '../common/Input';
 import { Button } from '../common/Button';
-import { Barcode } from 'lucide-react';
+import { Barcode, Printer } from 'lucide-react';
 import type { Variant } from '../../services/variant.service';
 import { useCreateVariant, useUpdateVariant } from '../../hooks/useVariants';
 import { useGenerateBarcode } from '../../hooks/useProducts';
+import { BarcodePrint } from './BarcodePrint';
 
 const createVariantSchema = (productSku: string) => z.object({
   name: z.string().min(1, 'Name is required'),
@@ -54,6 +55,7 @@ export const VariantForm: React.FC<VariantFormProps> = ({
   const createVariant = useCreateVariant();
   const updateVariant = useUpdateVariant();
   const generateBarcode = useGenerateBarcode();
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
 
   const variantSchema = React.useMemo(() => createVariantSchema(productSku), [productSku]);
 
@@ -192,6 +194,16 @@ export const VariantForm: React.FC<VariantFormProps> = ({
                 >
                   <Barcode className="w-5 h-5" />
                 </Button>
+                {watch('barcode') && (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => setIsPrintModalOpen(true)}
+                    title="Print Barcode"
+                  >
+                    <Printer className="w-5 h-5" />
+                  </Button>
+                )}
               </div>
             </div>
           </div>
@@ -298,6 +310,20 @@ export const VariantForm: React.FC<VariantFormProps> = ({
           {variant ? 'Update Variant' : 'Create Variant'}
         </Button>
       </div>
+
+      {/* Barcode Print Modal */}
+      {(() => {
+        const barcode = watch('barcode');
+        return barcode && barcode.trim() !== '' ? (
+          <BarcodePrint
+            barcode={barcode}
+            productName={watch('name')}
+            sku={watch('sku')}
+            isOpen={isPrintModalOpen}
+            onClose={() => setIsPrintModalOpen(false)}
+          />
+        ) : null;
+      })()}
     </form>
   );
 };

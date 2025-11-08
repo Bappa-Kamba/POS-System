@@ -1,14 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Edit, Package } from 'lucide-react';
+import { ArrowLeft, Edit, Package, Printer } from 'lucide-react';
 import { Button } from '../../components/common/Button';
 import { Badge } from '../../components/common/Badge';
 import { VariantManager } from '../../components/products/VariantManager';
+import { BarcodePrint } from '../../components/products/BarcodePrint';
 import { useProducts } from '../../hooks/useProducts';
 
 export const ProductDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
 
   // For now, we'll fetch all products and find the one we need
   // In a real app, you'd have a useProduct(id) hook
@@ -74,10 +76,21 @@ export const ProductDetailsPage: React.FC = () => {
             </p>
           </div>
         </div>
-        <Button onClick={() => navigate(`/products/${id}/edit`)}>
-          <Edit className="w-4 h-4 mr-2" />
-          Edit Product
-        </Button>
+        <div className="flex gap-2">
+          {product.barcode && (
+            <Button
+              variant="secondary"
+              onClick={() => setIsPrintModalOpen(true)}
+            >
+              <Printer className="w-4 h-4 mr-2" />
+              Print Barcode
+            </Button>
+          )}
+          <Button onClick={() => navigate(`/products/${id}/edit`)}>
+            <Edit className="w-4 h-4 mr-2" />
+            Edit Product
+          </Button>
+        </div>
       </div>
 
       {/* Product Info Card */}
@@ -167,6 +180,17 @@ export const ProductDetailsPage: React.FC = () => {
             productSku={product.sku}
           />
         </div>
+      )}
+
+      {/* Barcode Print Modal */}
+      {product.barcode && (
+        <BarcodePrint
+          barcode={product.barcode}
+          productName={product.name}
+          sku={product.sku}
+          isOpen={isPrintModalOpen}
+          onClose={() => setIsPrintModalOpen(false)}
+        />
       )}
     </div>
   );
