@@ -25,7 +25,12 @@ const productSchema = z.object({
   branchId: z.string().min(1, 'Branch is required'),
 }).refine(
   (data) => {
-    if (!data.hasVariants && data.sellingPrice && data.costPrice) {
+    // If hasVariants is true, pricing and inventory fields are not required
+    if (data.hasVariants) {
+      return true;
+    }
+    // If hasVariants is false, validate pricing
+    if (data.sellingPrice && data.costPrice) {
       return data.sellingPrice >= data.costPrice;
     }
     return true;
@@ -123,6 +128,17 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   }, [product, branchId, reset]);
 
   const hasVariants = watch('hasVariants');
+
+  // Clear pricing and inventory fields when hasVariants is toggled on
+  React.useEffect(() => {
+    if (hasVariants) {
+      setValue('costPrice', undefined);
+      setValue('sellingPrice', undefined);
+      setValue('quantityInStock', undefined);
+      setValue('lowStockThreshold', undefined);
+      setValue('unitType', 'PIECE');
+    }
+  }, [hasVariants, setValue]);
 
   const handleGenerateBarcode = async () => {
     try {
