@@ -6,8 +6,19 @@ import {
   IsNumber,
   Min,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import { ProductCategory } from '@prisma/client';
+
+/**
+ * Transform string boolean values to actual booleans
+ * Handles query params that come as strings
+ */
+const TransformBoolean = () =>
+  Transform(({ value }) => {
+    if (value === 'true' || value === true) return true;
+    if (value === 'false' || value === false) return false;
+    return undefined;
+  });
 
 export class FindAllProductsDto {
   @IsOptional()
@@ -31,17 +42,17 @@ export class FindAllProductsDto {
   category?: ProductCategory;
 
   @IsOptional()
-  @Type(() => Boolean)
+  @TransformBoolean()
   @IsBoolean()
   isActive?: boolean;
 
   @IsOptional()
-  @Type(() => Boolean)
+  @TransformBoolean()
   @IsBoolean()
   hasVariants?: boolean;
 
   @IsOptional()
-  @Type(() => Boolean)
+  @TransformBoolean()
   @IsBoolean()
   lowStock?: boolean;
 

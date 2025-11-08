@@ -19,7 +19,6 @@ export type ApiResponse<T> = ApiSuccessResponse<T> | ApiErrorResponse;
 export interface PaginationMeta {
   total: number;
   page: number;
-  limit: number;
   lastPage: number;
 }
 

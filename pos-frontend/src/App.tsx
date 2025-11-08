@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { LoginPage } from './pages/auth/LoginPage';
 import { DashboardPage } from './pages/admin/DashboardPage';
 import { ProductsPage } from './pages/admin/ProductsPage';
+import { ProductDetailsPage } from './pages/admin/ProductDetailsPage';
 import { PosPage } from './pages/cashier/PosPage';
 import { UnauthorizedPage } from './pages/UnauthorizedPage';
 import { ProtectedRoute } from './router/ProtectedRoute';
@@ -36,6 +37,14 @@ export default function App() {
           element={
             <RequireRole role="ADMIN">
               <ProductsPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/products/:id"
+          element={
+            <RequireRole role="ADMIN">
+              <ProductDetailsPage />
             </RequireRole>
           }
         />

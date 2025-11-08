@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { Plus, Search, Filter } from 'lucide-react';
+import { Plus, Search } from 'lucide-react';
 import { Button } from '../../components/common/Button';
-import { Input } from '../../components/common/Input';
 import { Modal } from '../../components/common/Modal';
 import { ProductTable } from '../../components/products/ProductTable';
 import { ProductForm } from '../../components/products/ProductForm';
@@ -35,7 +34,7 @@ export const ProductsPage: React.FC = () => {
     search: search || undefined,
     category: category || undefined,
     isActive,
-    lowStock: showLowStock,
+    lowStock: showLowStock || undefined,
     branchId: user?.branchId,
   });
 
@@ -81,7 +80,10 @@ export const ProductsPage: React.FC = () => {
     try {
       await updateProduct.mutateAsync({
         id: selectedProduct.id,
-        data: formData,
+        data: {
+          ...formData,
+          branchId: user?.branchId || '',
+        },
       });
       setIsEditModalOpen(false);
       setSelectedProduct(null);
@@ -92,6 +94,7 @@ export const ProductsPage: React.FC = () => {
   };
 
   const handleEdit = (product: Product) => {
+    console.log(product);
     setSelectedProduct(product);
     setIsEditModalOpen(true);
   };
@@ -109,10 +112,6 @@ export const ProductsPage: React.FC = () => {
     }
   };
 
-  const handleView = (product: Product) => {
-    // TODO: Implement view details modal or navigate to details page
-    console.log('View product:', product);
-  };
 
   const totalPages = data?.meta?.lastPage || 1;
 
@@ -201,13 +200,12 @@ export const ProductsPage: React.FC = () => {
 
       {/* Products Table */}
       <div className="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700">
-        <ProductTable
-          products={data?.data || []}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          onView={handleView}
-          isLoading={isLoading}
-        />
+          <ProductTable
+            products={data?.data || []}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            isLoading={isLoading}
+          />
 
         {/* Pagination */}
         {data && data.data.length > 0 && (
@@ -295,6 +293,7 @@ export const ProductsPage: React.FC = () => {
               setSelectedProduct(null);
             }}
             isLoading={updateProduct.isPending}
+            branchId={user?.branchId}
           />
         )}
       </Modal>

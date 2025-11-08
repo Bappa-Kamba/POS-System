@@ -61,6 +61,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
     formState: { errors },
     watch,
     setValue,
+    reset,
   } = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
     defaultValues: product
@@ -71,13 +72,13 @@ export const ProductForm: React.FC<ProductFormProps> = ({
           barcode: product.barcode || '',
           category: product.category,
           hasVariants: product.hasVariants,
-          costPrice: product.costPrice,
-          sellingPrice: product.sellingPrice,
-          quantityInStock: product.quantityInStock,
+          costPrice: product.costPrice ?? undefined,
+          sellingPrice: product.sellingPrice ?? undefined,
+          quantityInStock: product.quantityInStock ?? undefined,
           unitType: product.unitType || 'PIECE',
-          lowStockThreshold: product.lowStockThreshold,
+          lowStockThreshold: product.lowStockThreshold ?? undefined,
           taxable: product.taxable,
-          taxRate: product.taxRate,
+          taxRate: product.taxRate ?? undefined,
           branchId: product.branchId,
         }
       : {
@@ -89,6 +90,37 @@ export const ProductForm: React.FC<ProductFormProps> = ({
           branchId: branchId || '',
         },
   });
+
+  // Reset form when product changes
+  React.useEffect(() => {
+    if (product) {
+      reset({
+        name: product.name,
+        description: product.description || '',
+        sku: product.sku,
+        barcode: product.barcode || '',
+        category: product.category,
+        hasVariants: product.hasVariants,
+        costPrice: product.costPrice ?? undefined,
+        sellingPrice: product.sellingPrice ?? undefined,
+        quantityInStock: product.quantityInStock ?? undefined,
+        unitType: product.unitType || 'PIECE',
+        lowStockThreshold: product.lowStockThreshold ?? undefined,
+        taxable: product.taxable,
+        taxRate: product.taxRate ?? undefined,
+        branchId: product.branchId,
+      });
+    } else {
+      reset({
+        hasVariants: false,
+        taxable: true,
+        unitType: 'PIECE',
+        quantityInStock: 0,
+        lowStockThreshold: 10,
+        branchId: branchId || '',
+      });
+    }
+  }, [product, branchId, reset]);
 
   const hasVariants = watch('hasVariants');
 

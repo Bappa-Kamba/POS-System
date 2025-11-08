@@ -3,6 +3,7 @@ import {
   NotFoundException,
   ConflictException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateProductDto, UpdateProductDto, FindAllProductsDto } from './dto';
@@ -10,6 +11,7 @@ import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class ProductsService {
+  private readonly logger = new Logger(ProductsService.name);
   constructor(private readonly prisma: PrismaService) {}
 
   /**
@@ -80,6 +82,7 @@ export class ProductsService {
       lowStock,
       branchId,
     } = params;
+    this.logger.log(JSON.stringify(params, null, 2));
 
     const where: Prisma.ProductWhereInput = {
       ...(branchId && { branchId }),
@@ -124,12 +127,14 @@ export class ProductsService {
     // Filter low stock items in memory (since SQLite doesn't support column comparison in where)
     let filteredProducts = products;
     if (lowStock) {
-      filteredProducts = products.filter(
-        (p) =>
+      filteredProducts = products.filter((p) => {
+        this.logger.log(JSON.stringify(p, null, 2));
+        return (
           p.quantityInStock != null &&
           p.lowStockThreshold != null &&
-          p.quantityInStock <= p.lowStockThreshold,
-      );
+          p.quantityInStock <= p.lowStockThreshold
+        );
+      });
     }
 
     return {

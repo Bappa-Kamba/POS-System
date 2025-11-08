@@ -1,5 +1,6 @@
 import React from 'react';
 import { Edit, Trash2, Eye } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Badge } from '../common/Badge';
 import { Button } from '../common/Button';
 import type { Product } from '../../services/product.service';
@@ -8,7 +9,6 @@ interface ProductTableProps {
   products: Product[];
   onEdit: (product: Product) => void;
   onDelete: (product: Product) => void;
-  onView: (product: Product) => void;
   isLoading?: boolean;
 }
 
@@ -16,9 +16,10 @@ export const ProductTable: React.FC<ProductTableProps> = ({
   products,
   onEdit,
   onDelete,
-  onView,
   isLoading = false,
 }) => {
+  const navigate = useNavigate();
+
   const formatCurrency = (amount?: number) => {
     if (amount == null) return 'N/A';
     return new Intl.NumberFormat('en-NG', {
@@ -146,7 +147,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => onView(product)}
+                    onClick={() => navigate(`/products/${product.id}`)}
                     title="View Details"
                   >
                     <Eye className="w-4 h-4" />
