@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { LoginPage } from './pages/auth/LoginPage';
 import { DashboardPage } from './pages/admin/DashboardPage';
+import { ProductsPage } from './pages/admin/ProductsPage';
 import { PosPage } from './pages/cashier/PosPage';
 import { UnauthorizedPage } from './pages/UnauthorizedPage';
 import { ProtectedRoute } from './router/ProtectedRoute';
@@ -27,6 +28,14 @@ export default function App() {
           element={
             <RequireRole role="ADMIN">
               <DashboardPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/products"
+          element={
+            <RequireRole role="ADMIN">
+              <ProductsPage />
             </RequireRole>
           }
         />
