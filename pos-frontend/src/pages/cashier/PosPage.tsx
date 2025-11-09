@@ -3,17 +3,30 @@ import { useAuth } from '../../hooks/useAuth';
 import { ProductSearch } from '../../components/pos/ProductSearch';
 import { ProductTable } from '../../components/pos/ProductTable';
 import { Cart } from '../../components/pos/Cart';
+import { PaymentModal } from '../../components/pos/PaymentModal';
+import { ReceiptPreview } from '../../components/pos/ReceiptPreview';
 import { useProducts } from '../../hooks/useProducts';
 import { useCartStore } from '../../store/cartStore';
+import { useCreateSale, useReceipt } from '../../hooks/useSales';
 import type { Product } from '../../services/product.service';
 import type { Variant } from '../../services/variant.service';
+import type { Payment } from '../../services/sale.service';
 import { ProductCategory } from '../../types/product';
 
 export const PosPage: React.FC = () => {
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
+  const [completedSaleId, setCompletedSaleId] = useState<string | null>(null);
+
   const addItem = useCartStore((state) => state.addItem);
+  const { items, getTotal, clearCart } = useCartStore();
+  const createSaleMutation = useCreateSale();
+  const { data: receiptData } = useReceipt(completedSaleId || '');
+
+  const total = getTotal();
 
   // Fetch products
   const { data, isLoading } = useProducts({
@@ -104,8 +117,53 @@ export const PosPage: React.FC = () => {
   };
 
   const handleCheckout = () => {
-    // TODO: Open payment modal (Day 13-14)
-    alert('Payment functionality will be implemented in Day 13-14');
+    if (items.length === 0) {
+      alert('Cart is empty. Please add items before checkout.');
+      return;
+    }
+    setIsPaymentModalOpen(true);
+  };
+
+  const handleCompleteSale = async (payment: Payment) => {
+    try {
+      // Prepare sale items from cart
+      const saleItems = items.map((item) => ({
+        productId: item.productId,
+        variantId: item.variantId,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+      }));
+
+      // Create sale with single payment
+      const response = await createSaleMutation.mutateAsync({
+        items: saleItems,
+        payments: [payment],
+      });
+
+      if (response.success && response.data) {
+        // Clear cart
+        clearCart();
+
+        // Close payment modal
+        setIsPaymentModalOpen(false);
+
+        // Set completed sale ID and open receipt
+        setCompletedSaleId(response.data.id);
+        setIsReceiptModalOpen(true);
+      }
+    } catch (error: any) {
+      console.error('Sale creation failed:', error);
+      alert(
+        error?.response?.data?.error?.message ||
+          'Failed to complete sale. Please try again.'
+      );
+    }
+  };
+
+  const handleNewSale = () => {
+    setIsReceiptModalOpen(false);
+    setCompletedSaleId(null);
+    clearCart();
   };
 
   const categories = [
@@ -191,6 +249,29 @@ export const PosPage: React.FC = () => {
           <Cart onCheckout={handleCheckout} />
         </div>
       </div>
+
+      {/* Payment Modal */}
+      <PaymentModal
+        isOpen={isPaymentModalOpen}
+        onClose={() => setIsPaymentModalOpen(false)}
+        total={total}
+        onComplete={handleCompleteSale}
+      />
+
+      {/* Receipt Preview Modal */}
+      <ReceiptPreview
+        isOpen={isReceiptModalOpen}
+        onClose={() => {
+          setIsReceiptModalOpen(false);
+          setCompletedSaleId(null);
+        }}
+        receiptData={
+          receiptData && receiptData.success && 'receipt' in receiptData.data
+            ? (receiptData.data as any).receipt
+            : null
+        }
+        onNewSale={handleNewSale}
+      />
     </div>
   );
 };
