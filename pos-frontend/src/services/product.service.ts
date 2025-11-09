@@ -59,8 +59,8 @@ export interface FindAllProductsParams {
 const productService = {
   async getAll(
     params?: FindAllProductsParams
-  ): Promise<PaginatedApiResponse<Product>> {
-    const response = await api.get<PaginatedApiResponse<Product>>("/products", {
+  ): Promise<PaginatedApiResponse<Product> & { variants?: any[] }> {
+    const response = await api.get<PaginatedApiResponse<Product> & { variants?: any[] }>("/products", {
       params,
     });
     return response.data;

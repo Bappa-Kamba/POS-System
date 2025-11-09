@@ -109,6 +109,35 @@ export class ProductsService {
       ];
     }
 
+    // Also search variants by SKU if search query is provided
+    let variantResults: any[] = [];
+    if (search) {
+      const variants = await this.prisma.productVariant.findMany({
+        where: {
+          isActive: true,
+          sku: { contains: search },
+          product: {
+            ...(branchId && { branchId }),
+            isActive: true,
+          },
+        },
+        include: {
+          product: {
+            select: {
+              id: true,
+              name: true,
+              category: true,
+              taxable: true,
+              taxRate: true,
+              branchId: true,
+            },
+          },
+        },
+        take: 50, // Limit variant results
+      });
+      variantResults = variants;
+    }
+
     const [products, total] = await Promise.all([
       this.prisma.product.findMany({
         where,
@@ -118,6 +147,12 @@ export class ProductsService {
           branch: {
             select: { id: true, name: true },
           },
+          variants: search
+            ? undefined
+            : {
+                where: { isActive: true },
+                take: 0, // Don't include variants in normal listing
+              },
         },
         orderBy: { createdAt: 'desc' },
       }),
@@ -137,7 +172,8 @@ export class ProductsService {
       });
     }
 
-    return {
+    // Attach variant results to response if search was performed
+    const responseData: any = {
       data: filteredProducts,
       meta: {
         total: lowStock ? filteredProducts.length : total,
@@ -147,6 +183,13 @@ export class ProductsService {
         ),
       },
     };
+
+    // Include variants in response if search was performed
+    if (search && variantResults.length > 0) {
+      responseData.variants = variantResults;
+    }
+
+    return responseData;
   }
 
   /**
