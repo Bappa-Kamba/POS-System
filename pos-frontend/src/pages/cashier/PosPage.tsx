@@ -178,8 +178,8 @@ export const PosPage: React.FC = () => {
     <div className="h-screen flex flex-col bg-neutral-50 dark:bg-neutral-900">
       {/* Header */}
       <div className="bg-white dark:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-700 px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div>
+      <div className="flex items-center justify-between">
+        <div>
             <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
               Point of Sale
             </h1>
@@ -215,7 +215,7 @@ export const PosPage: React.FC = () => {
           <div className="px-4 py-3 bg-white dark:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-700">
             <div className="flex gap-2 overflow-x-auto">
               {categories.map((category) => (
-                <button
+        <button
                   key={category.value}
                   onClick={() => setSelectedCategory(category.value)}
                   className={`px-4 py-2 rounded-lg font-medium text-sm whitespace-nowrap transition-colors ${
@@ -228,7 +228,7 @@ export const PosPage: React.FC = () => {
                   <span className="ml-2 text-xs opacity-75">
                     ({categoryCounts[category.value] || 0})
                   </span>
-                </button>
+        </button>
               ))}
             </div>
           </div>

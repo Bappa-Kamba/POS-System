@@ -1,28 +1,168 @@
 import { useAuth } from '../../hooks/useAuth';
-import { useAuthStore } from '../../store/authStore';
+import { useDashboardStats, useLowStockItems } from '../../hooks/useReports';
+import { StatCard } from '../../components/dashboard/StatCard';
+import { SalesChart } from '../../components/dashboard/SalesChart';
+import { RecentSales } from '../../components/dashboard/RecentSales';
+import { LowStockAlert } from '../../components/dashboard/LowStockAlert';
+import { formatCurrency, formatPercentage } from '../../utils/formatters';
+import {
+  ShoppingCart,
+  TrendingUp,
+  Package,
+  DollarSign,
+  BarChart3,
+} from 'lucide-react';
 
 export const DashboardPage = () => {
   const { user } = useAuth();
-  const { logout, isAuthenticated } = useAuthStore();
-  console.log('Redirected to DashboardPage', isAuthenticated)
+  const { data: stats, isLoading: statsLoading } = useDashboardStats();
+  const { data: lowStockItems } = useLowStockItems();
+
+  if (statsLoading) {
+    return (
+      <div className="p-8">
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!stats) {
+    return (
+      <div className="p-8">
+        <p className="text-neutral-500">Failed to load dashboard data.</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="p-8 space-y-4">
+    <div className="p-6 space-y-6 bg-neutral-50 dark:bg-neutral-900 min-h-screen">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-neutral-900">Admin Dashboard</h1>
-          <p className="text-neutral-600">Welcome back, {user?.firstName ?? user?.username}! 🎉</p>
+          <h1 className="text-3xl font-bold text-neutral-900 dark:text-neutral-100">
+            Dashboard
+          </h1>
+          <p className="text-neutral-600 dark:text-neutral-400 mt-1">
+            Welcome back, {user?.firstName ?? user?.username}! 🎉
+          </p>
         </div>
-        <button
-          type="button"
-          onClick={logout}
-          className="px-4 py-2 bg-neutral-100 hover:bg-neutral-200 text-neutral-900 rounded-lg font-medium transition-colors"
-        >
-          Sign out
-        </button>
       </div>
-      <p className="text-neutral-500">Use the sidebar (coming soon) to manage products, users, inventory, and reports.</p>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatCard
+          title="Today's Sales"
+          value={stats.salesOverview.todaySalesCount}
+          subtitle={formatCurrency(stats.salesOverview.todayRevenue)}
+          change={stats.salesOverview.salesCountChange}
+          icon={<ShoppingCart className="w-6 h-6 text-primary-600" />}
+          variant="default"
+        />
+        <StatCard
+          title="Today's Revenue"
+          value={formatCurrency(stats.salesOverview.todayRevenue)}
+          change={stats.salesOverview.revenueChange}
+          icon={<DollarSign className="w-6 h-6 text-green-600" />}
+          variant="success"
+        />
+        <StatCard
+          title="Gross Profit"
+          value={formatCurrency(stats.profit.grossProfit)}
+          subtitle={`Margin: ${formatPercentage(stats.profit.profitMargin)}`}
+          icon={<TrendingUp className="w-6 h-6 text-blue-600" />}
+          variant="default"
+        />
+        <StatCard
+          title="Inventory Status"
+          value={stats.inventory.totalProducts}
+          subtitle={`${stats.inventory.lowStockCount} low stock, ${stats.inventory.outOfStockCount} out of stock`}
+          icon={<Package className="w-6 h-6 text-yellow-600" />}
+          variant={stats.inventory.lowStockCount > 0 ? 'warning' : 'default'}
+        />
+      </div>
+
+      {/* Sales Chart */}
+      <SalesChart data={stats.chartData} />
+
+      {/* Bottom Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Recent Sales */}
+        <RecentSales sales={stats.recentSales} />
+
+        {/* Low Stock Alerts */}
+        <LowStockAlert
+          items={lowStockItems || []}
+          onRestock={(itemId, isVariant) => {
+            // TODO: Navigate to inventory adjustment
+            console.log('Restock:', itemId, isVariant);
+          }}
+        />
+      </div>
+
+      {/* Top Products */}
+      {stats.topProducts.length > 0 && (
+        <div className="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-6 shadow-sm">
+          <div className="flex items-center gap-2 mb-4">
+            <BarChart3 className="w-5 h-5 text-primary-600" />
+            <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+              Top Selling Products (This Week)
+            </h3>
+          </div>
+          <div className="space-y-3">
+            {stats.topProducts.map((product, index) => (
+              <div
+                key={index}
+                className="flex items-center justify-between p-3 bg-neutral-50 dark:bg-neutral-700 rounded-lg"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/20 flex items-center justify-center text-primary-600 dark:text-primary-400 font-bold text-sm">
+                    {index + 1}
+                  </div>
+                  <div>
+                    <p className="font-medium text-neutral-900 dark:text-neutral-100">
+                      {product.name}
+                    </p>
+                    <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                      {product.quantity} units sold
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="font-semibold text-neutral-900 dark:text-neutral-100">
+                    {formatCurrency(product.revenue)}
+                  </p>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">Revenue</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Expenses Summary */}
+      {stats.expenses.monthTotal > 0 && (
+        <div className="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-6 shadow-sm">
+          <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-4">
+            Monthly Expenses
+          </h3>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+                {formatCurrency(stats.expenses.monthTotal)}
+              </p>
+              {stats.expenses.topCategory && (
+                <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+                  Top category: {stats.expenses.topCategory.category} (
+                  {formatCurrency(stats.expenses.topCategory.amount)})
+                </p>
+              )}
+            </div>
+            <DollarSign className="w-12 h-12 text-neutral-300 dark:text-neutral-600" />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
-

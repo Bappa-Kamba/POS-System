@@ -110,7 +110,21 @@ export class ProductsService {
     }
 
     // Also search variants by SKU if search query is provided
-    let variantResults: any[] = [];
+    type VariantWithProduct = Prisma.ProductVariantGetPayload<{
+      include: {
+        product: {
+          select: {
+            id: true;
+            name: true;
+            category: true;
+            taxable: true;
+            taxRate: true;
+            branchId: true;
+          };
+        };
+      };
+    }>;
+    let variantResults: VariantWithProduct[] = [];
     if (search) {
       const variants = await this.prisma.productVariant.findMany({
         where: {
@@ -173,7 +187,29 @@ export class ProductsService {
     }
 
     // Attach variant results to response if search was performed
-    const responseData: any = {
+    type ProductWithRelations = Prisma.ProductGetPayload<{
+      include: {
+        branch: {
+          select: { id: true; name: true };
+        };
+        variants?: {
+          where: { isActive: true };
+          take: number;
+        };
+      };
+    }>;
+
+    type ResponseData = {
+      data: ProductWithRelations[];
+      meta: {
+        total: number;
+        page: number;
+        lastPage: number;
+      };
+      variants?: VariantWithProduct[];
+    };
+
+    const responseData: ResponseData = {
       data: filteredProducts,
       meta: {
         total: lowStock ? filteredProducts.length : total,
