@@ -6,7 +6,9 @@ import {
   Post,
   Get,
   UseGuards,
+  Req,
 } from '@nestjs/common';
+import type { Request } from 'express';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
@@ -20,8 +22,19 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  async login(@Body() dto: LoginDto) {
-    const { user, tokens } = await this.authService.login(dto);
+  async login(@Body() dto: LoginDto, @Req() req: Request) {
+    const ipAddress =
+      (req.headers['x-forwarded-for'] as string) ||
+      req.ip ||
+      req.socket.remoteAddress ||
+      undefined;
+    const userAgent = req.headers['user-agent'] || undefined;
+
+    const { user, tokens } = await this.authService.login(
+      dto,
+      ipAddress,
+      userAgent,
+    );
 
     return {
       success: true,
@@ -48,8 +61,18 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Post('logout')
   @HttpCode(HttpStatus.OK)
-  async logout(@CurrentUser() user: AuthenticatedRequestUser) {
-    await this.authService.logout(user.id);
+  async logout(
+    @CurrentUser() user: AuthenticatedRequestUser,
+    @Req() req: Request,
+  ) {
+    const ipAddress =
+      (req.headers['x-forwarded-for'] as string) ||
+      req.ip ||
+      req.socket.remoteAddress ||
+      undefined;
+    const userAgent = req.headers['user-agent'] || undefined;
+
+    await this.authService.logout(user.id, ipAddress, userAgent);
 
     return {
       success: true,

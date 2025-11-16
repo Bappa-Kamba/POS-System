@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AdjustStockDto, FindAllLogsDto } from './dto';
-import { Prisma } from '@prisma/client';
+import { Prisma, AuditAction } from '@prisma/client';
 import { startOfDay, addDays } from 'date-fns';
 
 @Injectable()
@@ -127,6 +127,23 @@ export class InventoryService {
     this.logger.log(
       `Stock adjusted: ${product.name}${variant ? ` (${variant.name})` : ''} - ${data.quantityChange > 0 ? '+' : ''}${data.quantityChange} (${previousQuantity} → ${newQuantity})`,
     );
+
+    // Log audit trail for inventory adjustment
+    await this.logAudit({
+      userId,
+      action: AuditAction.UPDATE,
+      entity: 'Inventory',
+      entityId: data.variantId || data.productId,
+      newValues: JSON.stringify({
+        productId: product.id,
+        variantId: data.variantId,
+        changeType: data.changeType,
+        quantityChange: data.quantityChange,
+        previousQuantity,
+        newQuantity,
+        reason: data.reason,
+      }),
+    });
 
     return inventoryLog;
   }
@@ -314,5 +331,33 @@ export class InventoryService {
         isVariant: true,
       })),
     };
+  }
+
+  /**
+   * Helper method to log audit trail
+   */
+  private async logAudit(data: {
+    userId: string;
+    action: AuditAction;
+    entity: string;
+    entityId: string;
+    oldValues?: string;
+    newValues?: string;
+  }): Promise<void> {
+    try {
+      await this.prisma.auditLog.create({
+        data: {
+          userId: data.userId,
+          action: data.action,
+          entity: data.entity,
+          entityId: data.entityId,
+          oldValues: data.oldValues,
+          newValues: data.newValues,
+        },
+      });
+    } catch (error) {
+      this.logger.error(`Failed to create audit log: ${error}`);
+      // Don't throw - audit logging failure shouldn't break the operation
+    }
   }
 }

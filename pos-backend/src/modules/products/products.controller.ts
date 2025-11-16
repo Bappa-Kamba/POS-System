@@ -16,7 +16,9 @@ import { CreateProductDto, UpdateProductDto, FindAllProductsDto } from './dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { UserRole } from '@prisma/client';
+import type { AuthenticatedRequestUser } from '../auth/types/authenticated-user.type';
 
 @Controller('products')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -25,8 +27,11 @@ export class ProductsController {
 
   @Post()
   @Roles(UserRole.ADMIN)
-  async create(@Body() createProductDto: CreateProductDto) {
-    const product = await this.productsService.create(createProductDto);
+  async create(
+    @Body() createProductDto: CreateProductDto,
+    @CurrentUser() user: AuthenticatedRequestUser,
+  ) {
+    const product = await this.productsService.create(createProductDto, user.id);
     return {
       success: true,
       data: product,
@@ -102,8 +107,9 @@ export class ProductsController {
   async update(
     @Param('id') id: string,
     @Body() updateProductDto: UpdateProductDto,
+    @CurrentUser() user: AuthenticatedRequestUser,
   ) {
-    const product = await this.productsService.update(id, updateProductDto);
+    const product = await this.productsService.update(id, updateProductDto, user.id);
     return {
       success: true,
       data: product,
@@ -114,8 +120,11 @@ export class ProductsController {
   @Delete(':id')
   @Roles(UserRole.ADMIN)
   @HttpCode(HttpStatus.OK)
-  async remove(@Param('id') id: string) {
-    const product = await this.productsService.remove(id);
+  async remove(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedRequestUser,
+  ) {
+    const product = await this.productsService.remove(id, user.id);
     return {
       success: true,
       data: product,

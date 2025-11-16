@@ -8,6 +8,8 @@ import {
   User,
   Users,
   BarChart3,
+  DollarSign,
+  FileText,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useAuthStore } from '../../store/authStore';
@@ -58,6 +60,16 @@ export const Navbar = () => {
             path: '/reports',
             label: 'Reports',
             icon: BarChart3,
+          },
+          {
+            path: '/expenses',
+            label: 'Expenses',
+            icon: DollarSign,
+          },
+          {
+            path: '/audit-logs',
+            label: 'Audit Logs',
+            icon: FileText,
           },
         ]
       : []),

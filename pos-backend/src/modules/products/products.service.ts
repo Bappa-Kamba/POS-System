@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateProductDto, UpdateProductDto, FindAllProductsDto } from './dto';
-import { Prisma } from '@prisma/client';
+import { Prisma, AuditAction } from '@prisma/client';
 
 @Injectable()
 export class ProductsService {
@@ -17,7 +17,7 @@ export class ProductsService {
   /**
    * Create a new product
    */
-  async create(data: CreateProductDto) {
+  async create(data: CreateProductDto, userId: string) {
     // Check if SKU already exists
     const existingSku = await this.prisma.product.findUnique({
       where: { sku: data.sku },
@@ -63,6 +63,15 @@ export class ProductsService {
           select: { id: true, name: true },
         },
       },
+    });
+
+    // Log audit trail
+    await this.logAudit({
+      userId,
+      action: AuditAction.CREATE,
+      entity: 'Product',
+      entityId: product.id,
+      newValues: JSON.stringify(product),
     });
 
     return product;
@@ -262,9 +271,12 @@ export class ProductsService {
   /**
    * Update product
    */
-  async update(id: string, data: UpdateProductDto) {
+  async update(id: string, data: UpdateProductDto, userId: string) {
     // Check if product exists
     const product = await this.findOne(id);
+
+    // Store old values for audit
+    const oldValues = JSON.stringify(product);
 
     // Check SKU uniqueness if being updated
     if (data.sku && data.sku !== product.sku) {
@@ -317,15 +329,28 @@ export class ProductsService {
       },
     });
 
+    // Log audit trail
+    await this.logAudit({
+      userId,
+      action: AuditAction.UPDATE,
+      entity: 'Product',
+      entityId: id,
+      oldValues,
+      newValues: JSON.stringify(updated),
+    });
+
     return updated;
   }
 
   /**
    * Soft delete product
    */
-  async remove(id: string) {
+  async remove(id: string, userId: string) {
     // Check if product exists
-    await this.findOne(id);
+    const product = await this.findOne(id);
+
+    // Store old values for audit
+    const oldValues = JSON.stringify(product);
 
     const deleted = await this.prisma.product.update({
       where: { id },
@@ -335,6 +360,16 @@ export class ProductsService {
           select: { id: true, name: true },
         },
       },
+    });
+
+    // Log audit trail
+    await this.logAudit({
+      userId,
+      action: AuditAction.DELETE,
+      entity: 'Product',
+      entityId: id,
+      oldValues,
+      newValues: JSON.stringify(deleted),
     });
 
     return deleted;
@@ -496,5 +531,33 @@ export class ProductsService {
     });
 
     return products;
+  }
+
+  /**
+   * Helper method to log audit trail
+   */
+  private async logAudit(data: {
+    userId: string;
+    action: AuditAction;
+    entity: string;
+    entityId: string;
+    oldValues?: string;
+    newValues?: string;
+  }): Promise<void> {
+    try {
+      await this.prisma.auditLog.create({
+        data: {
+          userId: data.userId,
+          action: data.action,
+          entity: data.entity,
+          entityId: data.entityId,
+          oldValues: data.oldValues,
+          newValues: data.newValues,
+        },
+      });
+    } catch (error) {
+      this.logger.error(`Failed to create audit log: ${error}`);
+      // Don't throw - audit logging failure shouldn't break the operation
+    }
   }
 }
