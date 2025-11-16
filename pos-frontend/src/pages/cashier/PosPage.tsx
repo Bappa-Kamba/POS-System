@@ -160,11 +160,6 @@ export const PosPage: React.FC = () => {
     }
   };
 
-  const handleNewSale = () => {
-    setIsReceiptModalOpen(false);
-    setCompletedSaleId(null);
-    clearCart();
-  };
 
   const categories = [
     { value: 'ALL', label: 'All' },
@@ -175,7 +170,7 @@ export const PosPage: React.FC = () => {
   ];
 
   return (
-    <div className="h-screen flex flex-col bg-neutral-50 dark:bg-neutral-900">
+    <div className="h-screen flex flex-col">
       {/* Header */}
       <div className="bg-white dark:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-700 px-6 py-4">
       <div className="flex items-center justify-between">
@@ -258,20 +253,19 @@ export const PosPage: React.FC = () => {
         onComplete={handleCompleteSale}
       />
 
-      {/* Receipt Preview Modal */}
-      <ReceiptPreview
-        isOpen={isReceiptModalOpen}
-        onClose={() => {
-          setIsReceiptModalOpen(false);
-          setCompletedSaleId(null);
-        }}
-        receiptData={
-          receiptData && receiptData.success && 'receipt' in receiptData.data
-            ? (receiptData.data as any).receipt
-            : null
-        }
-        onNewSale={handleNewSale}
-      />
+              {/* Receipt Preview Modal */}
+              <ReceiptPreview
+                isOpen={isReceiptModalOpen}
+                onClose={() => {
+                  setIsReceiptModalOpen(false);
+                  setCompletedSaleId(null);
+                }}
+                receiptData={
+                  receiptData && receiptData.success && 'receipt' in receiptData.data
+                    ? (receiptData.data as any).receipt
+                    : null
+                }
+              />
     </div>
   );
 };

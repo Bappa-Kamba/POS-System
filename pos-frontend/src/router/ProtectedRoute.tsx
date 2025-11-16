@@ -8,7 +8,6 @@ export const ProtectedRoute = () => {
   if (isAuthLoading) return null;
 
   if (!isAuthenticated) {
-    console.log('Redirecting to login page...')
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 

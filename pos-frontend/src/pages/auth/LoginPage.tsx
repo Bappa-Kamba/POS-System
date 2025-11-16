@@ -34,7 +34,16 @@ export const LoginPage = () => {
     try {
       const payload = await authService.login(values);
       setSession(payload);
-      const redirectTo = (location.state as { from?: Location })?.from?.pathname ?? '/dashboard';
+      
+      // Determine redirect based on role or saved location
+      const savedPath = (location.state as { from?: Location })?.from?.pathname;
+      let redirectTo = savedPath;
+      
+      if (!redirectTo) {
+        // Default redirect based on role
+        redirectTo = payload.user.role === 'ADMIN' ? '/dashboard' : '/pos';
+      }
+      
       navigate(redirectTo, { replace: true });
     } catch (error) {
       const message =

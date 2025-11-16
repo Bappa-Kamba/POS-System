@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 import { authService } from "../services/auth.service";
 import type { AuthTokens, LoginPayload } from "../types/auth";
 import type { AuthUser } from "../types/user";
@@ -18,92 +19,127 @@ interface AuthState {
 
 let refreshPromise: Promise<AuthTokens | null> | null = null;
 
-export const useAuthStore = create<AuthState>((set, get) => ({
-  user: null,
-  accessToken: null,
-  refreshToken: null,
-  isAuthenticated: false,
-  isAuthLoading: true,
-
-  setSession: ({ user, tokens }: LoginPayload) => {
-    set({
-      user,
-      accessToken: tokens.accessToken,
-      refreshToken: tokens.refreshToken,
-      isAuthenticated: true,
-    });
-  },
-
-  checkAuthStatus: async () => {
-    console.log("Checking auth status");
-    // 1. Check if tokens exist in local storage (if you persist them)
-    // 2. OR attempt a token refresh immediately
-    const { refreshToken, clearSession } = get();
-    console.log("refresh token", refreshToken);
-
-    if (!refreshToken) {
-      set({ isAuthLoading: false });
-      console.log("IsAuthLoading", get().isAuthLoading);
-      return;
-    }
-
-    // Attempt refresh to validate existing tokens
-    try {
-      await get().refreshTokens();
-    } catch (error) {
-      clearSession();
-    } finally {
-      set({ isAuthLoading: false });
-    }
-  },
-
-  clearSession: () => {
-    refreshPromise = null;
-    set({
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set, get) => ({
       user: null,
       accessToken: null,
       refreshToken: null,
       isAuthenticated: false,
-    });
-  },
+      isAuthLoading: true,
 
-  refreshTokens: async () => {
-    const { refreshToken } = get();
-
-    if (!refreshToken) {
-      get().clearSession();
-      return null;
-    }
-
-    if (!refreshPromise) {
-      refreshPromise = authService
-        .refresh({ refreshToken })
-        .then((tokens) => {
-          set({
-            accessToken: tokens.accessToken,
-            refreshToken: tokens.refreshToken,
-            isAuthenticated: true,
-          });
-          refreshPromise = null;
-          return tokens;
-        })
-        .catch((error) => {
-          refreshPromise = null;
-          get().clearSession();
-          throw error;
+      setSession: ({ user, tokens }: LoginPayload) => {
+        set({
+          user,
+          accessToken: tokens.accessToken,
+          refreshToken: tokens.refreshToken,
+          isAuthenticated: true,
         });
-    }
+      },
 
-    return refreshPromise;
-  },
+      checkAuthStatus: async () => {
+        console.log("Checking auth status");
+        const { refreshToken, accessToken, clearSession } = get();
+        console.log("refresh token", refreshToken);
 
-  logout: async () => {
-    try {
-      await authService.logout();
-    } catch (error) {
-      // Swallow network errors to ensure client state clears
-    } finally {
-      get().clearSession();
+        if (!refreshToken) {
+          set({ isAuthLoading: false });
+          return;
+        }
+
+        // If we have an access token, try to validate it first by fetching user data
+        if (accessToken) {
+          try {
+            const user = await authService.me();
+            set({ user, isAuthenticated: true, isAuthLoading: false });
+            return; // Access token is still valid
+          } catch (error) {
+            console.log("Access token invalid, attempting refresh...");
+            // Access token is invalid, proceed to refresh
+          }
+        }
+
+        // Attempt to refresh tokens to validate session
+        try {
+          const tokens = await get().refreshTokens();
+          if (tokens) {
+            // If refresh succeeds, also fetch user data to ensure it's up to date
+            try {
+              const user = await authService.me();
+              set({ user, isAuthenticated: true });
+            } catch (error) {
+              console.error("Failed to fetch user data:", error);
+              // Continue anyway, user data might be in state
+            }
+          }
+        } catch (error) {
+          console.error("Token refresh failed:", error);
+          clearSession();
+        } finally {
+          set({ isAuthLoading: false });
+        }
+      },
+
+      clearSession: () => {
+        refreshPromise = null;
+        set({
+          user: null,
+          accessToken: null,
+          refreshToken: null,
+          isAuthenticated: false,
+        });
+        // Clear localStorage
+        localStorage.removeItem("auth-storage");
+      },
+
+      refreshTokens: async () => {
+        const { refreshToken } = get();
+
+        if (!refreshToken) {
+          get().clearSession();
+          return null;
+        }
+
+        if (!refreshPromise) {
+          refreshPromise = authService
+            .refresh({ refreshToken })
+            .then((tokens) => {
+              set({
+                accessToken: tokens.accessToken,
+                refreshToken: tokens.refreshToken,
+                isAuthenticated: true,
+              });
+              refreshPromise = null;
+              return tokens;
+            })
+            .catch((error) => {
+              refreshPromise = null;
+              get().clearSession();
+              throw error;
+            });
+        }
+
+        return refreshPromise;
+      },
+
+      logout: async () => {
+        try {
+          await authService.logout();
+        } catch (error) {
+          // Swallow network errors to ensure client state clears
+        } finally {
+          get().clearSession();
+        }
+      },
+    }),
+    {
+      name: "auth-storage",
+      partialize: (state) => ({
+        accessToken: state.accessToken,
+        refreshToken: state.refreshToken,
+        user: state.user,
+        isAuthenticated: state.isAuthenticated,
+      }),
     }
-  },
-}));
+  )
+);

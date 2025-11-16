@@ -1,26 +1,20 @@
 import React from 'react';
-import { X, Printer, Download } from 'lucide-react';
+import { X, Printer } from 'lucide-react';
 import { Modal } from '../common/Modal';
 import { Button } from '../common/Button';
 import { formatCurrency, formatDate } from '../../utils/formatters';
-import {
-  printReceipt,
-  downloadReceiptPDF,
-  type ReceiptData,
-} from '../../services/print.service';
+import { printReceipt, type ReceiptData } from '../../services/print.service';
 
 interface ReceiptPreviewProps {
   isOpen: boolean;
   onClose: () => void;
   receiptData: ReceiptData | null;
-  onNewSale?: () => void;
 }
 
 export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
   isOpen,
   onClose,
   receiptData,
-  onNewSale,
 }) => {
   if (!receiptData) {
     return null;
@@ -28,15 +22,6 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
 
   const handlePrint = () => {
     printReceipt(receiptData);
-  };
-
-  const handleDownloadPDF = async () => {
-    try {
-      await downloadReceiptPDF(receiptData);
-    } catch (error) {
-      console.error('Failed to generate PDF:', error);
-      alert('Failed to generate PDF. Please try again.');
-    }
   };
 
   return (
@@ -214,15 +199,6 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
             <Printer className="w-4 h-4 mr-2" />
             Print
           </Button>
-          <Button variant="secondary" onClick={handleDownloadPDF}>
-            <Download className="w-4 h-4 mr-2" />
-            Download PDF
-          </Button>
-          {onNewSale && (
-            <Button onClick={onNewSale}>
-              New Sale
-            </Button>
-          )}
           <Button variant="ghost" onClick={onClose}>
             <X className="w-4 h-4 mr-2" />
             Close

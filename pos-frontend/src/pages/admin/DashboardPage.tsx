@@ -5,16 +5,20 @@ import { SalesChart } from '../../components/dashboard/SalesChart';
 import { RecentSales } from '../../components/dashboard/RecentSales';
 import { LowStockAlert } from '../../components/dashboard/LowStockAlert';
 import { formatCurrency, formatPercentage } from '../../utils/formatters';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '../../components/common/Button';
 import {
   ShoppingCart,
   TrendingUp,
   Package,
   DollarSign,
   BarChart3,
+  Warehouse,
 } from 'lucide-react';
 
 export const DashboardPage = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { data: stats, isLoading: statsLoading } = useDashboardStats();
   const { data: lowStockItems } = useLowStockItems();
 
@@ -37,7 +41,7 @@ export const DashboardPage = () => {
   }
 
   return (
-    <div className="p-6 space-y-6 bg-neutral-50 dark:bg-neutral-900 min-h-screen">
+    <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -74,13 +78,18 @@ export const DashboardPage = () => {
           icon={<TrendingUp className="w-6 h-6 text-blue-600" />}
           variant="default"
         />
-        <StatCard
-          title="Inventory Status"
-          value={stats.inventory.totalProducts}
-          subtitle={`${stats.inventory.lowStockCount} low stock, ${stats.inventory.outOfStockCount} out of stock`}
-          icon={<Package className="w-6 h-6 text-yellow-600" />}
-          variant={stats.inventory.lowStockCount > 0 ? 'warning' : 'default'}
-        />
+        <div
+          onClick={() => navigate('/inventory')}
+          className="cursor-pointer"
+        >
+          <StatCard
+            title="Inventory Status"
+            value={stats.inventory.totalProducts}
+            subtitle={`${stats.inventory.lowStockCount} low stock, ${stats.inventory.outOfStockCount} out of stock`}
+            icon={<Package className="w-6 h-6 text-yellow-600" />}
+            variant={stats.inventory.lowStockCount > 0 ? 'warning' : 'default'}
+          />
+        </div>
       </div>
 
       {/* Sales Chart */}
@@ -92,13 +101,24 @@ export const DashboardPage = () => {
         <RecentSales sales={stats.recentSales} />
 
         {/* Low Stock Alerts */}
-        <LowStockAlert
-          items={lowStockItems || []}
-          onRestock={(itemId, isVariant) => {
-            // TODO: Navigate to inventory adjustment
-            console.log('Restock:', itemId, isVariant);
-          }}
-        />
+        <div className="space-y-4">
+          <LowStockAlert
+            items={lowStockItems || []}
+            onRestock={() => {
+              navigate('/inventory');
+            }}
+          />
+          <div className="flex justify-center">
+            <Button
+              variant="secondary"
+              onClick={() => navigate('/inventory')}
+              className="w-full"
+            >
+              <Warehouse className="w-4 h-4 mr-2" />
+              View Full Inventory
+            </Button>
+          </div>
+        </div>
       </div>
 
       {/* Top Products */}

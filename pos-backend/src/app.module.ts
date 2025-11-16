@@ -9,6 +9,7 @@ import { ProductsModule } from './modules/products/products.module';
 import { VariantsModule } from './modules/variants/variants.module';
 import { SalesModule } from './modules/sales/sales.module';
 import { ReportsModule } from './modules/reports/reports.module';
+import { InventoryModule } from './modules/inventory/inventory.module';
 import { PrismaModule } from './prisma/prisma.module';
 
 @Module({
@@ -28,6 +29,7 @@ import { PrismaModule } from './prisma/prisma.module';
     VariantsModule,
     SalesModule,
     ReportsModule,
+    InventoryModule,
   ],
   controllers: [AppController],
   providers: [AppService],
