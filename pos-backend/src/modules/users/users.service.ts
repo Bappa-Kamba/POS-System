@@ -110,10 +110,19 @@ export class UsersService {
   async findAll(params: FindAllUsersDto) {
     const { skip = 0, take = 20, search, role, isActive, branchId } = params;
 
+    this.logger.log(
+      `Users findAll - isActive: ${isActive} (type: ${typeof isActive})`,
+    );
+
     const where: Prisma.UserWhereInput = {
       ...(branchId && { branchId }),
       ...(role && { role }),
-      ...(isActive !== undefined && { isActive }),
+      // If isActive is 'ALL', it means "all" was explicitly requested (via 'all' string)
+      // So we don't filter by isActive (return all users)
+      // Otherwise, filter by the boolean value (true for active, false for inactive)
+      ...(isActive !== undefined &&
+        isActive !== 'ALL' &&
+        typeof isActive === 'boolean' && { isActive }),
       ...(search && {
         OR: [
           { username: { contains: search } },

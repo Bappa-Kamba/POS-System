@@ -18,7 +18,7 @@ export const UsersPage: React.FC = () => {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [role, setRole] = useState<string>('');
-  const [isActive, setIsActive] = useState<boolean | undefined>(undefined);
+  const [isActive, setIsActive] = useState<boolean | undefined>(true);
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -51,7 +51,7 @@ export const UsersPage: React.FC = () => {
 
   const handleStatusChange = (value: string) => {
     if (value === 'all') {
-      setIsActive(undefined);
+      setIsActive(undefined); // Send 'all' to backend to get all users
     } else {
       setIsActive(value === 'active');
     }

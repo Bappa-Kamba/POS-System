@@ -52,6 +52,13 @@ export const DashboardPage = () => {
             Welcome back, {user?.firstName ?? user?.username}! 🎉
           </p>
         </div>
+        <Button
+          variant="secondary"
+          onClick={() => navigate('/reports')}
+        >
+          <BarChart3 className="w-4 h-4 mr-2" />
+          View Reports
+        </Button>
       </div>
 
       {/* Stats Cards */}

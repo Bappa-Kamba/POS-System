@@ -60,8 +60,30 @@ const productService = {
   async getAll(
     params?: FindAllProductsParams
   ): Promise<PaginatedApiResponse<Product> & { variants?: any[] }> {
+    // Build query params manually to handle 'all' for isActive
+    const queryParams: Record<string, string> = {};
+    if (params?.skip !== undefined) queryParams.skip = String(params.skip);
+    if (params?.take !== undefined) queryParams.take = String(params.take);
+    if (params?.search) queryParams.search = params.search;
+    if (params?.category) queryParams.category = params.category;
+    if (params?.hasVariants !== undefined) queryParams.hasVariants = String(params.hasVariants);
+    if (params?.lowStock !== undefined) queryParams.lowStock = String(params.lowStock);
+    if (params?.branchId) queryParams.branchId = params.branchId;
+    // Handle isActive parameter
+    // When true: send 'true' (active products) - this is the default
+    // When false: send 'false' (inactive products)
+    // When undefined: send 'all' (all products - explicitly requested)
+    if (params?.isActive === true) {
+      queryParams.isActive = 'true';
+    } else if (params?.isActive === false) {
+      queryParams.isActive = 'false';
+    } else {
+      // When undefined, send 'all' to explicitly request all products
+      queryParams.isActive = 'all';
+    }
+
     const response = await api.get<PaginatedApiResponse<Product> & { variants?: any[] }>("/products", {
-      params,
+      params: queryParams,
     });
     return response.data;
   },

@@ -84,9 +84,18 @@ export class ProductsService {
     } = params;
     this.logger.log(JSON.stringify(params, null, 2));
 
+    this.logger.log(
+      `Products findAll - isActive: ${isActive} (type: ${typeof isActive})`,
+    );
+
     const where: Prisma.ProductWhereInput = {
       ...(branchId && { branchId }),
-      ...(isActive !== undefined && { isActive }),
+      // If isActive is 'ALL', it means "all" was explicitly requested (via 'all' string)
+      // So we don't filter by isActive (return all products)
+      // Otherwise, filter by the boolean value (true for active, false for inactive)
+      ...(isActive !== undefined &&
+        isActive !== 'ALL' &&
+        typeof isActive === 'boolean' && { isActive }),
       ...(category && { category }),
       ...(hasVariants !== undefined && { hasVariants }),
       ...(search && {

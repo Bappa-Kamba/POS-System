@@ -6,6 +6,7 @@ import { ProductsPage } from './pages/admin/ProductsPage';
 import { ProductDetailsPage } from './pages/admin/ProductDetailsPage';
 import { InventoryPage } from './pages/admin/InventoryPage';
 import { UsersPage } from './pages/admin/UsersPage';
+import { ReportsPage } from './pages/admin/ReportsPage';
 import { PosPage } from './pages/cashier/PosPage';
 import { UnauthorizedPage } from './pages/UnauthorizedPage';
 import { ProtectedRoute } from './router/ProtectedRoute';
@@ -71,6 +72,14 @@ export default function App() {
             element={
               <RequireRole role="ADMIN">
                 <UsersPage />
+              </RequireRole>
+            }
+          />
+          <Route
+            path="/reports"
+            element={
+              <RequireRole role="ADMIN">
+                <ReportsPage />
               </RequireRole>
             }
           />

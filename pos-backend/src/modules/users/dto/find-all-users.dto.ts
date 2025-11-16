@@ -5,8 +5,9 @@ import {
   IsOptional,
   IsInt,
   Min,
+  ValidateIf,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 import { UserRole } from '@prisma/client';
 
 export class FindAllUsersDto {
@@ -30,10 +31,21 @@ export class FindAllUsersDto {
   @IsOptional()
   role?: UserRole;
 
-  @IsBoolean()
-  @Type(() => Boolean)
   @IsOptional()
-  isActive?: boolean;
+  @Transform(({ value }) => {
+    // Handle 'all' string explicitly - return a special marker
+    if (value === 'all' || value === null || value === '') {
+      return 'ALL'; // Special marker to indicate "all" was requested
+    }
+    if (value === 'true' || value === true) return true;
+    if (value === 'false' || value === false) return false;
+    return undefined;
+  })
+  @ValidateIf((o: FindAllUsersDto) => {
+    return o.isActive !== undefined && o.isActive !== 'ALL';
+  })
+  @IsBoolean()
+  isActive?: boolean | string;
 
   @IsString()
   @IsOptional()

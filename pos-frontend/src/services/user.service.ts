@@ -64,7 +64,18 @@ export const userService = {
     if (params?.limit) queryParams.append('take', String(params.limit));
     if (params?.search) queryParams.append('search', params.search);
     if (params?.role) queryParams.append('role', params.role);
-    if (params?.isActive !== undefined) queryParams.append('isActive', String(params.isActive));
+    // Handle isActive parameter
+    // When true: send 'true' (active users) - this is the default
+    // When false: send 'false' (inactive users)
+    // When undefined: send 'all' (all users - explicitly requested)
+    if (params?.isActive === true) {
+      queryParams.append('isActive', 'true');
+    } else if (params?.isActive === false) {
+      queryParams.append('isActive', 'false');
+    } else {
+      // When undefined, send 'all' to explicitly request all users
+      queryParams.append('isActive', 'all');
+    }
     if (params?.branchId) queryParams.append('branchId', params.branchId);
 
     const response = await api.get<PaginatedApiResponse<User>>(

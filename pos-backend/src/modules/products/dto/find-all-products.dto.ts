@@ -5,6 +5,7 @@ import {
   IsString,
   IsNumber,
   Min,
+  ValidateIf,
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 import { ProductCategory } from '@prisma/client';
@@ -42,9 +43,20 @@ export class FindAllProductsDto {
   category?: ProductCategory;
 
   @IsOptional()
-  @TransformBoolean()
+  @Transform(({ value }) => {
+    // Handle 'all' string explicitly - return a special marker
+    if (value === 'all' || value === null || value === '') {
+      return 'ALL'; // Special marker to indicate "all" was requested
+    }
+    if (value === 'true' || value === true) return true;
+    if (value === 'false' || value === false) return false;
+    return undefined;
+  })
+  @ValidateIf((o: FindAllProductsDto) => {
+    return o.isActive !== undefined && o.isActive !== 'ALL';
+  })
   @IsBoolean()
-  isActive?: boolean;
+  isActive?: boolean | string;
 
   @IsOptional()
   @TransformBoolean()

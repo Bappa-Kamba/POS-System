@@ -1,7 +1,50 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { PaymentStatus } from '@prisma/client';
-import { startOfDay, endOfDay, subDays, format } from 'date-fns';
+import { PaymentStatus, Prisma } from '@prisma/client';
+import {
+  startOfDay,
+  endOfDay,
+  subDays,
+  format,
+  startOfWeek,
+  startOfMonth,
+} from 'date-fns';
+import {
+  SalesReportDto,
+  ProfitLossDto,
+  ExportReportDto,
+  ReportType,
+  ExportFormat,
+} from './dto';
+import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+
+// Extend jsPDF type to include autotable plugin properties
+interface jsPDFWithAutoTable extends jsPDF {
+  lastAutoTable?: {
+    finalY: number;
+  };
+}
+
+type SaleWithRelations = Prisma.SaleGetPayload<{
+  include: {
+    items: {
+      include: {
+        product: { select: { id: true; name: true; category: true } };
+        variant: { select: { id: true; name: true } };
+      };
+    };
+    cashier: {
+      select: { id: true; firstName: true; lastName: true; username: true };
+    };
+  };
+}>;
+
+type SalesReportData = Awaited<ReturnType<ReportsService['getSalesReport']>>;
+type ProfitLossReportData = Awaited<
+  ReturnType<ReportsService['getProfitLossReport']>
+>;
 
 @Injectable()
 export class ReportsService {
@@ -493,5 +536,917 @@ export class ReportsService {
       category: sorted[0][0],
       amount: sorted[0][1],
     };
+  }
+
+  /**
+   * Generate sales report
+   */
+  async getSalesReport(branchId: string, params: SalesReportDto) {
+    const startDate = startOfDay(new Date(params.startDate));
+    const endDate = endOfDay(new Date(params.endDate));
+
+    // Build where clause
+    const where: Prisma.SaleWhereInput = {
+      branchId,
+      createdAt: {
+        gte: startDate,
+        lte: endDate,
+      },
+      paymentStatus: PaymentStatus.PAID,
+      ...(params.cashierId && { cashierId: params.cashierId }),
+    };
+
+    // Fetch all sales with items
+    const sales = await this.prisma.sale.findMany({
+      where,
+      include: {
+        items: {
+          include: {
+            product: {
+              select: {
+                id: true,
+                name: true,
+                category: true,
+              },
+            },
+            variant: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+        cashier: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            username: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    // Calculate summary
+    const totalSales = sales.length;
+    const totalRevenue = sales.reduce((sum, sale) => sum + sale.totalAmount, 0);
+    const totalProfit = sales.reduce((sum, sale) => {
+      const saleProfit = sale.items.reduce(
+        (itemSum, item) =>
+          itemSum + (item.unitPrice - item.costPrice) * item.quantity,
+        0,
+      );
+      return sum + saleProfit;
+    }, 0);
+    const averageOrderValue = totalSales > 0 ? totalRevenue / totalSales : 0;
+
+    // Group by period
+    const groupBy = params.groupBy || 'day';
+    const breakdown = this.groupSalesByPeriod(
+      sales,
+      startDate,
+      endDate,
+      groupBy,
+    );
+
+    // Top selling products
+    const topProducts = this.getTopSellingProductsFromSales(sales);
+
+    // Category breakdown
+    const categoryBreakdown = this.getCategoryBreakdown(sales);
+
+    // Payment method breakdown
+    const paymentBreakdown = await this.getPaymentBreakdown(
+      branchId,
+      startDate,
+      endDate,
+    );
+
+    // Sales by cashier
+    const salesByCashier = this.getSalesByCashier(sales);
+
+    return {
+      period: {
+        start: format(startDate, 'yyyy-MM-dd'),
+        end: format(endDate, 'yyyy-MM-dd'),
+      },
+      summary: {
+        totalSales,
+        totalRevenue,
+        totalProfit,
+        averageOrderValue,
+        profitMargin: totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0,
+      },
+      breakdown,
+      topProducts,
+      categoryBreakdown,
+      paymentBreakdown,
+      salesByCashier,
+      transactions: sales.map((sale) => ({
+        id: sale.id,
+        receiptNumber: sale.receiptNumber,
+        date: sale.createdAt,
+        cashier: sale.cashier.firstName
+          ? `${sale.cashier.firstName} ${sale.cashier.lastName || ''}`.trim()
+          : sale.cashier.username,
+        itemsCount: sale.items.length,
+        subtotal: sale.subtotal,
+        taxAmount: sale.taxAmount,
+        totalAmount: sale.totalAmount,
+        paymentStatus: sale.paymentStatus,
+      })),
+    };
+  }
+
+  /**
+   * Generate profit & loss report
+   */
+  async getProfitLossReport(branchId: string, params: ProfitLossDto) {
+    const startDate = startOfDay(new Date(params.startDate));
+    const endDate = endOfDay(new Date(params.endDate));
+
+    // Get all sales in period
+    const sales = await this.prisma.sale.findMany({
+      where: {
+        branchId,
+        createdAt: {
+          gte: startDate,
+          lte: endDate,
+        },
+        paymentStatus: PaymentStatus.PAID,
+      },
+      include: {
+        items: true,
+      },
+    });
+
+    // Calculate revenue
+    const salesRevenue = sales.reduce((sum, sale) => sum + sale.totalAmount, 0);
+
+    // Calculate COGS (Cost of Goods Sold)
+    const costOfGoodsSold = sales.reduce((sum, sale) => {
+      const saleCOGS = sale.items.reduce(
+        (itemSum, item) => itemSum + item.costPrice * item.quantity,
+        0,
+      );
+      return sum + saleCOGS;
+    }, 0);
+
+    // Calculate gross profit
+    const grossProfit = salesRevenue - costOfGoodsSold;
+    const grossProfitMargin =
+      salesRevenue > 0 ? (grossProfit / salesRevenue) * 100 : 0;
+
+    // Get expenses in period
+    const expenses = await this.prisma.expense.findMany({
+      where: {
+        branchId,
+        date: {
+          gte: startDate,
+          lte: endDate,
+        },
+      },
+    });
+
+    const totalExpenses = expenses.reduce(
+      (sum, expense) => sum + expense.amount,
+      0,
+    );
+
+    // Expense breakdown by category
+    const expenseBreakdown = expenses.reduce(
+      (acc, expense) => {
+        const existing = acc.find((e) => e.category === expense.category);
+        if (existing) {
+          existing.amount += expense.amount;
+        } else {
+          acc.push({
+            category: expense.category,
+            amount: expense.amount,
+          });
+        }
+        return acc;
+      },
+      [] as Array<{ category: string; amount: number }>,
+    );
+
+    // Calculate net profit
+    const netProfit = grossProfit - totalExpenses;
+    const netProfitMargin =
+      salesRevenue > 0 ? (netProfit / salesRevenue) * 100 : 0;
+
+    return {
+      period: {
+        start: format(startDate, 'yyyy-MM-dd'),
+        end: format(endDate, 'yyyy-MM-dd'),
+      },
+      revenue: {
+        sales: salesRevenue,
+        total: salesRevenue,
+      },
+      costs: {
+        costOfGoodsSold,
+        expenses: totalExpenses,
+        total: costOfGoodsSold + totalExpenses,
+      },
+      profit: {
+        gross: grossProfit,
+        net: netProfit,
+        grossMargin: grossProfitMargin,
+        netMargin: netProfitMargin,
+      },
+      expenseBreakdown: expenseBreakdown.sort((a, b) => b.amount - a.amount),
+    };
+  }
+
+  /**
+   * Export report as CSV or PDF
+   */
+  async exportReport(
+    branchId: string,
+    params: ExportReportDto,
+  ): Promise<{ data: Buffer; filename: string; mimeType: string }> {
+    let filename: string;
+
+    // Generate report data based on type
+    if (params.reportType === ReportType.SALES) {
+      const reportData = await this.getSalesReport(branchId, {
+        startDate: params.startDate,
+        endDate: params.endDate,
+        ...params.filters,
+      });
+      filename = `sales-report-${format(new Date(params.startDate), 'yyyyMMdd')}-${format(new Date(params.endDate), 'yyyyMMdd')}`;
+
+      // Generate file based on format
+      if (params.format === ExportFormat.EXCEL) {
+        return this.generateExcelReport(
+          reportData,
+          params.reportType,
+          filename,
+        );
+      } else {
+        return this.generatePDFReport(reportData, params.reportType, filename);
+      }
+    } else if (params.reportType === ReportType.PROFIT_LOSS) {
+      const reportData = await this.getProfitLossReport(branchId, {
+        startDate: params.startDate,
+        endDate: params.endDate,
+      });
+      filename = `profit-loss-${format(new Date(params.startDate), 'yyyyMMdd')}-${format(new Date(params.endDate), 'yyyyMMdd')}`;
+
+      // Generate file based on format
+      if (params.format === ExportFormat.EXCEL) {
+        return this.generateExcelReport(
+          reportData,
+          params.reportType,
+          filename,
+        );
+      } else {
+        return this.generatePDFReport(reportData, params.reportType, filename);
+      }
+    } else {
+      throw new Error('Unsupported report type');
+    }
+  }
+
+  /**
+   * Group sales by period
+   */
+  private groupSalesByPeriod(
+    sales: SaleWithRelations[],
+    startDate: Date,
+    endDate: Date,
+    groupBy: 'day' | 'week' | 'month',
+  ) {
+    const grouped = new Map<
+      string,
+      { sales: number; revenue: number; profit: number }
+    >();
+
+    sales.forEach((sale) => {
+      const saleDate = new Date(sale.createdAt);
+      let key: string;
+
+      switch (groupBy) {
+        case 'week':
+          key = format(startOfWeek(saleDate), 'yyyy-MM-dd');
+          break;
+        case 'month':
+          key = format(startOfMonth(saleDate), 'yyyy-MM');
+          break;
+        default:
+          key = format(saleDate, 'yyyy-MM-dd');
+      }
+
+      const existing = grouped.get(key) || { sales: 0, revenue: 0, profit: 0 };
+      const saleProfit = sale.items.reduce(
+        (sum: number, item) =>
+          sum + (item.unitPrice - item.costPrice) * item.quantity,
+        0,
+      );
+
+      grouped.set(key, {
+        sales: existing.sales + 1,
+        revenue: existing.revenue + sale.totalAmount,
+        profit: existing.profit + saleProfit,
+      });
+    });
+
+    return Array.from(grouped.entries()).map(([date, data]) => ({
+      date,
+      ...data,
+    }));
+  }
+
+  /**
+   * Get top selling products from sales
+   */
+  private getTopSellingProductsFromSales(sales: SaleWithRelations[]) {
+    const productMap = new Map<
+      string,
+      { name: string; quantity: number; revenue: number }
+    >();
+
+    sales.forEach((sale) => {
+      sale.items.forEach((item) => {
+        const productName = item.variant
+          ? `${item.product.name} (${item.variant.name})`
+          : item.product.name;
+        const productId = item.variantId ?? item.productId;
+
+        const existing = productMap.get(productId) || {
+          name: productName,
+          quantity: 0,
+          revenue: 0,
+        };
+
+        productMap.set(productId, {
+          name: productName,
+          quantity: existing.quantity + item.quantity,
+          revenue: existing.revenue + item.total,
+        });
+      });
+    });
+
+    return Array.from(productMap.values())
+      .sort((a, b) => b.quantity - a.quantity)
+      .slice(0, 10);
+  }
+
+  /**
+   * Get category breakdown
+   */
+  private getCategoryBreakdown(sales: SaleWithRelations[]) {
+    const categoryMap = new Map<string, number>();
+
+    sales.forEach((sale) => {
+      sale.items.forEach((item) => {
+        const category = item.product.category;
+        const existing = categoryMap.get(category) || 0;
+        categoryMap.set(category, existing + item.total);
+      });
+    });
+
+    return Array.from(categoryMap.entries()).map(([category, revenue]) => ({
+      category,
+      revenue,
+    }));
+  }
+
+  /**
+   * Get payment breakdown
+   */
+  private async getPaymentBreakdown(
+    branchId: string,
+    startDate: Date,
+    endDate: Date,
+  ) {
+    const payments = await this.prisma.payment.findMany({
+      where: {
+        sale: {
+          branchId,
+          createdAt: {
+            gte: startDate,
+            lte: endDate,
+          },
+          paymentStatus: PaymentStatus.PAID,
+        },
+      },
+      select: {
+        method: true,
+        amount: true,
+      },
+    });
+
+    const breakdown = payments.reduce(
+      (acc, payment) => {
+        const existing = acc.find((p) => p.method === payment.method);
+        if (existing) {
+          existing.amount += payment.amount;
+        } else {
+          acc.push({
+            method: payment.method,
+            amount: payment.amount,
+          });
+        }
+        return acc;
+      },
+      [] as Array<{ method: string; amount: number }>,
+    );
+
+    return breakdown;
+  }
+
+  /**
+   * Get sales by cashier
+   */
+  private getSalesByCashier(sales: SaleWithRelations[]) {
+    const cashierMap = new Map<
+      string,
+      { name: string; sales: number; revenue: number }
+    >();
+
+    sales.forEach((sale) => {
+      const cashierName = sale.cashier.firstName
+        ? `${sale.cashier.firstName} ${sale.cashier.lastName || ''}`.trim()
+        : sale.cashier.username;
+      const cashierId = sale.cashier.id;
+
+      const existing = cashierMap.get(cashierId) || {
+        name: cashierName,
+        sales: 0,
+        revenue: 0,
+      };
+
+      cashierMap.set(cashierId, {
+        name: cashierName,
+        sales: existing.sales + 1,
+        revenue: existing.revenue + sale.totalAmount,
+      });
+    });
+
+    return Array.from(cashierMap.values()).sort(
+      (a, b) => b.revenue - a.revenue,
+    );
+  }
+
+  /**
+   * Generate Excel report
+   */
+  private generateExcelReport(
+    reportData: SalesReportData | ProfitLossReportData,
+    reportType: ReportType,
+    filename: string,
+  ): { data: Buffer; filename: string; mimeType: string } {
+    const workbook = XLSX.utils.book_new();
+
+    if (reportType === ReportType.SALES) {
+      const salesData = reportData as SalesReportData;
+      this.addSalesReportToWorkbook(workbook, salesData);
+    } else if (reportType === ReportType.PROFIT_LOSS) {
+      const profitLossData = reportData as ProfitLossReportData;
+      this.addProfitLossReportToWorkbook(workbook, profitLossData);
+    }
+
+    // Generate Excel buffer
+    const excelBuffer = XLSX.write(workbook, {
+      type: 'buffer',
+      bookType: 'xlsx',
+    }) as Buffer;
+
+    return {
+      data: excelBuffer,
+      filename: `${filename}.xlsx`,
+      mimeType:
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    };
+  }
+
+  /**
+   * Generate PDF report
+   */
+  private generatePDFReport(
+    reportData: SalesReportData | ProfitLossReportData,
+    reportType: ReportType,
+    filename: string,
+  ): { data: Buffer; filename: string; mimeType: string } {
+    const doc = new jsPDF() as jsPDFWithAutoTable;
+
+    if (reportType === ReportType.SALES) {
+      this.addSalesReportToPDF(doc, reportData as SalesReportData);
+    } else if (reportType === ReportType.PROFIT_LOSS) {
+      this.addProfitLossReportToPDF(doc, reportData as ProfitLossReportData);
+    }
+
+    const pdfBuffer = Buffer.from(doc.output('arraybuffer'));
+
+    return {
+      data: pdfBuffer,
+      filename: `${filename}.pdf`,
+      mimeType: 'application/pdf',
+    };
+  }
+
+  /**
+   * Generate CSV for sales report
+   */
+  private generateSalesReportCSV(reportData: SalesReportData): string {
+    const lines: string[] = [];
+
+    // Header
+    lines.push('Sales Report');
+    lines.push(
+      `Period: ${reportData.period.start} to ${reportData.period.end}`,
+    );
+    lines.push('');
+
+    // Summary
+    lines.push('Summary');
+    lines.push(`Total Sales,${reportData.summary.totalSales}`);
+    lines.push(`Total Revenue,${reportData.summary.totalRevenue.toFixed(2)}`);
+    lines.push(`Total Profit,${reportData.summary.totalProfit.toFixed(2)}`);
+    lines.push(
+      `Average Order Value,${reportData.summary.averageOrderValue.toFixed(2)}`,
+    );
+    lines.push('');
+
+    // Breakdown
+    lines.push('Daily Breakdown');
+    lines.push('Date,Sales,Revenue,Profit');
+    reportData.breakdown.forEach((item) => {
+      lines.push(
+        `${item.date},${item.sales},${item.revenue.toFixed(2)},${item.profit.toFixed(2)}`,
+      );
+    });
+    lines.push('');
+
+    // Top Products
+    lines.push('Top Products');
+    lines.push('Product,Quantity,Revenue');
+    reportData.topProducts.forEach((product) => {
+      lines.push(
+        `${product.name},${product.quantity},${product.revenue.toFixed(2)}`,
+      );
+    });
+
+    return lines.join('\n');
+  }
+
+  /**
+   * Generate CSV for profit & loss report
+   */
+  private generateProfitLossReportCSV(
+    reportData: ProfitLossReportData,
+  ): string {
+    const lines: string[] = [];
+
+    // Header
+    lines.push('Profit & Loss Report');
+    lines.push(
+      `Period: ${reportData.period.start} to ${reportData.period.end}`,
+    );
+    lines.push('');
+
+    // Revenue
+    lines.push('Revenue');
+    lines.push(`Sales,${reportData.revenue.sales.toFixed(2)}`);
+    lines.push(`Total Revenue,${reportData.revenue.total.toFixed(2)}`);
+    lines.push('');
+
+    // Costs
+    lines.push('Costs');
+    lines.push(
+      `Cost of Goods Sold,${reportData.costs.costOfGoodsSold.toFixed(2)}`,
+    );
+    lines.push(`Operating Expenses,${reportData.costs.expenses.toFixed(2)}`);
+    lines.push(`Total Costs,${reportData.costs.total.toFixed(2)}`);
+    lines.push('');
+
+    // Profit
+    lines.push('Profit');
+    lines.push(`Gross Profit,${reportData.profit.gross.toFixed(2)}`);
+    lines.push(`Gross Margin,${reportData.profit.grossMargin.toFixed(2)}%`);
+    lines.push(`Net Profit,${reportData.profit.net.toFixed(2)}`);
+    lines.push(`Net Margin,${reportData.profit.netMargin.toFixed(2)}%`);
+    lines.push('');
+
+    // Expense Breakdown
+    lines.push('Expense Breakdown');
+    lines.push('Category,Amount');
+    reportData.expenseBreakdown.forEach((expense) => {
+      lines.push(`${expense.category},${expense.amount.toFixed(2)}`);
+    });
+
+    return lines.join('\n');
+  }
+
+  /**
+   * Add sales report data to Excel workbook
+   */
+  private addSalesReportToWorkbook(
+    workbook: XLSX.WorkBook,
+    reportData: SalesReportData,
+  ) {
+    // Summary sheet
+    const summaryData = [
+      ['Sales Report Summary'],
+      ['Period', `${reportData.period.start} to ${reportData.period.end}`],
+      [],
+      ['Metric', 'Value'],
+      ['Total Sales', reportData.summary.totalSales],
+      ['Total Revenue', reportData.summary.totalRevenue],
+      ['Total Profit', reportData.summary.totalProfit],
+      ['Average Order Value', reportData.summary.averageOrderValue],
+      ['Profit Margin (%)', reportData.summary.profitMargin],
+    ];
+    const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
+    XLSX.utils.book_append_sheet(workbook, summarySheet, 'Summary');
+
+    // Breakdown sheet
+    const breakdownData = [
+      ['Date', 'Sales', 'Revenue', 'Profit'],
+      ...reportData.breakdown.map((item) => [
+        item.date,
+        item.sales,
+        item.revenue,
+        item.profit,
+      ]),
+    ];
+    const breakdownSheet = XLSX.utils.aoa_to_sheet(breakdownData);
+    XLSX.utils.book_append_sheet(workbook, breakdownSheet, 'Breakdown');
+
+    // Top Products sheet
+    const topProductsData = [
+      ['Product', 'Quantity', 'Revenue'],
+      ...reportData.topProducts.map((product) => [
+        product.name,
+        product.quantity,
+        product.revenue,
+      ]),
+    ];
+    const topProductsSheet = XLSX.utils.aoa_to_sheet(topProductsData);
+    XLSX.utils.book_append_sheet(workbook, topProductsSheet, 'Top Products');
+
+    // Transactions sheet
+    const transactionsData = [
+      [
+        'Receipt #',
+        'Date',
+        'Cashier',
+        'Items',
+        'Subtotal',
+        'Tax',
+        'Total',
+        'Status',
+      ],
+      ...reportData.transactions.map((tx) => [
+        tx.receiptNumber,
+        format(new Date(tx.date), 'yyyy-MM-dd HH:mm'),
+        tx.cashier,
+        tx.itemsCount,
+        tx.subtotal,
+        tx.taxAmount,
+        tx.totalAmount,
+        tx.paymentStatus,
+      ]),
+    ];
+    const transactionsSheet = XLSX.utils.aoa_to_sheet(transactionsData);
+    XLSX.utils.book_append_sheet(workbook, transactionsSheet, 'Transactions');
+  }
+
+  /**
+   * Add profit & loss report data to Excel workbook
+   */
+  private addProfitLossReportToWorkbook(
+    workbook: XLSX.WorkBook,
+    reportData: ProfitLossReportData,
+  ) {
+    // Summary sheet
+    const summaryData = [
+      ['Profit & Loss Report'],
+      ['Period', `${reportData.period.start} to ${reportData.period.end}`],
+      [],
+      ['Revenue'],
+      ['Sales', reportData.revenue.sales],
+      ['Total Revenue', reportData.revenue.total],
+      [],
+      ['Costs'],
+      ['Cost of Goods Sold', reportData.costs.costOfGoodsSold],
+      ['Operating Expenses', reportData.costs.expenses],
+      ['Total Costs', reportData.costs.total],
+      [],
+      ['Profit'],
+      ['Gross Profit', reportData.profit.gross],
+      ['Gross Margin (%)', reportData.profit.grossMargin],
+      ['Net Profit', reportData.profit.net],
+      ['Net Margin (%)', reportData.profit.netMargin],
+    ];
+    const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
+    XLSX.utils.book_append_sheet(workbook, summarySheet, 'Summary');
+
+    // Expense Breakdown sheet
+    const expenseData = [
+      ['Category', 'Amount'],
+      ...reportData.expenseBreakdown.map((expense) => [
+        expense.category,
+        expense.amount,
+      ]),
+    ];
+    const expenseSheet = XLSX.utils.aoa_to_sheet(expenseData);
+    XLSX.utils.book_append_sheet(workbook, expenseSheet, 'Expenses');
+  }
+
+  /**
+   * Add sales report to PDF document
+   */
+  private addSalesReportToPDF(
+    doc: jsPDFWithAutoTable,
+    reportData: SalesReportData,
+  ) {
+    // Title
+    doc.setFontSize(18);
+    doc.text('Sales Report', 14, 20);
+
+    // Period
+    doc.setFontSize(12);
+    doc.text(
+      `Period: ${reportData.period.start} to ${reportData.period.end}`,
+      14,
+      30,
+    );
+
+    let yPos = 45;
+
+    // Summary
+    doc.setFontSize(14);
+    doc.text('Summary', 14, yPos);
+    yPos += 10;
+
+    const summaryData = [
+      ['Metric', 'Value'],
+      ['Total Sales', reportData.summary.totalSales.toString()],
+      ['Total Revenue', `₦${reportData.summary.totalRevenue.toFixed(2)}`],
+      ['Total Profit', `₦${reportData.summary.totalProfit.toFixed(2)}`],
+      [
+        'Average Order Value',
+        `₦${reportData.summary.averageOrderValue.toFixed(2)}`,
+      ],
+      ['Profit Margin', `${reportData.summary.profitMargin.toFixed(2)}%`],
+    ];
+
+    autoTable(doc, {
+      startY: yPos,
+      head: [summaryData[0]],
+      body: summaryData.slice(1),
+      theme: 'striped',
+      headStyles: { fillColor: [66, 139, 202] },
+    });
+
+    yPos = (doc.lastAutoTable?.finalY ?? yPos) + 15;
+
+    // Breakdown table
+    doc.setFontSize(14);
+    doc.text('Daily Breakdown', 14, yPos);
+    yPos += 10;
+
+    const breakdownData = reportData.breakdown.map((item) => [
+      item.date,
+      item.sales.toString(),
+      `₦${item.revenue.toFixed(2)}`,
+      `₦${item.profit.toFixed(2)}`,
+    ]);
+
+    autoTable(doc, {
+      startY: yPos,
+      head: [['Date', 'Sales', 'Revenue', 'Profit']],
+      body: breakdownData,
+      theme: 'striped',
+      headStyles: { fillColor: [66, 139, 202] },
+    });
+
+    yPos = (doc.lastAutoTable?.finalY ?? yPos) + 15;
+
+    // Top Products
+    doc.setFontSize(14);
+    doc.text('Top Products', 14, yPos);
+    yPos += 10;
+
+    const topProductsData = reportData.topProducts.map((product) => [
+      product.name,
+      product.quantity.toString(),
+      `₦${product.revenue.toFixed(2)}`,
+    ]);
+
+    autoTable(doc, {
+      startY: yPos,
+      head: [['Product', 'Quantity', 'Revenue']],
+      body: topProductsData,
+      theme: 'striped',
+      headStyles: { fillColor: [66, 139, 202] },
+    });
+  }
+
+  /**
+   * Add profit & loss report to PDF document
+   */
+  private addProfitLossReportToPDF(
+    doc: jsPDFWithAutoTable,
+    reportData: ProfitLossReportData,
+  ) {
+    // Title
+    doc.setFontSize(18);
+    doc.text('Profit & Loss Report', 14, 20);
+
+    // Period
+    doc.setFontSize(12);
+    doc.text(
+      `Period: ${reportData.period.start} to ${reportData.period.end}`,
+      14,
+      30,
+    );
+
+    let yPos = 45;
+
+    // Revenue
+    doc.setFontSize(14);
+    doc.text('Revenue', 14, yPos);
+    yPos += 10;
+
+    const revenueData = [
+      ['Sales', `₦${reportData.revenue.sales.toFixed(2)}`],
+      ['Total Revenue', `₦${reportData.revenue.total.toFixed(2)}`],
+    ];
+
+    autoTable(doc, {
+      startY: yPos,
+      body: revenueData,
+      theme: 'striped',
+      headStyles: { fillColor: [66, 139, 202] },
+    });
+
+    yPos = (doc.lastAutoTable?.finalY ?? yPos) + 15;
+
+    // Costs
+    doc.setFontSize(14);
+    doc.text('Costs', 14, yPos);
+    yPos += 10;
+
+    const costsData = [
+      ['Cost of Goods Sold', `₦${reportData.costs.costOfGoodsSold.toFixed(2)}`],
+      ['Operating Expenses', `₦${reportData.costs.expenses.toFixed(2)}`],
+      ['Total Costs', `₦${reportData.costs.total.toFixed(2)}`],
+    ];
+
+    autoTable(doc, {
+      startY: yPos,
+      body: costsData,
+      theme: 'striped',
+      headStyles: { fillColor: [66, 139, 202] },
+    });
+
+    yPos = (doc.lastAutoTable?.finalY ?? yPos) + 15;
+
+    // Profit
+    doc.setFontSize(14);
+    doc.text('Profit', 14, yPos);
+    yPos += 10;
+
+    const profitData = [
+      ['Gross Profit', `₦${reportData.profit.gross.toFixed(2)}`],
+      ['Gross Margin', `${reportData.profit.grossMargin.toFixed(2)}%`],
+      ['Net Profit', `₦${reportData.profit.net.toFixed(2)}`],
+      ['Net Margin', `${reportData.profit.netMargin.toFixed(2)}%`],
+    ];
+
+    autoTable(doc, {
+      startY: yPos,
+      body: profitData,
+      theme: 'striped',
+      headStyles: { fillColor: [66, 139, 202] },
+    });
+
+    yPos = (doc.lastAutoTable?.finalY ?? yPos) + 15;
+
+    // Expense Breakdown
+    doc.setFontSize(14);
+    doc.text('Expense Breakdown', 14, yPos);
+    yPos += 10;
+
+    const expenseData = reportData.expenseBreakdown.map((expense) => [
+      expense.category,
+      `₦${expense.amount.toFixed(2)}`,
+    ]);
+
+    autoTable(doc, {
+      startY: yPos,
+      head: [['Category', 'Amount']],
+      body: expenseData,
+      theme: 'striped',
+      headStyles: { fillColor: [66, 139, 202] },
+    });
   }
 }

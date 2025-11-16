@@ -7,6 +7,7 @@ import {
   LogOut,
   User,
   Users,
+  BarChart3,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useAuthStore } from '../../store/authStore';
@@ -52,6 +53,11 @@ export const Navbar = () => {
             path: '/users',
             label: 'Users',
             icon: Users,
+          },
+          {
+            path: '/reports',
+            label: 'Reports',
+            icon: BarChart3,
           },
         ]
       : []),
