@@ -6,6 +6,7 @@ import {
   ShoppingCart,
   LogOut,
   User,
+  Users,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useAuthStore } from '../../store/authStore';
@@ -46,6 +47,11 @@ export const Navbar = () => {
             path: '/inventory',
             label: 'Inventory',
             icon: Warehouse,
+          },
+          {
+            path: '/users',
+            label: 'Users',
+            icon: Users,
           },
         ]
       : []),
