@@ -4,6 +4,7 @@ import { JwtService } from '@nestjs/jwt';
 import { User, UserRole } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { UsersService } from '../users/users.service';
+import { PrismaService } from '../../prisma/prisma.service';
 import { AuthService } from './auth.service';
 
 jest.mock('bcrypt');
@@ -53,6 +54,14 @@ describe('AuthService', () => {
           useValue: {
             get: jest.fn(),
             getOrThrow: jest.fn(),
+          },
+        },
+        {
+          provide: PrismaService,
+          useValue: {
+            auditLog: {
+              create: jest.fn(),
+            },
           },
         },
       ],
