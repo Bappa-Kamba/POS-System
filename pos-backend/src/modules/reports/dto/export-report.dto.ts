@@ -5,6 +5,7 @@ export enum ReportType {
   PROFIT_LOSS = 'profit-loss',
   INVENTORY = 'inventory',
   EXPENSES = 'expenses',
+  CASHBACK = 'cashback',
 }
 
 export enum ExportFormat {

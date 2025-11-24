@@ -20,6 +20,7 @@ export interface CreateSalePayload {
   payments: Payment[];
   transactionType?: 'PURCHASE' | 'CASHBACK';
   cashbackAmount?: number;
+  serviceCharge?: number;
   customerName?: string;
   customerPhone?: string;
   notes?: string;

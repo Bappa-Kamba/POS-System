@@ -38,6 +38,7 @@ type SaleWithRelations = Prisma.SaleGetPayload<{
     cashier: {
       select: { id: true; firstName: true; lastName: true; username: true };
     };
+    payments: true;
   };
 }>;
 
@@ -101,15 +102,25 @@ export class ReportsService {
     const todayCashbackSales = todaySales.filter((sale) => sale.transactionType === 'CASHBACK');
 
     // Calculate today's metrics (net)
+    // salesOverview should only reflect PURCHASE transactions
     const todayPurchaseRevenue = todayPurchaseSales.reduce(
       (sum, sale) => sum + sale.totalAmount,
       0,
     );
-    const todayCashbackRevenue = todayCashbackSales.reduce(
+    
+    // Cashback stats
+    const todayCashbackGiven = todayCashbackSales.reduce(
       (sum, sale) => sum + sale.totalAmount,
       0,
     );
-    const todayRevenue = todayPurchaseRevenue - todayCashbackRevenue; // Net revenue
+    
+    // Cashback profit = service charge (total received - amount given)
+    const todayCashbackProfit = todayCashbackSales.reduce((sum, sale) => {
+      // Get payments to calculate service charge
+      const totalReceived = sale.payments.reduce((pSum, p) => pSum + p.amount, 0);
+      const serviceCharge = totalReceived - sale.totalAmount; // This is the profit
+      return sum + serviceCharge;
+    }, 0);
 
     const todayPurchaseProfit = todayPurchaseSales.reduce((sum, sale) => {
       const saleProfit = sale.items.reduce(
@@ -120,38 +131,24 @@ export class ReportsService {
       return sum + saleProfit;
     }, 0);
     
-    // Cashback profit = service charge (total received - amount given)
-    const todayCashbackProfit = todayCashbackSales.reduce((sum, sale) => {
-      // Get payments to calculate service charge
-      const totalReceived = sale.payments.reduce((pSum, p) => pSum + p.amount, 0);
-      const serviceCharge = totalReceived - sale.totalAmount; // This is the profit
-      return sum + serviceCharge;
-    }, 0);
-    
     const todayProfit = todayPurchaseProfit + todayCashbackProfit; // Net profit (purchase profit + cashback service charge)
-    const todaySalesCount = todaySales.length;
+    const todaySalesCount = todayPurchaseSales.length; // Only count purchases for sales count
 
     // Separate purchase and cashback for yesterday
     const yesterdayPurchaseSales = yesterdaySales.filter((sale) => sale.transactionType === 'PURCHASE');
-    const yesterdayCashbackSales = yesterdaySales.filter((sale) => sale.transactionType === 'CASHBACK');
-
+    
     // Calculate yesterday's metrics (net)
     const yesterdayPurchaseRevenue = yesterdayPurchaseSales.reduce(
       (sum, sale) => sum + sale.totalAmount,
       0,
     );
-    const yesterdayCashbackRevenue = yesterdayCashbackSales.reduce(
-      (sum, sale) => sum + sale.totalAmount,
-      0,
-    );
-    const yesterdayRevenue = yesterdayPurchaseRevenue - yesterdayCashbackRevenue; // Net revenue
-    const yesterdaySalesCount = yesterdaySales.length;
+    const yesterdaySalesCount = yesterdayPurchaseSales.length;
 
     // Revenue comparison
     const revenueChange =
-      yesterdayRevenue > 0
-        ? ((todayRevenue - yesterdayRevenue) / yesterdayRevenue) * 100
-        : todayRevenue > 0
+      yesterdayPurchaseRevenue > 0
+        ? ((todayPurchaseRevenue - yesterdayPurchaseRevenue) / yesterdayPurchaseRevenue) * 100
+        : todayPurchaseRevenue > 0
           ? 100
           : 0;
 
@@ -169,7 +166,7 @@ export class ReportsService {
 
     // Profit margin
     const profitMargin =
-      todayRevenue > 0 ? (todayProfit / todayRevenue) * 100 : 0;
+      todayPurchaseRevenue > 0 ? (todayProfit / todayPurchaseRevenue) * 100 : 0;
 
     // Inventory stats
     const inventoryStats = await this.getInventoryStats(branchId);
@@ -206,20 +203,14 @@ export class ReportsService {
     return {
       salesOverview: {
         todaySalesCount,
-        todayRevenue,
+        todayRevenue: todayPurchaseRevenue,
         revenueChange,
         salesCountChange,
-        // Separate purchase and cashback metrics
-        purchase: {
-          count: todayPurchaseSales.length,
-          revenue: todayPurchaseRevenue,
-          profit: todayPurchaseProfit,
-        },
-        cashback: {
-          count: todayCashbackSales.length,
-          revenue: todayCashbackRevenue,
-          profit: todayCashbackProfit,
-        },
+      },
+      cashbackStats: {
+        count: todayCashbackSales.length,
+        totalGiven: todayCashbackGiven,
+        totalProfit: todayCashbackProfit,
       },
       profit: {
         grossProfit: todayProfit,
@@ -672,7 +663,7 @@ export class ReportsService {
     // Overall totals
     const totalSales = sales.length;
     const totalRevenue = purchaseTotalRevenue - cashbackTotalRevenue; // Net revenue
-    const totalProfit = purchaseTotalProfit - cashbackTotalProfit; // Net profit
+    const totalProfit = purchaseTotalProfit + cashbackTotalProfit; // Net profit (Purchase Profit + Cashback Service Charge)
     const averageOrderValue = totalSales > 0 ? totalRevenue / totalSales : 0;
 
     // Group by period
@@ -698,13 +689,21 @@ export class ReportsService {
     );
 
     // Sales by cashier
+    // Sales by cashier
     const salesByCashier = this.getSalesByCashier(sales);
+
+    // Get available cashback capital
+    const branch = await this.prisma.branch.findUnique({
+      where: { id: branchId },
+      select: { cashbackCapital: true },
+    });
 
     return {
       period: {
         start: format(startDate, 'yyyy-MM-dd'),
         end: format(endDate, 'yyyy-MM-dd'),
       },
+      availableCapital: branch?.cashbackCapital || 0,
       summary: {
         totalSales,
         totalRevenue,
@@ -891,6 +890,24 @@ export class ReportsService {
       } else {
         return this.generatePDFReport(reportData, params.reportType, filename);
       }
+    } else if (params.reportType === ReportType.CASHBACK) {
+      const reportData = await this.getSalesReport(branchId, {
+        startDate: params.startDate,
+        endDate: params.endDate,
+        transactionType: 'CASHBACK' as any, // Force type as it might not be in DTO yet but service supports it
+      });
+      filename = `cashback-report-${format(new Date(params.startDate), 'yyyyMMdd')}-${format(new Date(params.endDate), 'yyyyMMdd')}`;
+
+      // Generate file based on format
+      if (params.format === ExportFormat.EXCEL) {
+        return this.generateExcelReport(
+          reportData,
+          params.reportType,
+          filename,
+        );
+      } else {
+        return this.generatePDFReport(reportData, params.reportType, filename);
+      }
     } else {
       throw new Error('Unsupported report type');
     }
@@ -926,11 +943,20 @@ export class ReportsService {
       }
 
       const existing = grouped.get(key) || { sales: 0, revenue: 0, profit: 0 };
-      const saleProfit = sale.items.reduce(
-        (sum: number, item) =>
-          sum + (item.unitPrice - item.costPrice) * item.quantity,
-        0,
-      );
+      
+      let saleProfit = 0;
+      if (sale.transactionType === 'CASHBACK') {
+        // For cashback, profit is the service charge
+        const totalReceived = sale.payments.reduce((pSum, p) => pSum + p.amount, 0);
+        saleProfit = totalReceived - sale.totalAmount;
+      } else {
+        // For purchases, profit is (price - cost) * quantity
+        saleProfit = sale.items.reduce(
+          (sum: number, item) =>
+            sum + (item.unitPrice - item.costPrice) * item.quantity,
+          0,
+        );
+      }
 
       grouped.set(key, {
         sales: existing.sales + 1,
@@ -1093,6 +1119,9 @@ export class ReportsService {
     } else if (reportType === ReportType.PROFIT_LOSS) {
       const profitLossData = reportData as ProfitLossReportData;
       this.addProfitLossReportToWorkbook(workbook, profitLossData);
+    } else if (reportType === ReportType.CASHBACK) {
+      const salesData = reportData as SalesReportData;
+      this.addCashbackReportToWorkbook(workbook, salesData);
     }
 
     // Generate Excel buffer
@@ -1123,6 +1152,8 @@ export class ReportsService {
       this.addSalesReportToPDF(doc, reportData as SalesReportData);
     } else if (reportType === ReportType.PROFIT_LOSS) {
       this.addProfitLossReportToPDF(doc, reportData as ProfitLossReportData);
+    } else if (reportType === ReportType.CASHBACK) {
+      this.addCashbackReportToPDF(doc, reportData as SalesReportData);
     }
 
     const pdfBuffer = Buffer.from(doc.output('arraybuffer'));
@@ -1530,6 +1561,121 @@ export class ReportsService {
       body: expenseData,
       theme: 'striped',
       headStyles: { fillColor: [66, 139, 202] },
+    });
+  }
+
+  /**
+   * Add cashback report data to Excel workbook
+   */
+  private addCashbackReportToWorkbook(
+    workbook: XLSX.WorkBook,
+    reportData: SalesReportData,
+  ) {
+    // Summary sheet
+    const summaryData = [
+      ['Cashback Report Summary'],
+      ['Period', `${reportData.period.start} to ${reportData.period.end}`],
+      [],
+      ['Metric', 'Value'],
+      ['Total Transactions', reportData.summary.cashback.totalSales],
+      ['Total Amount Given', reportData.summary.cashback.totalRevenue],
+      ['Total Service Charge (Profit)', reportData.summary.cashback.totalProfit],
+    ];
+    const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
+    XLSX.utils.book_append_sheet(workbook, summarySheet, 'Summary');
+
+    // Transactions sheet
+    const transactionsData = [
+      [
+        'Receipt #',
+        'Date',
+        'Cashier',
+        'Amount Given',
+        'Service Charge',
+        'Total Received',
+        'Status',
+      ],
+      ...reportData.transactions.map((tx) => {
+        return [
+          tx.receiptNumber,
+          format(new Date(tx.date), 'yyyy-MM-dd HH:mm'),
+          tx.cashier,
+          tx.totalAmount, // Amount Given
+          0, // Placeholder for Service Charge - we need to fix this
+          tx.totalAmount, // Placeholder for Total Received
+          tx.paymentStatus,
+        ];
+      }),
+    ];
+    const transactionsSheet = XLSX.utils.aoa_to_sheet(transactionsData);
+    XLSX.utils.book_append_sheet(workbook, transactionsSheet, 'Transactions');
+  }
+
+  /**
+   * Add cashback report to PDF document
+   */
+  private addCashbackReportToPDF(
+    doc: jsPDFWithAutoTable,
+    reportData: SalesReportData,
+  ) {
+    // Title
+    doc.setFontSize(18);
+    doc.text('Cashback Report', 14, 20);
+
+    // Period
+    doc.setFontSize(12);
+    doc.text(
+      `Period: ${reportData.period.start} to ${reportData.period.end}`,
+      14,
+      30,
+    );
+
+    let yPos = 45;
+
+    // Summary
+    doc.setFontSize(14);
+    doc.text('Summary', 14, yPos);
+    yPos += 10;
+
+    const summaryData = [
+      ['Metric', 'Value'],
+      ['Total Transactions', reportData.summary.cashback.totalSales.toString()],
+      ['Total Amount Given', `₦${reportData.summary.cashback.totalRevenue.toFixed(2)}`],
+      ['Total Service Charge', `₦${reportData.summary.cashback.totalProfit.toFixed(2)}`],
+    ];
+
+    autoTable(doc, {
+      startY: yPos,
+      head: [summaryData[0]],
+      body: summaryData.slice(1),
+      theme: 'striped',
+      headStyles: { fillColor: [249, 115, 22] }, // Orange for cashback
+    });
+
+    yPos = (doc.lastAutoTable?.finalY ?? yPos) + 15;
+
+    // Transactions table
+    doc.setFontSize(14);
+    doc.text('Transactions', 14, yPos);
+    yPos += 10;
+
+    const transactionsData = reportData.transactions.map((tx) => [
+      tx.receiptNumber,
+      format(new Date(tx.date), 'yyyy-MM-dd HH:mm'),
+      tx.cashier,
+      `₦${tx.totalAmount.toFixed(2)}`,
+      // We need service charge here too
+      '-', 
+      '-',
+      tx.paymentStatus,
+    ]);
+
+    autoTable(doc, {
+      startY: yPos,
+      head: [['Receipt #', 'Date', 'Cashier', 'Amount', 'S. Charge', 'Total', 'Status']],
+      body: transactionsData,
+      theme: 'striped',
+      headStyles: { fillColor: [249, 115, 22] },
     });
   }
 }

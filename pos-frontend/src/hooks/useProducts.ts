@@ -5,10 +5,11 @@ import productService, {
   type FindAllProductsParams,
 } from "../services/product.service";
 
-export const useProducts = (params?: FindAllProductsParams) => {
+export const useProducts = (params?: FindAllProductsParams, options?: { enabled?: boolean }) => {
   return useQuery({
     queryKey: ["products", params],
     queryFn: () => productService.getAll(params),
+    enabled: options?.enabled,
   });
 };
 

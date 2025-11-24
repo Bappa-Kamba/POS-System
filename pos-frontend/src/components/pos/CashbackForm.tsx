@@ -1,30 +1,29 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { ArrowLeftRight, DollarSign } from 'lucide-react';
 import { Button } from '../common/Button';
 import { Input } from '../common/Input';
 import { formatCurrency } from '../../utils/formatters';
 
 interface CashbackFormProps {
-  serviceChargeRate: number; // e.g., 0.02 for 2%
   availableCapital: number;
   onComplete: (amount: number, serviceCharge: number, totalReceived: number) => void;
   onCancel: () => void;
 }
 
 export const CashbackForm: React.FC<CashbackFormProps> = ({
-  serviceChargeRate,
   availableCapital,
   onComplete,
   onCancel,
 }) => {
   const [amount, setAmount] = useState('');
+  const [serviceChargeInput, setServiceChargeInput] = useState('');
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
 
   const cashbackAmount = parseFloat(amount) || 0;
-  const serviceCharge = cashbackAmount * serviceChargeRate;
+  const serviceCharge = parseFloat(serviceChargeInput) || 0;
   const totalReceived = cashbackAmount + serviceCharge; // Customer sends this amount
-  const isValid = cashbackAmount > 0 && cashbackAmount <= availableCapital;
+  const isValid = cashbackAmount > 0 && cashbackAmount <= availableCapital && serviceCharge >= 0;
 
   const handleSubmit = () => {
     if (!isValid) {
@@ -65,16 +64,6 @@ export const CashbackForm: React.FC<CashbackFormProps> = ({
           </div>
         </div>
 
-        {/* Service Charge Info */}
-        <div className="bg-neutral-50 dark:bg-neutral-900/50 rounded-lg p-4">
-          <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-2">
-            Service Charge Rate: {(serviceChargeRate * 100).toFixed(2)}%
-          </p>
-          <p className="text-xs text-neutral-500 dark:text-neutral-500">
-            Customer will send: Amount + Service Charge to your account
-          </p>
-        </div>
-
         {/* Amount Input */}
         <div>
           <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
@@ -96,6 +85,25 @@ export const CashbackForm: React.FC<CashbackFormProps> = ({
               Insufficient capital. Maximum: {formatCurrency(availableCapital)}
             </p>
           )}
+        </div>
+
+        {/* Service Charge Input */}
+        <div>
+          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+            Service Charge
+          </label>
+          <Input
+            type="number"
+            value={serviceChargeInput}
+            onChange={(e) => setServiceChargeInput(e.target.value)}
+            placeholder="Enter service charge"
+            min="0"
+            step="0.01"
+            className="text-lg font-semibold"
+          />
+          <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-500">
+            Enter the fee for this transaction
+          </p>
         </div>
 
         {/* Customer Info (Optional) */}
@@ -141,7 +149,7 @@ export const CashbackForm: React.FC<CashbackFormProps> = ({
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-neutral-600 dark:text-neutral-400">
-                  Service Charge ({(serviceChargeRate * 100).toFixed(2)}%):
+                  Service Charge:
                 </span>
                 <span className="font-medium text-green-600 dark:text-green-400">
                   {formatCurrency(serviceCharge)}

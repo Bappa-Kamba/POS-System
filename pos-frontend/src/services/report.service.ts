@@ -8,6 +8,11 @@ export interface DashboardStats {
     revenueChange: number;
     salesCountChange: number;
   };
+  cashbackStats: {
+    count: number;
+    totalGiven: number;
+    totalProfit: number;
+  };
   profit: {
     grossProfit: number;
     netProfit: number;
@@ -64,6 +69,7 @@ export interface SalesReportParams {
   cashierId?: string;
   category?: string;
   groupBy?: 'day' | 'week' | 'month';
+  transactionType?: 'PURCHASE' | 'CASHBACK';
 }
 
 export interface SalesReport {
@@ -71,12 +77,23 @@ export interface SalesReport {
     start: string;
     end: string;
   };
+  availableCapital?: number;
   summary: {
     totalSales: number;
     totalRevenue: number;
     totalProfit: number;
     averageOrderValue: number;
     profitMargin: number;
+    purchase: {
+      totalSales: number;
+      totalRevenue: number;
+      totalProfit: number;
+    };
+    cashback: {
+      totalSales: number;
+      totalRevenue: number;
+      totalProfit: number;
+    };
   };
   breakdown: Array<{
     date: string;
@@ -147,7 +164,7 @@ export interface ProfitLossReport {
 }
 
 export interface ExportReportParams {
-  reportType: 'sales' | 'profit-loss' | 'inventory' | 'expenses';
+  reportType: 'sales' | 'profit-loss' | 'inventory' | 'expenses' | 'cashback';
   format: 'pdf' | 'excel';
   startDate: string;
   endDate: string;
@@ -174,6 +191,7 @@ const reportService = {
     if (params.cashierId) queryParams.append('cashierId', params.cashierId);
     if (params.category) queryParams.append('category', params.category);
     if (params.groupBy) queryParams.append('groupBy', params.groupBy);
+    if (params.transactionType) queryParams.append('transactionType', params.transactionType);
 
     const response = await api.get<ApiResponse<SalesReport>>(
       `/reports/sales?${queryParams.toString()}`,

@@ -65,6 +65,11 @@ export class CreateSaleDto {
   @IsOptional()
   cashbackAmount?: number; // Amount given to customer (for cashback transactions)
 
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  serviceCharge?: number; // Manual service charge for cashback
+
   @IsString()
   @IsOptional()
   customerName?: string;

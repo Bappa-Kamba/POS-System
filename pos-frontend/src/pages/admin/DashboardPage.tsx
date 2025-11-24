@@ -78,6 +78,18 @@ export const DashboardPage = () => {
           icon={<DollarSign className="w-6 h-6 text-green-600" />}
           variant="success"
         />
+        <div
+          onClick={() => navigate('/reports')}
+          className="cursor-pointer"
+        >
+          <StatCard
+            title="Today's Cashback"
+            value={formatCurrency(stats.cashbackStats.totalGiven)}
+            subtitle={`${stats.cashbackStats.count} transactions`}
+            icon={<DollarSign className="w-6 h-6 text-orange-600" />}
+            variant="warning"
+          />
+        </div>
         <StatCard
           title="Gross Profit"
           value={formatCurrency(stats.profit.grossProfit)}

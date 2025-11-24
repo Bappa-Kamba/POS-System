@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { subDays, format, startOfDay, endOfDay } from 'date-fns';
-import { BarChart3, TrendingUp, Download } from 'lucide-react';
+import { BarChart3, TrendingUp, Download, DollarSign } from 'lucide-react';
 import { Button } from '../../components/common/Button';
 import { SalesReportView } from '../../components/reports/SalesReportView';
 import { ProfitLossReportView } from '../../components/reports/ProfitLossReportView';
 import { useExportReport } from '../../hooks/useReports';
 import type { ExportReportParams } from '../../services/report.service';
 
-type ReportType = 'sales' | 'profit-loss';
+import { CashbackReportView } from '../../components/reports/CashbackReportView';
+
+type ReportType = 'sales' | 'profit-loss' | 'cashback';
 
 export const ReportsPage = () => {
   const [activeReport, setActiveReport] = useState<ReportType>('sales');
@@ -82,6 +84,17 @@ export const ReportsPage = () => {
           Sales Report
         </button>
         <button
+          onClick={() => setActiveReport('cashback')}
+          className={`px-4 py-2 font-medium text-sm transition-colors border-b-2 ${
+            activeReport === 'cashback'
+              ? 'border-primary-600 text-primary-600'
+              : 'border-transparent text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100'
+          }`}
+        >
+          <DollarSign className="w-4 h-4 inline mr-2" />
+          Cashback Report
+        </button>
+        <button
           onClick={() => setActiveReport('profit-loss')}
           className={`px-4 py-2 font-medium text-sm transition-colors border-b-2 ${
             activeReport === 'profit-loss'
@@ -146,6 +159,9 @@ export const ReportsPage = () => {
       <div>
         {activeReport === 'sales' && (
           <SalesReportView startDate={startDate} endDate={endDate} />
+        )}
+        {activeReport === 'cashback' && (
+          <CashbackReportView startDate={startDate} endDate={endDate} />
         )}
         {activeReport === 'profit-loss' && (
           <ProfitLossReportView startDate={startDate} endDate={endDate} />

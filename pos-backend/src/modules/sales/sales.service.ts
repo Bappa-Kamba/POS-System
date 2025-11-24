@@ -95,8 +95,8 @@ export class SalesService {
       }
 
       const cashbackAmount = data.cashbackAmount!;
-      const serviceChargeRate = branch.cashbackServiceChargeRate || 0.02;
-      const serviceCharge = cashbackAmount * serviceChargeRate;
+      // Use manual service charge if provided, otherwise default to 0 (or throw error if required)
+      const serviceCharge = data.serviceCharge !== undefined ? data.serviceCharge : 0;
       const totalReceived = cashbackAmount + serviceCharge; // Customer sends this
 
       // Check if enough capital
@@ -150,7 +150,7 @@ export class SalesService {
             changeGiven,
             customerName: data.customerName,
             customerPhone: data.customerPhone,
-            notes: data.notes || `Service Charge: ${serviceCharge.toFixed(2)} (${(serviceChargeRate * 100).toFixed(2)}%)`,
+            notes: data.notes || `Service Charge: ${serviceCharge.toFixed(2)}`,
             payments: {
               create: data.payments.map((payment) => ({
                 method: payment.method,
@@ -440,9 +440,10 @@ export class SalesService {
         }
 
         // Calculate service charge (profit)
-        const cashbackAmount = totalAmount; // Amount given to customer
-        const serviceCharge = cashbackAmount * (branch.cashbackServiceChargeRate || 0.02);
-        const totalReceived = cashbackAmount + serviceCharge; // Customer sends this amount
+        const cashbackAmount = totalAmount; // Amount given to customer (subtotal)
+        // Service charge is the difference between what customer paid and what they received
+        const serviceCharge = totalPaid - cashbackAmount;
+        const totalReceived = totalPaid; // Customer sends this amount
 
         // Check if enough capital
         if (branch.cashbackCapital < cashbackAmount) {

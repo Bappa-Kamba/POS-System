@@ -43,6 +43,7 @@ export const PosPage: React.FC = () => {
         : undefined,
     isActive: true,
     branchId: user?.branchId,
+  }, {
     enabled: transactionType === 'PURCHASE',
   });
 
@@ -162,6 +163,7 @@ export const PosPage: React.FC = () => {
     try {
       const response = await createSaleMutation.mutateAsync({
         cashbackAmount: amount,
+        serviceCharge, // Pass manual service charge
         payments: [
           {
             method: 'TRANSFER',
@@ -171,7 +173,7 @@ export const PosPage: React.FC = () => {
           },
         ],
         transactionType: 'CASHBACK',
-        notes: `Service Charge: ${serviceCharge.toFixed(2)} (${((serviceCharge / amount) * 100).toFixed(2)}%)`,
+        notes: `Service Charge: ${serviceCharge.toFixed(2)}`,
       });
 
       if (response.success && response.data) {
@@ -258,7 +260,6 @@ export const PosPage: React.FC = () => {
         <div className="flex-1 flex overflow-hidden">
           <div className="flex-1 flex flex-col">
             <CashbackForm
-              serviceChargeRate={branch?.cashbackServiceChargeRate || 0.02}
               availableCapital={branch?.cashbackCapital || 0}
               onComplete={handleCompleteCashback}
               onCancel={handleBackToSelection}
