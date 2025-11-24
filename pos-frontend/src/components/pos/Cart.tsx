@@ -42,7 +42,7 @@ export const Cart: React.FC<CartProps> = ({ onCheckout }) => {
         <h3 className="text-lg font-medium text-neutral-600 dark:text-neutral-400 mb-2">
           Cart is Empty
         </h3>
-        <p className="text-sm text-neutral-500">
+        <p className="text-sm text-neutral-500 dark:text-neutral-400">
           Add products to get started
         </p>
       </div>
@@ -66,7 +66,7 @@ export const Cart: React.FC<CartProps> = ({ onCheckout }) => {
           variant="ghost"
           size="sm"
           onClick={clearCart}
-          className="text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+          className="text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
         >
           <Trash2 className="w-4 h-4 mr-1" />
           Clear

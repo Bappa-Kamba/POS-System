@@ -1,0 +1,52 @@
+import {
+  Controller,
+  Get,
+  Patch,
+  Body,
+  UseGuards,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
+import { SettingsService } from './settings.service';
+import { UpdateBranchDto } from './dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { UserRole } from '@prisma/client';
+import type { AuthenticatedRequestUser } from '../auth/types/authenticated-user.type';
+
+@Controller('settings')
+@UseGuards(JwtAuthGuard, RolesGuard)
+export class SettingsController {
+  constructor(private readonly settingsService: SettingsService) {}
+
+  @Get('branch')
+  @Roles(UserRole.ADMIN)
+  async getBranch(@CurrentUser() user: AuthenticatedRequestUser) {
+    const branch = await this.settingsService.getBranch(user.branchId);
+    return {
+      success: true,
+      data: branch,
+    };
+  }
+
+  @Patch('branch')
+  @Roles(UserRole.ADMIN)
+  @HttpCode(HttpStatus.OK)
+  async updateBranch(
+    @CurrentUser() user: AuthenticatedRequestUser,
+    @Body() updateBranchDto: UpdateBranchDto,
+  ) {
+    const branch = await this.settingsService.updateBranch(
+      user.branchId,
+      updateBranchDto,
+    );
+    return {
+      success: true,
+      data: branch,
+      message: 'Branch settings updated successfully',
+    };
+  }
+}
+

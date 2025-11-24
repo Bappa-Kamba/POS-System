@@ -13,6 +13,7 @@ import { ReportsModule } from './modules/reports/reports.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { ExpensesModule } from './modules/expenses/expenses.module';
 import { AuditModule } from './modules/audit/audit.module';
+import { SettingsModule } from './modules/settings/settings.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuditInterceptor } from './common/interceptors/audit.interceptor';
 
@@ -36,6 +37,7 @@ import { AuditInterceptor } from './common/interceptors/audit.interceptor';
     InventoryModule,
     ExpensesModule,
     AuditModule,
+    SettingsModule,
   ],
   controllers: [AppController],
   providers: [

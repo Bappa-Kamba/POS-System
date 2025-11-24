@@ -62,17 +62,17 @@ export const CartItem: React.FC<CartItemProps> = ({
             {item.productName}
           </h4>
           {item.variantName && (
-            <p className="text-xs text-neutral-500 mt-0.5">{item.variantName}</p>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">{item.variantName}</p>
           )}
-          <p className="text-xs text-neutral-400 mt-1">SKU: {item.sku}</p>
+          <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">SKU: {item.sku}</p>
         </div>
-        <button
-          onClick={() => onRemove(item.id)}
-          className="p-1 text-neutral-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors flex-shrink-0 ml-2"
-          aria-label="Remove item"
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
+          <button
+            onClick={() => onRemove(item.id)}
+            className="p-1 text-neutral-400 dark:text-neutral-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors flex-shrink-0 ml-2"
+            aria-label="Remove item"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
       </div>
 
       <div className="flex items-center justify-between">
@@ -80,13 +80,13 @@ export const CartItem: React.FC<CartItemProps> = ({
         <div className="flex items-center gap-2">
           <button
             onClick={() => onQuantityChange(item.id, item.quantity - 1)}
-            className="p-1 rounded border border-neutral-300 dark:border-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors"
+            className="p-1 rounded border border-neutral-300 dark:border-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors text-neutral-700 dark:text-neutral-300"
             aria-label="Decrease quantity"
           >
             <Minus className="w-4 h-4" />
           </button>
           <input
-            type="number"
+            type="text"
             value={localQuantity}
             onChange={handleQuantityInputChange}
             onBlur={handleQuantityInputBlur}
@@ -94,11 +94,10 @@ export const CartItem: React.FC<CartItemProps> = ({
             className="w-16 text-center text-sm font-medium border border-neutral-300 dark:border-neutral-600 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
             min="0"
             max={item.availableStock}
-            step={item.unitType === 'WEIGHT' ? '0.1' : '1'}
           />
           <button
             onClick={() => onQuantityChange(item.id, item.quantity + 1)}
-            className="p-1 rounded border border-neutral-300 dark:border-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors"
+            className="p-1 rounded border border-neutral-300 dark:border-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors text-neutral-700 dark:text-neutral-300"
             aria-label="Increase quantity"
           >
             <Plus className="w-4 h-4" />
@@ -107,7 +106,7 @@ export const CartItem: React.FC<CartItemProps> = ({
 
         {/* Price */}
         <div className="text-right">
-          <p className="text-xs text-neutral-500">
+          <p className="text-xs text-neutral-500 dark:text-neutral-400">
             {formatCurrency(item.unitPrice)} × {item.quantity}
           </p>
           <p className="font-semibold text-neutral-900 dark:text-neutral-100">

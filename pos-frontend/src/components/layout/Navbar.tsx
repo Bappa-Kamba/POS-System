@@ -1,3 +1,4 @@
+import { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -10,21 +11,48 @@ import {
   BarChart3,
   DollarSign,
   FileText,
+  Settings,
+  Moon,
+  Sun,
+  ChevronDown,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useAuthStore } from '../../store/authStore';
-import { Button } from '../common/Button';
+import { useThemeStore } from '../../store/themeStore';
 
 export const Navbar = () => {
   const { user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const logout = useAuthStore((state) => state.logout);
+  const { isDarkMode, toggleTheme } = useThemeStore();
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const profileDropdownRef = useRef<HTMLDivElement>(null);
 
   const handleLogout = async () => {
     await logout();
     navigate('/login');
   };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        profileDropdownRef.current &&
+        !profileDropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsProfileOpen(false);
+      }
+    };
+
+    if (isProfileOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isProfileOpen]);
 
   const isActive = (path: string) => {
     if (path === '/dashboard') {
@@ -121,32 +149,73 @@ export const Navbar = () => {
             </div>
           </div>
 
-          {/* User Info & Logout */}
-          <div className="flex items-center gap-4">
-            <div className="hidden sm:flex items-center gap-2 text-sm">
-              <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/20 flex items-center justify-center">
-                <User className="w-4 h-4 text-primary-600 dark:text-primary-400" />
-              </div>
-              <div className="flex flex-col">
-                <span className="font-medium text-neutral-900 dark:text-neutral-100">
-                  {user?.firstName && user?.lastName
-                    ? `${user.firstName} ${user.lastName}`
-                    : user?.username}
-                </span>
-                <span className="text-xs text-neutral-500 dark:text-neutral-400">
-                  {user?.role === 'ADMIN' ? 'Administrator' : 'Cashier'}
-                </span>
-              </div>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleLogout}
-              className="flex items-center gap-2"
+          {/* User Info & Actions */}
+          <div className="flex items-center gap-2">
+            {/* Theme Toggle */}
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors"
+              aria-label="Toggle theme"
             >
-              <LogOut className="w-4 h-4" />
-              <span className="hidden sm:inline">Logout</span>
-            </Button>
+              {isDarkMode ? (
+                <Sun className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />
+              ) : (
+                <Moon className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />
+              )}
+            </button>
+
+            {/* Profile Dropdown */}
+            <div className="relative" ref={profileDropdownRef}>
+              <button
+                onClick={() => setIsProfileOpen(!isProfileOpen)}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors"
+              >
+                <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/20 flex items-center justify-center">
+                  <User className="w-4 h-4 text-primary-600 dark:text-primary-400" />
+                </div>
+                <div className="hidden sm:flex flex-col items-start text-sm">
+                  <span className="font-medium text-neutral-900 dark:text-neutral-100">
+                    {user?.firstName && user?.lastName
+                      ? `${user.firstName} ${user.lastName}`
+                      : user?.username}
+                  </span>
+                  <span className="text-xs text-neutral-500 dark:text-neutral-400">
+                    {user?.role === 'ADMIN' ? 'Administrator' : 'Cashier'}
+                  </span>
+                </div>
+                <ChevronDown
+                  className={`w-4 h-4 text-neutral-500 dark:text-neutral-400 transition-transform ${
+                    isProfileOpen ? 'rotate-180' : ''
+                  }`}
+                />
+              </button>
+
+              {/* Dropdown Menu */}
+              {isProfileOpen && (
+                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-neutral-800 rounded-lg shadow-lg border border-neutral-200 dark:border-neutral-700 py-1 z-50">
+                  {user?.role === 'ADMIN' && (
+                    <Link
+                      to="/settings"
+                      onClick={() => setIsProfileOpen(false)}
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors"
+                    >
+                      <Settings className="w-4 h-4" />
+                      Settings
+                    </Link>
+                  )}
+                  <button
+                    onClick={() => {
+                      setIsProfileOpen(false);
+                      handleLogout();
+                    }}
+                    className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    Logout
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

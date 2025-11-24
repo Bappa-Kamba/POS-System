@@ -72,7 +72,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
   if (products.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-neutral-500">No products found</p>
+        <p className="text-neutral-500 dark:text-neutral-400">No products found</p>
       </div>
     );
   }
@@ -123,7 +123,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
                   {product.name}
                 </div>
                 {product.description && (
-                  <div className="text-sm text-neutral-500 truncate max-w-xs">
+                  <div className="text-sm text-neutral-500 dark:text-neutral-400 truncate max-w-xs">
                     {product.description}
                   </div>
                 )}
@@ -137,10 +137,10 @@ export const ProductTable: React.FC<ProductTableProps> = ({
                     <span className="text-sm font-mono text-neutral-900 dark:text-neutral-100">
                       {product.barcode}
                     </span>
-                    <span className="text-xs text-neutral-500">EAN-13</span>
+                    <span className="text-xs text-neutral-500 dark:text-neutral-400">EAN-13</span>
                   </div>
                 ) : (
-                  <span className="text-sm text-neutral-400">-</span>
+                  <span className="text-sm text-neutral-400 dark:text-neutral-500">-</span>
                 )}
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
@@ -148,7 +148,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900 dark:text-neutral-100">
                 {product.hasVariants ? (
-                  <span className="text-neutral-500">See variants</span>
+                  <span className="text-neutral-500 dark:text-neutral-400">See variants</span>
                 ) : (
                   formatCurrency(product.sellingPrice)
                 )}
@@ -195,7 +195,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
                       onDelete(product);
                     }}
                     title="Delete Product"
-                    className="text-red-600 hover:bg-red-50"
+                    className="text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>

@@ -178,14 +178,14 @@ export const PosPage: React.FC = () => {
             <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
               Point of Sale
             </h1>
-            <p className="text-sm text-neutral-500 mt-1">
+            <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
               {user?.firstName
                 ? `Hello, ${user.firstName}`
                 : `Hello, ${user?.username}`}
             </p>
           </div>
           <div className="text-right">
-            <p className="text-sm text-neutral-500">Branch</p>
+            <p className="text-sm text-neutral-500 dark:text-neutral-400">Branch</p>
             <p className="font-medium text-neutral-900 dark:text-neutral-100">
               {user?.branchId || 'N/A'}
             </p>

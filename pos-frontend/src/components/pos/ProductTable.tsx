@@ -113,7 +113,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
         <h3 className="text-lg font-medium text-neutral-600 dark:text-neutral-400 mb-2">
           No Products Found
         </h3>
-        <p className="text-sm text-neutral-500">
+        <p className="text-sm text-neutral-500 dark:text-neutral-400">
           Try adjusting your search or filters
         </p>
       </div>
@@ -154,7 +154,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
                   <div className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
                     {variant.product?.name || 'Unknown Product'}
                   </div>
-                  <div className="text-xs text-neutral-500 mt-0.5">
+                  <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
                     {variant.name}
                   </div>
                 </td>

@@ -123,7 +123,7 @@ export const ProductsPage: React.FC = () => {
           <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
             Products
           </h1>
-          <p className="text-sm text-neutral-500 mt-1">
+          <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
             Manage your product inventory
           </p>
         </div>
@@ -139,13 +139,13 @@ export const ProductsPage: React.FC = () => {
           {/* Search */}
           <div className="md:col-span-2">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400 dark:text-neutral-500" />
               <input
                 type="text"
                 placeholder="Search by name, SKU, or barcode..."
                 value={search}
                 onChange={(e) => handleSearch(e.target.value)}
-                className="w-full pl-10 pr-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full pl-10 pr-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500"
               />
             </div>
           </div>
@@ -155,7 +155,7 @@ export const ProductsPage: React.FC = () => {
             <select
               value={category}
               onChange={(e) => handleCategoryChange(e.target.value)}
-              className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
             >
               <option value="">All Categories</option>
               <option value="DRINKS">Drinks</option>
@@ -170,7 +170,7 @@ export const ProductsPage: React.FC = () => {
             <select
               value={isActive === undefined ? 'all' : isActive ? 'active' : 'inactive'}
               onChange={(e) => handleStatusChange(e.target.value)}
-              className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
             >
               <option value="all">All Status</option>
               <option value="active">Active</option>
@@ -189,7 +189,7 @@ export const ProductsPage: React.FC = () => {
                 setShowLowStock(e.target.checked);
                 setPage(1);
               }}
-              className="w-4 h-4 text-primary-600 border-neutral-300 rounded focus:ring-primary-500"
+              className="w-4 h-4 text-primary-600 border-neutral-300 dark:border-neutral-600 rounded focus:ring-primary-500 bg-white dark:bg-neutral-800"
             />
             <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
               Show Low Stock Only
@@ -210,7 +210,7 @@ export const ProductsPage: React.FC = () => {
         {/* Pagination */}
         {data && data.data.length > 0 && (
           <div className="flex items-center justify-between px-6 py-4 border-t border-neutral-200 dark:border-neutral-700">
-            <div className="text-sm text-neutral-500">
+            <div className="text-sm text-neutral-500 dark:text-neutral-400">
               Showing {skip + 1} to {Math.min(skip + limit, data.meta.total)} of{' '}
               {data.meta.total} products
             </div>
@@ -234,7 +234,7 @@ export const ProductsPage: React.FC = () => {
                   .map((p, idx, arr) => (
                     <React.Fragment key={p}>
                       {idx > 0 && arr[idx - 1] !== p - 1 && (
-                        <span className="text-neutral-500">...</span>
+                        <span className="text-neutral-500 dark:text-neutral-400">...</span>
                       )}
                       <Button
                         variant={p === page ? 'primary' : 'secondary'}

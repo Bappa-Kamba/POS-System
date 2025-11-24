@@ -29,7 +29,7 @@ export const UserTable: React.FC<UserTableProps> = ({
   if (users.length === 0) {
     return (
       <div className="text-center py-12">
-        <UserIcon className="w-12 h-12 text-neutral-400 mx-auto mb-4" />
+        <UserIcon className="w-12 h-12 text-neutral-400 dark:text-neutral-500 mx-auto mb-4" />
         <p className="text-neutral-500 dark:text-neutral-400">No users found</p>
       </div>
     );
@@ -117,7 +117,7 @@ export const UserTable: React.FC<UserTableProps> = ({
                     variant="ghost"
                     size="sm"
                     onClick={() => onEdit(user)}
-                    className="text-primary-600 hover:text-primary-700"
+                    className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-500"
                   >
                     <Edit className="w-4 h-4" />
                   </Button>
@@ -125,7 +125,7 @@ export const UserTable: React.FC<UserTableProps> = ({
                     variant="ghost"
                     size="sm"
                     onClick={() => onDelete(user)}
-                    className="text-red-600 hover:text-red-700"
+                    className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-500"
                     disabled={!user.isActive} // Can't delete already inactive users
                   >
                     <Trash2 className="w-4 h-4" />

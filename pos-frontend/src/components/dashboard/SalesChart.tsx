@@ -108,4 +108,3 @@ export const SalesChart: React.FC<SalesChartProps> = ({ data }) => {
     </div>
   );
 };
-
