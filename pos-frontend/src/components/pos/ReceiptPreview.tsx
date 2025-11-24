@@ -46,6 +46,18 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
           </div>
 
           <div className="border-t border-b border-neutral-200 dark:border-neutral-700 py-4 my-4">
+            {/* Transaction Type Badge */}
+            <div className="text-center mb-3">
+              <span
+                className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
+                  receiptData.transactionType === 'CASHBACK'
+                    ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300'
+                    : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                }`}
+              >
+                {receiptData.transactionType === 'CASHBACK' ? 'CASHBACK' : 'PURCHASE'}
+              </span>
+            </div>
             <div className="flex justify-between text-sm mb-2">
               <span className="text-neutral-600 dark:text-neutral-400">
                 Receipt #:

@@ -16,8 +16,10 @@ export interface Payment {
 }
 
 export interface CreateSalePayload {
-  items: SaleItem[];
+  items?: SaleItem[];
   payments: Payment[];
+  transactionType?: 'PURCHASE' | 'CASHBACK';
+  cashbackAmount?: number;
   customerName?: string;
   customerPhone?: string;
   notes?: string;
@@ -28,6 +30,7 @@ export interface Sale {
   receiptNumber: string;
   cashierId: string;
   branchId: string;
+  transactionType: 'PURCHASE' | 'CASHBACK';
   subtotal: number;
   taxAmount: number;
   discountAmount: number;
@@ -90,6 +93,7 @@ export interface ReceiptData {
     };
     branch: string;
     receiptNumber: string;
+    transactionType: 'PURCHASE' | 'CASHBACK';
     date: string;
     cashier: string;
     items: Array<{
@@ -125,6 +129,7 @@ export interface FindAllSalesParams {
   cashierId?: string;
   branchId?: string;
   paymentStatus?: 'PENDING' | 'PARTIAL' | 'PAID' | 'CANCELLED';
+  transactionType?: 'PURCHASE' | 'CASHBACK';
   search?: string;
 }
 

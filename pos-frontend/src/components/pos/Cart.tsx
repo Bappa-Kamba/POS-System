@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { ShoppingCart, Trash2, CreditCard } from 'lucide-react';
+import { ShoppingCart, Trash2, CreditCard, ArrowLeftRight } from 'lucide-react';
 import { Button } from '../common/Button';
 import { CartItem } from './CartItem';
 import { useCartStore } from '../../store/cartStore';

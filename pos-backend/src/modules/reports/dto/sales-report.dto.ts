@@ -1,4 +1,5 @@
 import { IsString, IsOptional, IsEnum, IsDateString } from 'class-validator';
+import { TransactionType } from '@prisma/client';
 
 export enum ReportGroupBy {
   DAY = 'day',
@@ -24,4 +25,8 @@ export class SalesReportDto {
   @IsOptional()
   @IsEnum(ReportGroupBy)
   groupBy?: ReportGroupBy;
+
+  @IsOptional()
+  @IsEnum(TransactionType)
+  transactionType?: TransactionType;
 }

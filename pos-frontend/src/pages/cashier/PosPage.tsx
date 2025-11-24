@@ -5,9 +5,13 @@ import { ProductTable } from '../../components/pos/ProductTable';
 import { Cart } from '../../components/pos/Cart';
 import { PaymentModal } from '../../components/pos/PaymentModal';
 import { ReceiptPreview } from '../../components/pos/ReceiptPreview';
+import { TransactionTypeSelector } from '../../components/pos/TransactionTypeSelector';
+import { CashbackForm } from '../../components/pos/CashbackForm';
+import { Button } from '../../components/common/Button';
 import { useProducts } from '../../hooks/useProducts';
 import { useCartStore } from '../../store/cartStore';
 import { useCreateSale, useReceipt } from '../../hooks/useSales';
+import { useBranch } from '../../hooks/useSettings';
 import type { Product } from '../../services/product.service';
 import type { Variant } from '../../services/variant.service';
 import type { Payment } from '../../services/sale.service';
@@ -15,6 +19,7 @@ import { ProductCategory } from '../../types/product';
 
 export const PosPage: React.FC = () => {
   const { user } = useAuth();
+  const [transactionType, setTransactionType] = useState<'PURCHASE' | 'CASHBACK' | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
@@ -25,10 +30,11 @@ export const PosPage: React.FC = () => {
   const { items, getTotal, clearCart } = useCartStore();
   const createSaleMutation = useCreateSale();
   const { data: receiptData } = useReceipt(completedSaleId || '');
+  const { data: branch } = useBranch();
 
   const total = getTotal();
 
-  // Fetch products
+  // Fetch products (only for PURCHASE mode)
   const { data, isLoading } = useProducts({
     search: searchQuery || undefined,
     category:
@@ -37,6 +43,7 @@ export const PosPage: React.FC = () => {
         : undefined,
     isActive: true,
     branchId: user?.branchId,
+    enabled: transactionType === 'PURCHASE',
   });
 
   const products = useMemo(() => {
@@ -44,22 +51,18 @@ export const PosPage: React.FC = () => {
   }, [data]);
 
   const variants = useMemo(() => {
-    // Extract variants from response if they exist
     const allVariants = (data as any)?.variants || [];
-    // Filter variants by category if category is selected
     if (selectedCategory === 'ALL') return allVariants;
     return allVariants.filter(
       (v: Variant) => v.product?.category === selectedCategory
     );
   }, [data, selectedCategory]);
 
-  // Filter products by category
   const filteredProducts = useMemo(() => {
     if (selectedCategory === 'ALL') return products;
     return products.filter((p) => p.category === selectedCategory);
   }, [products, selectedCategory]);
 
-  // Category counts
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = {
       ALL: products.length,
@@ -86,13 +89,10 @@ export const PosPage: React.FC = () => {
     if (type === 'product') {
       const productData = product as Product;
       if (productData.hasVariants) {
-        // For products with variants, we'd need to show variant selector
-        // For now, just add the product (will need variant selection)
         return;
       }
       addItem(productData);
     } else {
-      // Variant found - need to get the parent product
       const variant = product as Variant;
       if (variant.product) {
         const parentProduct: Product = {
@@ -100,7 +100,7 @@ export const PosPage: React.FC = () => {
           name: variant.product.name,
           category: variant.product.category as ProductCategory,
           hasVariants: true,
-          sku: variant.product.id, // Temporary
+          sku: variant.product.id,
           taxable: true,
           isActive: true,
           branchId: user?.branchId || '',
@@ -124,9 +124,8 @@ export const PosPage: React.FC = () => {
     setIsPaymentModalOpen(true);
   };
 
-  const handleCompleteSale = async (payment: Payment) => {
+  const handleCompletePurchase = async (payment: Payment) => {
     try {
-      // Prepare sale items from cart
       const saleItems = items.map((item) => ({
         productId: item.productId,
         variantId: item.variantId,
@@ -134,20 +133,15 @@ export const PosPage: React.FC = () => {
         unitPrice: item.unitPrice,
       }));
 
-      // Create sale with single payment
       const response = await createSaleMutation.mutateAsync({
         items: saleItems,
         payments: [payment],
+        transactionType: 'PURCHASE',
       });
 
       if (response.success && response.data) {
-        // Clear cart
         clearCart();
-
-        // Close payment modal
         setIsPaymentModalOpen(false);
-
-        // Set completed sale ID and open receipt
         setCompletedSaleId(response.data.id);
         setIsReceiptModalOpen(true);
       }
@@ -160,6 +154,46 @@ export const PosPage: React.FC = () => {
     }
   };
 
+  const handleCompleteCashback = async (
+    amount: number,
+    serviceCharge: number,
+    totalReceived: number,
+  ) => {
+    try {
+      const response = await createSaleMutation.mutateAsync({
+        cashbackAmount: amount,
+        payments: [
+          {
+            method: 'TRANSFER',
+            amount: totalReceived,
+            reference: `Cashback-${Date.now()}`,
+            notes: `Service Charge: ${serviceCharge.toFixed(2)}`,
+          },
+        ],
+        transactionType: 'CASHBACK',
+        notes: `Service Charge: ${serviceCharge.toFixed(2)} (${((serviceCharge / amount) * 100).toFixed(2)}%)`,
+      });
+
+      if (response.success && response.data) {
+        alert('Cashback transaction completed successfully!');
+        // Reset to transaction type selection
+        setTransactionType(null);
+      }
+    } catch (error: any) {
+      console.error('Cashback creation failed:', error);
+      alert(
+        error?.response?.data?.error?.message ||
+          'Failed to complete cashback. Please try again.'
+      );
+    }
+  };
+
+  const handleBackToSelection = () => {
+    setTransactionType(null);
+    clearCart();
+    setSearchQuery('');
+    setSelectedCategory('ALL');
+  };
 
   const categories = [
     { value: 'ALL', label: 'All' },
@@ -169,14 +203,80 @@ export const PosPage: React.FC = () => {
     { value: 'OTHER', label: 'Other' },
   ];
 
+  // Show transaction type selector if no type selected
+  if (!transactionType) {
+    return (
+      <div className="h-screen flex flex-col">
+        <div className="bg-white dark:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-700 px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+                Point of Sale
+              </h1>
+              <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+                {user?.firstName
+                  ? `Hello, ${user.firstName}`
+                  : `Hello, ${user?.username}`}
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-sm text-neutral-500 dark:text-neutral-400">Branch</p>
+              <p className="font-medium text-neutral-900 dark:text-neutral-100">
+                {user?.branchId || 'N/A'}
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="flex-1">
+          <TransactionTypeSelector onSelect={setTransactionType} />
+        </div>
+      </div>
+    );
+  }
+
+  // Show cashback form if cashback selected
+  if (transactionType === 'CASHBACK') {
+    return (
+      <div className="h-screen flex flex-col">
+        <div className="bg-white dark:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-700 px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+                Cashback Service
+              </h1>
+              <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+                {user?.firstName
+                  ? `Hello, ${user.firstName}`
+                  : `Hello, ${user?.username}`}
+              </p>
+            </div>
+            <Button variant="ghost" onClick={handleBackToSelection}>
+              ← Back to Selection
+            </Button>
+          </div>
+        </div>
+        <div className="flex-1 flex overflow-hidden">
+          <div className="flex-1 flex flex-col">
+            <CashbackForm
+              serviceChargeRate={branch?.cashbackServiceChargeRate || 0.02}
+              availableCapital={branch?.cashbackCapital || 0}
+              onComplete={handleCompleteCashback}
+              onCancel={handleBackToSelection}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show purchase interface
   return (
     <div className="h-screen flex flex-col">
-      {/* Header */}
       <div className="bg-white dark:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-700 px-6 py-4">
-      <div className="flex items-center justify-between">
-        <div>
+        <div className="flex items-center justify-between">
+          <div>
             <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
-              Point of Sale
+              Point of Sale - Purchase
             </h1>
             <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
               {user?.firstName
@@ -184,20 +284,22 @@ export const PosPage: React.FC = () => {
                 : `Hello, ${user?.username}`}
             </p>
           </div>
-          <div className="text-right">
-            <p className="text-sm text-neutral-500 dark:text-neutral-400">Branch</p>
-            <p className="font-medium text-neutral-900 dark:text-neutral-100">
-              {user?.branchId || 'N/A'}
-            </p>
+          <div className="flex items-center gap-4">
+            <div className="text-right">
+              <p className="text-sm text-neutral-500 dark:text-neutral-400">Branch</p>
+              <p className="font-medium text-neutral-900 dark:text-neutral-100">
+                {user?.branchId || 'N/A'}
+              </p>
+            </div>
+            <Button variant="ghost" onClick={handleBackToSelection}>
+              ← Back to Selection
+            </Button>
           </div>
         </div>
       </div>
 
-      {/* Main Content - Split Screen */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Left Panel - Product Selection (70%) */}
         <div className="flex-1 flex flex-col overflow-hidden border-r border-neutral-200 dark:border-neutral-700">
-          {/* Search Bar */}
           <div className="p-4 border-b border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800">
             <ProductSearch
               onSearch={handleSearch}
@@ -206,11 +308,10 @@ export const PosPage: React.FC = () => {
             />
           </div>
 
-          {/* Category Filter Tabs */}
           <div className="px-4 py-3 bg-white dark:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-700">
             <div className="flex gap-2 overflow-x-auto">
               {categories.map((category) => (
-        <button
+                <button
                   key={category.value}
                   onClick={() => setSelectedCategory(category.value)}
                   className={`px-4 py-2 rounded-lg font-medium text-sm whitespace-nowrap transition-colors ${
@@ -223,12 +324,11 @@ export const PosPage: React.FC = () => {
                   <span className="ml-2 text-xs opacity-75">
                     ({categoryCounts[category.value] || 0})
                   </span>
-        </button>
+                </button>
               ))}
             </div>
           </div>
 
-          {/* Product Table */}
           <div className="flex-1 overflow-y-auto p-4">
             <ProductTable
               products={filteredProducts}
@@ -239,33 +339,30 @@ export const PosPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Right Panel - Cart (30%) */}
         <div className="w-full md:w-96 lg:w-[400px] flex flex-col border-l border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800">
           <Cart onCheckout={handleCheckout} />
         </div>
       </div>
 
-      {/* Payment Modal */}
       <PaymentModal
         isOpen={isPaymentModalOpen}
         onClose={() => setIsPaymentModalOpen(false)}
         total={total}
-        onComplete={handleCompleteSale}
+        onComplete={handleCompletePurchase}
       />
 
-              {/* Receipt Preview Modal */}
-              <ReceiptPreview
-                isOpen={isReceiptModalOpen}
-                onClose={() => {
-                  setIsReceiptModalOpen(false);
-                  setCompletedSaleId(null);
-                }}
-                receiptData={
-                  receiptData && receiptData.success && 'receipt' in receiptData.data
-                    ? (receiptData.data as any).receipt
-                    : null
-                }
-              />
+      <ReceiptPreview
+        isOpen={isReceiptModalOpen}
+        onClose={() => {
+          setIsReceiptModalOpen(false);
+          setCompletedSaleId(null);
+        }}
+        receiptData={
+          receiptData && receiptData.success && 'receipt' in receiptData.data
+            ? (receiptData.data as any).receipt
+            : null
+        }
+      />
     </div>
   );
 };

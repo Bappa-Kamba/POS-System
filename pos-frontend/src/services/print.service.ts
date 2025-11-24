@@ -10,6 +10,7 @@ export interface ReceiptData {
   };
   branch: string;
   receiptNumber: string;
+  transactionType: 'PURCHASE' | 'CASHBACK';
   date: string;
   cashier: string;
   items: Array<{
@@ -80,6 +81,16 @@ export const generateReceiptHTML = (data: ReceiptData): string => {
       <div class="center">${data.branch}</div>
       
       <div class="divider"></div>
+      
+      <div class="center" style="margin: 8px 0;">
+        <span style="padding: 4px 12px; border-radius: 12px; font-weight: bold; font-size: 11px; ${
+          data.transactionType === 'CASHBACK'
+            ? 'background-color: #fed7aa; color: #9a3412;'
+            : 'background-color: #bbf7d0; color: #166534;'
+        }">
+          ${data.transactionType === 'CASHBACK' ? 'CASHBACK' : 'PURCHASE'}
+        </span>
+      </div>
       
       <table>
         <tr>
@@ -232,7 +243,20 @@ export const generateReceiptPDF = async (data: ReceiptData): Promise<Blob> => {
   doc.line(20, y, 190, y);
 
   y += 8;
+  // Transaction Type Badge
   doc.setFontSize(10);
+  doc.setFont("helvetica", "bold");
+  const transactionTypeText = data.transactionType === 'CASHBACK' ? 'CASHBACK' : 'PURCHASE';
+  const transactionTypeColor = data.transactionType === 'CASHBACK' ? [254, 215, 170] : [187, 247, 208];
+  doc.setFillColor(transactionTypeColor[0], transactionTypeColor[1], transactionTypeColor[2]);
+  doc.roundedRect(75, y - 3, 60, 6, 3, 3, 'FD');
+  doc.setTextColor(data.transactionType === 'CASHBACK' ? 154 : 22);
+  doc.text(transactionTypeText, 105, y, { align: "center" });
+  doc.setTextColor(0, 0, 0); // Reset to black
+
+  y += 8;
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "normal");
   doc.text(`Receipt #: ${data.receiptNumber}`, 20, y);
   y += 5;
   doc.text(`Date: ${formatDate(data.date, "datetime")}`, 20, y);

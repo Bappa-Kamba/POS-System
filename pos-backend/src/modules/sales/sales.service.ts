@@ -43,8 +43,18 @@ export class SalesService {
    * Create a new sale with transaction
    */
   async create(data: CreateSaleDto, cashierId: string, branchId: string) {
-    if (!data.items || data.items.length === 0) {
-      throw new BadRequestException('Sale must have at least one item');
+    const transactionType = data.transactionType || 'PURCHASE';
+
+    // Validate based on transaction type
+    if (transactionType === 'PURCHASE') {
+      if (!data.items || data.items.length === 0) {
+        throw new BadRequestException('Purchase must have at least one item');
+      }
+    } else if (transactionType === 'CASHBACK') {
+      if (!data.cashbackAmount || data.cashbackAmount <= 0) {
+        throw new BadRequestException('Cashback amount is required and must be greater than 0');
+      }
+      // Cashback doesn't need items
     }
 
     if (!data.payments || data.payments.length === 0) {
@@ -73,8 +83,113 @@ export class SalesService {
     let subtotal = 0;
     let taxAmount = 0;
 
-    // Validate items and calculate totals
-    for (const itemDto of data.items) {
+    // Handle cashback transaction (no products)
+    if (transactionType === 'CASHBACK') {
+      const branch = await this.prisma.branch.findUnique({
+        where: { id: branchId },
+        select: { cashbackCapital: true, cashbackServiceChargeRate: true },
+      });
+
+      if (!branch) {
+        throw new NotFoundException('Branch not found');
+      }
+
+      const cashbackAmount = data.cashbackAmount!;
+      const serviceChargeRate = branch.cashbackServiceChargeRate || 0.02;
+      const serviceCharge = cashbackAmount * serviceChargeRate;
+      const totalReceived = cashbackAmount + serviceCharge; // Customer sends this
+
+      // Check if enough capital
+      if (branch.cashbackCapital < cashbackAmount) {
+        throw new BadRequestException(
+          `Insufficient cashback capital. Available: ${branch.cashbackCapital}, Required: ${cashbackAmount}`,
+        );
+      }
+
+      // For cashback: subtotal = amount given, total = amount given (service charge is profit, not part of sale total)
+      subtotal = cashbackAmount;
+      taxAmount = 0; // No tax on cashback
+      const totalAmount = cashbackAmount; // Total is just the amount given
+
+      // Generate receipt number
+      const receiptNumber = await this.generateReceiptNumber(new Date());
+
+      // Create sale in transaction
+      const sale = await this.prisma.$transaction(async (tx) => {
+        // Deduct from cashback capital
+        await tx.branch.update({
+          where: { id: branchId },
+          data: {
+            cashbackCapital: {
+              decrement: cashbackAmount,
+            },
+          },
+        });
+
+        // Calculate payment totals
+        const totalPaid = data.payments.reduce((sum, p) => sum + p.amount, 0);
+        const amountDue = totalAmount - totalPaid;
+        const changeGiven = totalPaid > totalAmount ? totalPaid - totalAmount : 0;
+        const paymentStatus =
+          amountDue <= 0 ? PaymentStatus.PAID : PaymentStatus.PARTIAL;
+
+        // Create sale (no items for cashback)
+        const newSale = await tx.sale.create({
+          data: {
+            receiptNumber,
+            cashierId,
+            branchId,
+            transactionType: 'CASHBACK',
+            subtotal,
+            taxAmount: 0,
+            discountAmount: 0,
+            totalAmount,
+            paymentStatus,
+            amountPaid: totalPaid,
+            amountDue,
+            changeGiven,
+            customerName: data.customerName,
+            customerPhone: data.customerPhone,
+            notes: data.notes || `Service Charge: ${serviceCharge.toFixed(2)} (${(serviceChargeRate * 100).toFixed(2)}%)`,
+            payments: {
+              create: data.payments.map((payment) => ({
+                method: payment.method,
+                amount: payment.amount,
+                reference: payment.reference,
+                notes: payment.notes,
+              })),
+            },
+          },
+        });
+
+        return await tx.sale.findUnique({
+          where: { id: newSale.id },
+          include: {
+            items: true,
+            payments: true,
+            cashier: {
+              select: {
+                id: true,
+                username: true,
+                firstName: true,
+                lastName: true,
+              },
+            },
+            branch: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        });
+      });
+
+      return sale;
+    }
+
+    // Validate items and calculate totals (for PURCHASE transactions)
+    for (const itemDto of data.items!) {
       let product;
       let variant;
       let availableStock: number;
@@ -202,6 +317,7 @@ export class SalesService {
           receiptNumber,
           cashierId,
           branchId,
+          transactionType,
           subtotal,
           taxAmount,
           discountAmount: 0,
@@ -239,72 +355,111 @@ export class SalesService {
         },
       });
 
-      // Deduct stock and create inventory logs
-      for (const item of saleItems) {
-        if (item.variantId) {
-          // Get current stock before update
-          const variant = await tx.productVariant.findUnique({
-            where: { id: item.variantId },
-            select: { quantityInStock: true },
-          });
+      // Handle stock changes only for PURCHASE transactions
+      // CASHBACK is a financial service, not a product transaction
+      if (transactionType === 'PURCHASE') {
+        for (const item of saleItems) {
+          if (item.variantId) {
+            // Get current stock before update
+            const variant = await tx.productVariant.findUnique({
+              where: { id: item.variantId },
+              select: { quantityInStock: true },
+            });
 
-          const previousQuantity = variant?.quantityInStock || 0;
+            const previousQuantity = variant?.quantityInStock || 0;
+            const quantityChange = -item.quantity;
+            const newQuantity = previousQuantity + quantityChange;
 
-          // Update variant stock
-          await tx.productVariant.update({
-            where: { id: item.variantId },
-            data: {
-              quantityInStock: {
-                decrement: item.quantity,
+            // Update variant stock
+            await tx.productVariant.update({
+              where: { id: item.variantId },
+              data: {
+                quantityInStock: {
+                  increment: quantityChange,
+                },
               },
-            },
-          });
+            });
 
-          // Create inventory log
-          await tx.inventoryLog.create({
-            data: {
-              productId: item.productId,
-              variantId: item.variantId,
-              changeType: InventoryChangeType.SALE,
-              quantityChange: -item.quantity,
-              previousQuantity,
-              newQuantity: previousQuantity - item.quantity,
-              reason: 'Sale',
-              saleId: newSale.id,
-            },
-          });
-        } else {
-          // Get current stock before update
-          const product = await tx.product.findUnique({
-            where: { id: item.productId },
-            select: { quantityInStock: true },
-          });
-
-          const previousQuantity = product?.quantityInStock || 0;
-
-          // Update product stock
-          await tx.product.update({
-            where: { id: item.productId },
-            data: {
-              quantityInStock: {
-                decrement: item.quantity,
+            // Create inventory log
+            await tx.inventoryLog.create({
+              data: {
+                productId: item.productId,
+                variantId: item.variantId,
+                changeType: InventoryChangeType.SALE,
+                quantityChange,
+                previousQuantity,
+                newQuantity,
+                reason: 'Sale',
+                saleId: newSale.id,
               },
-            },
-          });
+            });
+          } else {
+            // Get current stock before update
+            const product = await tx.product.findUnique({
+              where: { id: item.productId },
+              select: { quantityInStock: true },
+            });
 
-          // Create inventory log
-          await tx.inventoryLog.create({
-            data: {
-              productId: item.productId,
-              changeType: InventoryChangeType.SALE,
-              quantityChange: -item.quantity,
-              previousQuantity,
-              newQuantity: previousQuantity - item.quantity,
-              reason: 'Sale',
-              saleId: newSale.id,
-            },
-          });
+            const previousQuantity = product?.quantityInStock || 0;
+            const quantityChange = -item.quantity;
+            const newQuantity = previousQuantity + quantityChange;
+
+            // Update product stock
+            await tx.product.update({
+              where: { id: item.productId },
+              data: {
+                quantityInStock: {
+                  increment: quantityChange,
+                },
+              },
+            });
+
+            // Create inventory log
+            await tx.inventoryLog.create({
+              data: {
+                productId: item.productId,
+                changeType: InventoryChangeType.SALE,
+                quantityChange,
+                previousQuantity,
+                newQuantity,
+                reason: 'Sale',
+                saleId: newSale.id,
+              },
+            });
+          }
         }
+      } else if (transactionType === 'CASHBACK') {
+        // For cashback, deduct from cashback capital
+        const branch = await tx.branch.findUnique({
+          where: { id: branchId },
+          select: { cashbackCapital: true, cashbackServiceChargeRate: true },
+        });
+
+        if (!branch) {
+          throw new NotFoundException('Branch not found');
+        }
+
+        // Calculate service charge (profit)
+        const cashbackAmount = totalAmount; // Amount given to customer
+        const serviceCharge = cashbackAmount * (branch.cashbackServiceChargeRate || 0.02);
+        const totalReceived = cashbackAmount + serviceCharge; // Customer sends this amount
+
+        // Check if enough capital
+        if (branch.cashbackCapital < cashbackAmount) {
+          throw new BadRequestException(
+            `Insufficient cashback capital. Available: ${branch.cashbackCapital}, Required: ${cashbackAmount}`,
+          );
+        }
+
+        // Deduct from cashback capital
+        await tx.branch.update({
+          where: { id: branchId },
+          data: {
+            cashbackCapital: {
+              decrement: cashbackAmount,
+            },
+          },
+        });
       }
 
       // Return sale with relations
@@ -351,6 +506,7 @@ export class SalesService {
       cashierId,
       branchId,
       paymentStatus,
+      transactionType,
       search,
     } = params;
 
@@ -358,6 +514,7 @@ export class SalesService {
       ...(branchId && { branchId }),
       ...(cashierId && { cashierId }),
       ...(paymentStatus && { paymentStatus }),
+      ...(transactionType && { transactionType }),
       ...(startDate &&
         endDate && {
           createdAt: {
@@ -467,6 +624,11 @@ export class SalesService {
   async getReceiptData(id: string) {
     const sale = await this.findOne(id);
 
+    // Cashback transactions don't generate receipts
+    if (sale.transactionType === 'CASHBACK') {
+      throw new BadRequestException('Cashback transactions do not generate receipts');
+    }
+
     const cashierName = sale.cashier.firstName
       ? `${sale.cashier.firstName} ${sale.cashier.lastName || ''}`.trim()
       : sale.cashier.username;
@@ -480,6 +642,7 @@ export class SalesService {
         },
         branch: sale.branch.name,
         receiptNumber: sale.receiptNumber,
+        transactionType: sale.transactionType,
         date: sale.createdAt,
         cashier: cashierName,
         items: sale.items.map((item) => ({

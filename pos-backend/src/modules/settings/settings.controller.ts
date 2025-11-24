@@ -2,13 +2,14 @@ import {
   Controller,
   Get,
   Patch,
+  Post,
   Body,
   UseGuards,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
 import { SettingsService } from './settings.service';
-import { UpdateBranchDto } from './dto';
+import { UpdateBranchDto, AdjustCashbackCapitalDto } from './dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -48,5 +49,23 @@ export class SettingsController {
       message: 'Branch settings updated successfully',
     };
   }
-}
 
+  @Post('cashback-capital/adjust')
+  @Roles(UserRole.ADMIN)
+  @HttpCode(HttpStatus.OK)
+  async adjustCashbackCapital(
+    @CurrentUser() user: AuthenticatedRequestUser,
+    @Body() adjustDto: AdjustCashbackCapitalDto,
+  ) {
+    const result = await this.settingsService.adjustCashbackCapital(
+      user.branchId,
+      adjustDto.amount,
+      adjustDto.notes,
+    );
+    return {
+      success: true,
+      data: result,
+      message: `Cashback capital ${adjustDto.amount > 0 ? 'added' : 'deducted'} successfully`,
+    };
+  }
+}

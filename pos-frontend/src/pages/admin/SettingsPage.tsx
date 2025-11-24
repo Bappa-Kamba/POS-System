@@ -9,11 +9,15 @@ import {
   Settings as SettingsIcon,
   Moon,
   Sun,
+  ArrowLeftRight,
+  Plus,
+  Minus,
 } from 'lucide-react';
-import { useBranch, useUpdateBranch } from '../../hooks/useSettings';
+import { useBranch, useUpdateBranch, useAdjustCashbackCapital } from '../../hooks/useSettings';
 import { useThemeStore } from '../../store/themeStore';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
+import { formatCurrency } from '../../utils/formatters';
 
 const branchInfoSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -35,13 +39,20 @@ const receiptSettingsSchema = z.object({
   receiptFooter: z.string().optional(),
 });
 
-type TabType = 'branch' | 'tax' | 'receipt' | 'system';
+const cashbackSettingsSchema = z.object({
+  cashbackServiceChargeRate: z.number().min(0).max(1, 'Rate must be between 0 and 1'),
+});
+
+type TabType = 'branch' | 'tax' | 'receipt' | 'cashback' | 'system';
 
 export const SettingsPage = () => {
   const [activeTab, setActiveTab] = useState<TabType>('branch');
   const { data: branch, isLoading } = useBranch();
   const updateBranch = useUpdateBranch();
+  const adjustCapital = useAdjustCashbackCapital();
   const { isDarkMode, toggleTheme } = useThemeStore();
+  const [capitalAdjustment, setCapitalAdjustment] = useState('');
+  const [adjustmentNotes, setAdjustmentNotes] = useState('');
 
   const branchForm = useForm({
     resolver: zodResolver(branchInfoSchema),
@@ -95,6 +106,18 @@ export const SettingsPage = () => {
       : undefined,
   });
 
+  const cashbackForm = useForm({
+    resolver: zodResolver(cashbackSettingsSchema),
+    defaultValues: {
+      cashbackServiceChargeRate: branch?.cashbackServiceChargeRate || 0.02,
+    },
+    values: branch
+      ? {
+          cashbackServiceChargeRate: branch.cashbackServiceChargeRate || 0.02,
+        }
+      : undefined,
+  });
+
   const handleBranchSubmit = async (data: z.infer<typeof branchInfoSchema>) => {
     try {
       await updateBranch.mutateAsync(data);
@@ -134,6 +157,7 @@ export const SettingsPage = () => {
     { id: 'branch' as TabType, label: 'Branch Information', icon: Building2 },
     { id: 'tax' as TabType, label: 'Tax Settings', icon: DollarSign },
     { id: 'receipt' as TabType, label: 'Receipt Settings', icon: Receipt },
+    { id: 'cashback' as TabType, label: 'Cashback Settings', icon: ArrowLeftRight },
     { id: 'system' as TabType, label: 'System Settings', icon: SettingsIcon },
   ];
 
@@ -313,6 +337,243 @@ export const SettingsPage = () => {
                 </Button>
               </div>
             </form>
+          )}
+
+          {/* Cashback Settings Tab */}
+          {activeTab === 'cashback' && (
+            <div className="space-y-6">
+              {/* Current Capital Display */}
+              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6 border border-blue-200 dark:border-blue-800">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-100 mb-1">
+                      Current Cashback Capital
+                    </h3>
+                    <p className="text-sm text-blue-700 dark:text-blue-300">
+                      Available capital for cashback transactions
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-3xl font-bold text-blue-900 dark:text-blue-100">
+                      {formatCurrency(branch?.cashbackCapital || 0, branch?.currency || 'NGN')}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Service Charge Rate */}
+              <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-6">
+                <h3 className="text-lg font-medium text-neutral-900 dark:text-neutral-100 mb-4">
+                  Service Charge Rate
+                </h3>
+                <form
+                  onSubmit={cashbackForm.handleSubmit(async (data) => {
+                    try {
+                      await updateBranch.mutateAsync({
+                        cashbackServiceChargeRate: data.cashbackServiceChargeRate,
+                      });
+                      cashbackForm.reset(data);
+                      alert('Service charge rate updated successfully');
+                    } catch (error) {
+                      console.error('Failed to update service charge rate:', error);
+                      alert('Failed to update service charge rate');
+                    }
+                  })}
+                  className="space-y-4"
+                >
+                  <div>
+                    <Input
+                      label="Service Charge Rate"
+                      type="number"
+                      step="0.001"
+                      min="0"
+                      max="1"
+                      {...cashbackForm.register('cashbackServiceChargeRate', {
+                        valueAsNumber: true,
+                      })}
+                      className="max-w-xs"
+                      error={
+                        cashbackForm.formState.errors.cashbackServiceChargeRate?.message
+                      }
+                    />
+                    <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+                      Enter as decimal (e.g., 0.02 for 2%). Current rate:{' '}
+                      {((branch?.cashbackServiceChargeRate || 0.02) * 100).toFixed(2)}%
+                    </p>
+                  </div>
+                  <div className="flex justify-end">
+                    <Button
+                      type="submit"
+                      isLoading={updateBranch.isPending}
+                      disabled={!cashbackForm.formState.isDirty}
+                    >
+                      Save Rate
+                    </Button>
+                  </div>
+                </form>
+              </div>
+
+              {/* Adjust Capital */}
+              <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-6">
+                <h3 className="text-lg font-medium text-neutral-900 dark:text-neutral-100 mb-4">
+                  Adjust Capital
+                </h3>
+                <form
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    const amount = parseFloat(capitalAdjustment);
+                    if (isNaN(amount) || amount === 0) {
+                      alert('Please enter a valid amount');
+                      return;
+                    }
+
+                    const newBalance = (branch?.cashbackCapital || 0) + amount;
+                    if (newBalance < 0) {
+                      alert(
+                        `Insufficient capital. Current: ${formatCurrency(
+                          branch?.cashbackCapital || 0,
+                          branch?.currency || 'NGN',
+                        )}, Adjustment: ${formatCurrency(amount, branch?.currency || 'NGN')}`,
+                      );
+                      return;
+                    }
+
+                    try {
+                      await adjustCapital.mutateAsync({
+                        amount,
+                        notes: adjustmentNotes || undefined,
+                      });
+                      setCapitalAdjustment('');
+                      setAdjustmentNotes('');
+                      alert(
+                        `Capital ${amount > 0 ? 'added' : 'deducted'} successfully. New balance: ${formatCurrency(
+                          newBalance,
+                          branch?.currency || 'NGN',
+                        )}`,
+                      );
+                    } catch (error: any) {
+                      console.error('Failed to adjust capital:', error);
+                      alert(
+                        error?.response?.data?.error?.message ||
+                          'Failed to adjust capital',
+                      );
+                    }
+                  }}
+                  className="space-y-4"
+                >
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                      Amount
+                    </label>
+                    <div className="flex gap-2">
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={capitalAdjustment}
+                        onChange={(e) => setCapitalAdjustment(e.target.value)}
+                        placeholder="Enter amount"
+                        className="flex-1"
+                        required
+                      />
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => {
+                          const amount = parseFloat(capitalAdjustment) || 0;
+                          if (amount > 0) {
+                            setCapitalAdjustment(amount.toString());
+                          }
+                        }}
+                        title="Use positive number to add"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => {
+                          const amount = parseFloat(capitalAdjustment) || 0;
+                          if (amount > 0) {
+                            setCapitalAdjustment(`-${amount}`);
+                          }
+                        }}
+                        title="Use negative number to subtract"
+                      >
+                        <Minus className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+                      Use positive number to add capital, negative to subtract
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                      Notes (Optional)
+                    </label>
+                    <Input
+                      type="text"
+                      value={adjustmentNotes}
+                      onChange={(e) => setAdjustmentNotes(e.target.value)}
+                      placeholder="e.g., Initial capital, Bank deposit, etc."
+                    />
+                  </div>
+                  {capitalAdjustment && (
+                    <div className="bg-neutral-50 dark:bg-neutral-900/50 rounded-lg p-4 border border-neutral-200 dark:border-neutral-700">
+                      <div className="flex justify-between text-sm mb-2">
+                        <span className="text-neutral-600 dark:text-neutral-400">
+                          Current Balance:
+                        </span>
+                        <span className="font-medium text-neutral-900 dark:text-neutral-100">
+                          {formatCurrency(
+                            branch?.cashbackCapital || 0,
+                            branch?.currency || 'NGN',
+                          )}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-sm mb-2">
+                        <span className="text-neutral-600 dark:text-neutral-400">
+                          Adjustment:
+                        </span>
+                        <span
+                          className={`font-medium ${
+                            parseFloat(capitalAdjustment) >= 0
+                              ? 'text-green-600 dark:text-green-400'
+                              : 'text-red-600 dark:text-red-400'
+                          }`}
+                        >
+                          {parseFloat(capitalAdjustment) >= 0 ? '+' : ''}
+                          {formatCurrency(
+                            parseFloat(capitalAdjustment) || 0,
+                            branch?.currency || 'NGN',
+                          )}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-base font-semibold pt-2 border-t border-neutral-200 dark:border-neutral-700">
+                        <span className="text-neutral-900 dark:text-neutral-100">
+                          New Balance:
+                        </span>
+                        <span className="text-primary-600 dark:text-primary-400">
+                          {formatCurrency(
+                            (branch?.cashbackCapital || 0) +
+                              (parseFloat(capitalAdjustment) || 0),
+                            branch?.currency || 'NGN',
+                          )}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                  <div className="flex justify-end">
+                    <Button
+                      type="submit"
+                      isLoading={adjustCapital.isPending}
+                      disabled={!capitalAdjustment || parseFloat(capitalAdjustment) === 0}
+                    >
+                      {parseFloat(capitalAdjustment) >= 0 ? 'Add' : 'Deduct'} Capital
+                    </Button>
+                  </div>
+                </form>
+              </div>
+            </div>
           )}
 
           {/* System Settings Tab */}

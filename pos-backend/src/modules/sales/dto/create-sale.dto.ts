@@ -5,9 +5,10 @@ import {
   IsNumber,
   ValidateNested,
   Min,
+  IsEnum,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { PaymentMethod } from '@prisma/client';
+import { PaymentMethod, TransactionType } from '@prisma/client';
 
 export class CreateSaleItemDto {
   @IsString()
@@ -47,12 +48,22 @@ export class CreateSaleDto {
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => CreateSaleItemDto)
-  items!: CreateSaleItemDto[];
+  @IsOptional()
+  items?: CreateSaleItemDto[];
 
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => CreatePaymentDto)
   payments!: CreatePaymentDto[];
+
+  @IsEnum(TransactionType)
+  @IsOptional()
+  transactionType?: TransactionType;
+
+  @IsNumber()
+  @Min(0.01)
+  @IsOptional()
+  cashbackAmount?: number; // Amount given to customer (for cashback transactions)
 
   @IsString()
   @IsOptional()

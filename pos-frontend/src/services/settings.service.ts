@@ -13,6 +13,8 @@ export interface Branch {
   businessAddress?: string | null;
   businessPhone?: string | null;
   receiptFooter?: string | null;
+  cashbackCapital: number;
+  cashbackServiceChargeRate: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -29,6 +31,13 @@ export interface UpdateBranchData {
   businessAddress?: string;
   businessPhone?: string;
   receiptFooter?: string;
+  cashbackCapital?: number;
+  cashbackServiceChargeRate?: number;
+}
+
+export interface AdjustCashbackCapitalData {
+  amount: number; // Positive to add, negative to subtract
+  notes?: string;
 }
 
 export const settingsService = {
@@ -44,6 +53,26 @@ export const settingsService = {
       '/settings/branch',
       data,
     );
+    return response.data.data;
+  },
+
+  async adjustCashbackCapital(
+    data: AdjustCashbackCapitalData,
+  ): Promise<{
+    previousCapital: number;
+    adjustment: number;
+    newCapital: number;
+    notes?: string;
+  }> {
+    const response = await api.post<{
+      success: true;
+      data: {
+        previousCapital: number;
+        adjustment: number;
+        newCapital: number;
+        notes?: string;
+      };
+    }>('/settings/cashback-capital/adjust', data);
     return response.data.data;
   },
 };

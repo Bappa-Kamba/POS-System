@@ -76,6 +76,7 @@ export class ReportsService {
       },
       include: {
         items: true,
+        payments: true, // Need payments for cashback profit calculation
       },
     });
 
@@ -91,15 +92,26 @@ export class ReportsService {
       },
       include: {
         items: true,
+        payments: true, // Need payments for cashback profit calculation
       },
     });
 
-    // Calculate today's metrics
-    const todayRevenue = todaySales.reduce(
+    // Separate purchase and cashback for today
+    const todayPurchaseSales = todaySales.filter((sale) => sale.transactionType === 'PURCHASE');
+    const todayCashbackSales = todaySales.filter((sale) => sale.transactionType === 'CASHBACK');
+
+    // Calculate today's metrics (net)
+    const todayPurchaseRevenue = todayPurchaseSales.reduce(
       (sum, sale) => sum + sale.totalAmount,
       0,
     );
-    const todayProfit = todaySales.reduce((sum, sale) => {
+    const todayCashbackRevenue = todayCashbackSales.reduce(
+      (sum, sale) => sum + sale.totalAmount,
+      0,
+    );
+    const todayRevenue = todayPurchaseRevenue - todayCashbackRevenue; // Net revenue
+
+    const todayPurchaseProfit = todayPurchaseSales.reduce((sum, sale) => {
       const saleProfit = sale.items.reduce(
         (itemSum, item) =>
           itemSum + (item.unitPrice - item.costPrice) * item.quantity,
@@ -107,13 +119,32 @@ export class ReportsService {
       );
       return sum + saleProfit;
     }, 0);
+    
+    // Cashback profit = service charge (total received - amount given)
+    const todayCashbackProfit = todayCashbackSales.reduce((sum, sale) => {
+      // Get payments to calculate service charge
+      const totalReceived = sale.payments.reduce((pSum, p) => pSum + p.amount, 0);
+      const serviceCharge = totalReceived - sale.totalAmount; // This is the profit
+      return sum + serviceCharge;
+    }, 0);
+    
+    const todayProfit = todayPurchaseProfit + todayCashbackProfit; // Net profit (purchase profit + cashback service charge)
     const todaySalesCount = todaySales.length;
 
-    // Calculate yesterday's metrics
-    const yesterdayRevenue = yesterdaySales.reduce(
+    // Separate purchase and cashback for yesterday
+    const yesterdayPurchaseSales = yesterdaySales.filter((sale) => sale.transactionType === 'PURCHASE');
+    const yesterdayCashbackSales = yesterdaySales.filter((sale) => sale.transactionType === 'CASHBACK');
+
+    // Calculate yesterday's metrics (net)
+    const yesterdayPurchaseRevenue = yesterdayPurchaseSales.reduce(
       (sum, sale) => sum + sale.totalAmount,
       0,
     );
+    const yesterdayCashbackRevenue = yesterdayCashbackSales.reduce(
+      (sum, sale) => sum + sale.totalAmount,
+      0,
+    );
+    const yesterdayRevenue = yesterdayPurchaseRevenue - yesterdayCashbackRevenue; // Net revenue
     const yesterdaySalesCount = yesterdaySales.length;
 
     // Revenue comparison
@@ -178,6 +209,17 @@ export class ReportsService {
         todayRevenue,
         revenueChange,
         salesCountChange,
+        // Separate purchase and cashback metrics
+        purchase: {
+          count: todayPurchaseSales.length,
+          revenue: todayPurchaseRevenue,
+          profit: todayPurchaseProfit,
+        },
+        cashback: {
+          count: todayCashbackSales.length,
+          revenue: todayCashbackRevenue,
+          profit: todayCashbackProfit,
+        },
       },
       profit: {
         grossProfit: todayProfit,
@@ -194,6 +236,7 @@ export class ReportsService {
         id: sale.id,
         receiptNumber: sale.receiptNumber,
         createdAt: sale.createdAt,
+        transactionType: sale.transactionType,
         cashier: sale.cashier.firstName
           ? `${sale.cashier.firstName} ${sale.cashier.lastName || ''}`.trim()
           : sale.cashier.username,
@@ -554,9 +597,10 @@ export class ReportsService {
       },
       paymentStatus: PaymentStatus.PAID,
       ...(params.cashierId && { cashierId: params.cashierId }),
+      ...(params.transactionType && { transactionType: params.transactionType }),
     };
 
-    // Fetch all sales with items
+    // Fetch all sales with items and payments
     const sales = await this.prisma.sale.findMany({
       where,
       include: {
@@ -577,6 +621,7 @@ export class ReportsService {
             },
           },
         },
+        payments: true, // Need payments for cashback profit calculation
         cashier: {
           select: {
             id: true,
@@ -591,10 +636,14 @@ export class ReportsService {
       },
     });
 
-    // Calculate summary
-    const totalSales = sales.length;
-    const totalRevenue = sales.reduce((sum, sale) => sum + sale.totalAmount, 0);
-    const totalProfit = sales.reduce((sum, sale) => {
+    // Separate purchase and cashback transactions
+    const purchaseSales = sales.filter((sale) => sale.transactionType === 'PURCHASE');
+    const cashbackSales = sales.filter((sale) => sale.transactionType === 'CASHBACK');
+
+    // Calculate summary for purchases
+    const purchaseTotalSales = purchaseSales.length;
+    const purchaseTotalRevenue = purchaseSales.reduce((sum, sale) => sum + sale.totalAmount, 0);
+    const purchaseTotalProfit = purchaseSales.reduce((sum, sale) => {
       const saleProfit = sale.items.reduce(
         (itemSum, item) =>
           itemSum + (item.unitPrice - item.costPrice) * item.quantity,
@@ -602,6 +651,28 @@ export class ReportsService {
       );
       return sum + saleProfit;
     }, 0);
+
+    // Calculate summary for cashbacks
+    // For cashback: revenue = amount given (negative), profit = service charge (positive)
+    const cashbackTotalSales = cashbackSales.length;
+    const cashbackTotalRevenue = cashbackSales.reduce((sum, sale) => sum + sale.totalAmount, 0);
+    // Cashback profit is the service charge, which is stored in notes or calculated from payments
+    // Service charge = total received - amount given
+    // We can extract it from payments (total payment amount - sale total amount)
+    const cashbackTotalProfit = cashbackSales.reduce((sum, sale) => {
+      // For cashback, profit is the service charge
+      // Customer sends: amount + service charge
+      // We give: amount
+      // Profit: service charge = total received - amount given
+      const totalReceived = sale.payments.reduce((pSum, p) => pSum + p.amount, 0);
+      const serviceCharge = totalReceived - sale.totalAmount; // This is the profit
+      return sum + serviceCharge;
+    }, 0);
+
+    // Overall totals
+    const totalSales = sales.length;
+    const totalRevenue = purchaseTotalRevenue - cashbackTotalRevenue; // Net revenue
+    const totalProfit = purchaseTotalProfit - cashbackTotalProfit; // Net profit
     const averageOrderValue = totalSales > 0 ? totalRevenue / totalSales : 0;
 
     // Group by period
@@ -640,6 +711,17 @@ export class ReportsService {
         totalProfit,
         averageOrderValue,
         profitMargin: totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0,
+        // Separate purchase and cashback metrics
+        purchase: {
+          totalSales: purchaseTotalSales,
+          totalRevenue: purchaseTotalRevenue,
+          totalProfit: purchaseTotalProfit,
+        },
+        cashback: {
+          totalSales: cashbackTotalSales,
+          totalRevenue: cashbackTotalRevenue,
+          totalProfit: cashbackTotalProfit,
+        },
       },
       breakdown,
       topProducts,
@@ -650,6 +732,7 @@ export class ReportsService {
         id: sale.id,
         receiptNumber: sale.receiptNumber,
         date: sale.createdAt,
+        transactionType: sale.transactionType,
         cashier: sale.cashier.firstName
           ? `${sale.cashier.firstName} ${sale.cashier.lastName || ''}`.trim()
           : sale.cashier.username,

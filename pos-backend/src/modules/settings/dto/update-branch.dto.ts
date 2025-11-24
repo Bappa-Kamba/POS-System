@@ -53,5 +53,16 @@ export class UpdateBranchDto {
   @IsString()
   @IsOptional()
   receiptFooter?: string;
+
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  cashbackCapital?: number;
+
+  @IsNumber()
+  @Min(0)
+  @Max(1)
+  @IsOptional()
+  cashbackServiceChargeRate?: number;
 }
 
