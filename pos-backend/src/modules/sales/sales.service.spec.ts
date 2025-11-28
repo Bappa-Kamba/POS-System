@@ -2,7 +2,13 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { SalesService } from './sales.service';
 import { PrismaService } from '../../prisma/prisma.service';
-import { PaymentStatus, PaymentMethod, ProductCategory, UnitType } from '@prisma/client';
+import { SessionsService } from '../sessions/sessions.service';
+import {
+  PaymentStatus,
+  PaymentMethod,
+  ProductCategory,
+  UnitType,
+} from '@prisma/client';
 
 describe('SalesService', () => {
   let service: SalesService;
@@ -21,6 +27,7 @@ describe('SalesService', () => {
     branchId: 'branch-1',
     category: ProductCategory.DRINKS,
     unitType: UnitType.PIECE,
+    isActive: true,
   };
 
   const mockBranch = {
@@ -38,6 +45,7 @@ describe('SalesService', () => {
     },
     product: {
       findUnique: jest.fn(),
+      update: jest.fn(),
     },
     productVariant: {
       findUnique: jest.fn(),
@@ -65,11 +73,18 @@ describe('SalesService', () => {
           provide: PrismaService,
           useValue: mockPrismaService,
         },
+        {
+          provide: SessionsService,
+          useValue: {
+            // Add mock methods as needed
+            getActiveSession: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
     service = module.get<SalesService>(SalesService);
-    prisma = module.get(PrismaService) as jest.Mocked<PrismaService>;
+    prisma = module.get(PrismaService);
   });
 
   afterEach(() => {
@@ -159,6 +174,7 @@ describe('SalesService', () => {
       };
 
       prisma.sale.create.mockResolvedValue(mockSale);
+      prisma.sale.findUnique.mockResolvedValue(mockSale as any);
 
       const result = await service.create(createDto, 'cashier-1', 'branch-1');
 
@@ -179,14 +195,20 @@ describe('SalesService', () => {
     });
 
     it('should throw BadRequestException when insufficient stock', async () => {
-      const productWithLowStock = { ...mockProduct, quantityInStock: 1, isActive: true };
+      const productWithLowStock = {
+        ...mockProduct,
+        quantityInStock: 1,
+        isActive: true,
+      };
       prisma.branch.findUnique.mockResolvedValue(mockBranch);
       prisma.sale.count.mockResolvedValue(0);
-      
+
       // Mock product lookup - first call (before transaction) and inside transaction
-      const productFindUniqueMock = jest.fn().mockResolvedValue(productWithLowStock);
+      const productFindUniqueMock = jest
+        .fn()
+        .mockResolvedValue(productWithLowStock);
       prisma.product.findUnique = productFindUniqueMock;
-      
+
       prisma.$transaction.mockImplementation(async (callback) => {
         // Inside transaction, product should also be found
         const transactionPrisma = {
@@ -233,4 +255,3 @@ describe('SalesService', () => {
     });
   });
 });
-

@@ -28,6 +28,7 @@ describe('InventoryService', () => {
     quantityInStock: 30,
     lowStockThreshold: 5,
     isActive: true,
+    product: mockProduct,
   };
 
   const mockPrismaService = {
@@ -41,6 +42,8 @@ describe('InventoryService', () => {
     },
     inventoryLog: {
       create: jest.fn(),
+      findMany: jest.fn(),
+      count: jest.fn(),
     },
   };
 
@@ -56,7 +59,7 @@ describe('InventoryService', () => {
     }).compile();
 
     service = module.get<InventoryService>(InventoryService);
-    prisma = module.get(PrismaService) as jest.Mocked<PrismaService>;
+    prisma = module.get(PrismaService);
   });
 
   afterEach(() => {
@@ -126,7 +129,11 @@ describe('InventoryService', () => {
         create: jest.fn().mockResolvedValue({}),
       } as any;
 
-      const result = await service.adjustStock(variantDto, 'user-1', 'branch-1');
+      const result = await service.adjustStock(
+        variantDto,
+        'user-1',
+        'branch-1',
+      );
 
       expect(result).toBeDefined();
       expect(prisma.productVariant.update).toHaveBeenCalledWith({
@@ -186,15 +193,17 @@ describe('InventoryService', () => {
       prisma.inventoryLog.findMany = jest.fn().mockResolvedValue(mockLogs);
       prisma.inventoryLog.count = jest.fn().mockResolvedValue(1);
 
-      const result = await service.findAllLogs({
-        page: 1,
-        limit: 20,
-        productId: 'product-1',
-      });
+      const result = await service.getInventoryLogs(
+        {
+          page: '1',
+          limit: '20',
+          productId: 'product-1',
+        },
+        'branch-1',
+      );
 
       expect(result.data).toEqual(mockLogs);
       expect(result.meta.total).toBe(1);
     });
   });
 });
-

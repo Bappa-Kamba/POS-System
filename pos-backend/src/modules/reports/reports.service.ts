@@ -8,6 +8,9 @@ import {
   format,
   startOfWeek,
   startOfMonth,
+  startOfYear,
+  addMonths,
+  subMonths,
 } from 'date-fns';
 import {
   SalesReportDto,
@@ -15,6 +18,7 @@ import {
   ExportReportDto,
   ReportType,
   ExportFormat,
+  ReportFrequency,
 } from './dto';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
@@ -52,8 +56,208 @@ export class ReportsService {
   constructor(private readonly prisma: PrismaService) {}
 
   /**
-   * Get dashboard statistics
+   * Calculate date range based on report frequency
+   * Used to automatically determine start and end dates for reports
    */
+  private getDateRangeByFrequency(
+    frequency: ReportFrequency,
+    referenceDate: Date = new Date(),
+  ): { startDate: Date; endDate: Date; label: string } {
+    const endDate = endOfDay(referenceDate);
+
+    switch (frequency) {
+      case ReportFrequency.DAILY:
+        return {
+          startDate: startOfDay(referenceDate),
+          endDate,
+          label: `Daily Report - ${format(referenceDate, 'MMM dd, yyyy')}`,
+        };
+
+      case ReportFrequency.WEEKLY:
+        return {
+          startDate: startOfDay(
+            startOfWeek(referenceDate, { weekStartsOn: 1 }),
+          ),
+          endDate,
+          label: `Weekly Report - Week of ${format(startOfWeek(referenceDate, { weekStartsOn: 1 }), 'MMM dd, yyyy')}`,
+        };
+
+      case ReportFrequency.MONTHLY:
+        return {
+          startDate: startOfDay(startOfMonth(referenceDate)),
+          endDate,
+          label: `Monthly Report - ${format(referenceDate, 'MMMM yyyy')}`,
+        };
+
+      case ReportFrequency.QUARTERLY:
+        const quarter = Math.floor(referenceDate.getMonth() / 3);
+        const quarterStart = new Date(
+          referenceDate.getFullYear(),
+          quarter * 3,
+          1,
+        );
+        return {
+          startDate: startOfDay(quarterStart),
+          endDate,
+          label: `Q${quarter + 1} ${referenceDate.getFullYear()} Report`,
+        };
+
+      case ReportFrequency.SEMI_ANNUAL:
+        const halfYear = referenceDate.getMonth() >= 6 ? 1 : 0;
+        const halfYearStart = new Date(
+          referenceDate.getFullYear(),
+          halfYear * 6,
+          1,
+        );
+        return {
+          startDate: startOfDay(halfYearStart),
+          endDate,
+          label: `${halfYear === 0 ? 'H1' : 'H2'} ${referenceDate.getFullYear()} Report`,
+        };
+
+      case ReportFrequency.YEARLY:
+        return {
+          startDate: startOfDay(startOfYear(referenceDate)),
+          endDate,
+          label: `Annual Report - ${referenceDate.getFullYear()}`,
+        };
+
+      default:
+        return {
+          startDate: startOfDay(referenceDate),
+          endDate,
+          label: `Report - ${format(referenceDate, 'MMM dd, yyyy')}`,
+        };
+    }
+  }
+
+  /**
+   * Get list of sessions in a report with frequency annotations
+   * Shows session count, user count, and total sales per frequency period
+   */
+  async getSessionsReport(
+    branchId: string,
+    startDate: Date,
+    endDate: Date,
+    frequency: ReportFrequency,
+  ) {
+    const sessions = await this.prisma.session.findMany({
+      where: {
+        branchId,
+        startTime: {
+          gte: startDate,
+          lte: endDate,
+        },
+        status: 'CLOSED', // Only closed sessions
+      },
+      include: {
+        openedBy: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            username: true,
+          },
+        },
+        closedBy: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            username: true,
+          },
+        },
+        sales: {
+          select: {
+            totalAmount: true,
+            transactionType: true,
+          },
+        },
+      },
+      orderBy: {
+        startTime: 'desc',
+      },
+    });
+
+    // Group sessions by frequency period
+    const groupedSessions = this.groupByFrequency(sessions, frequency);
+
+    // Annotate sessions with frequency information
+    return {
+      frequency,
+      period: this.getDateRangeByFrequency(endDate, frequency),
+      totalSessions: sessions.length,
+      groupedSessions,
+      sessions: sessions.map((session) => ({
+        ...session,
+        summary: {
+          totalSalesCount: session.sales.length,
+          totalRevenue: session.sales.reduce(
+            (sum, s) => sum + s.totalAmount,
+            0,
+          ),
+          durationMinutes: session.endTime
+            ? Math.round(
+                (session.endTime.getTime() - session.startTime.getTime()) /
+                  60000,
+              )
+            : 0,
+          cashVariance:
+            (session.closingBalance || 0) -
+            (session.openingBalance +
+              session.sales
+                .filter((s) => s.transactionType === 'PURCHASE')
+                .reduce((sum, s) => sum + s.totalAmount, 0)),
+        },
+      })),
+    };
+  }
+
+  /**
+   * Group sessions by frequency period
+   */
+  private groupByFrequency(sessions: any[], frequency: ReportFrequency): any {
+    const grouped: { [key: string]: any[] } = {};
+
+    sessions.forEach((session) => {
+      let key: string;
+
+      switch (frequency) {
+        case ReportFrequency.DAILY:
+          key = format(session.startTime, 'yyyy-MM-dd');
+          break;
+        case ReportFrequency.WEEKLY:
+          const weekStart = startOfWeek(session.startTime, {
+            weekStartsOn: 1,
+          });
+          key = `Week of ${format(weekStart, 'yyyy-MM-dd')}`;
+          break;
+        case ReportFrequency.MONTHLY:
+          key = format(session.startTime, 'yyyy-MM');
+          break;
+        case ReportFrequency.QUARTERLY:
+          const quarter = Math.floor(session.startTime.getMonth() / 3);
+          key = `Q${quarter + 1} ${session.startTime.getFullYear()}`;
+          break;
+        case ReportFrequency.SEMI_ANNUAL:
+          const halfYear = session.startTime.getMonth() >= 6 ? 'H2' : 'H1';
+          key = `${halfYear} ${session.startTime.getFullYear()}`;
+          break;
+        case ReportFrequency.YEARLY:
+          key = `${session.startTime.getFullYear()}`;
+          break;
+        default:
+          key = format(session.startTime, 'yyyy-MM-dd');
+      }
+
+      if (!grouped[key]) {
+        grouped[key] = [];
+      }
+      grouped[key].push(session);
+    });
+
+    return grouped;
+  }
   async getDashboardStats(branchId: string) {
     const today = new Date();
     const yesterday = subDays(today, 1);
@@ -98,8 +302,12 @@ export class ReportsService {
     });
 
     // Separate purchase and cashback for today
-    const todayPurchaseSales = todaySales.filter((sale) => sale.transactionType === 'PURCHASE');
-    const todayCashbackSales = todaySales.filter((sale) => sale.transactionType === 'CASHBACK');
+    const todayPurchaseSales = todaySales.filter(
+      (sale) => sale.transactionType === 'PURCHASE',
+    );
+    const todayCashbackSales = todaySales.filter(
+      (sale) => sale.transactionType === 'CASHBACK',
+    );
 
     // Calculate today's metrics (net)
     // salesOverview should only reflect PURCHASE transactions
@@ -107,17 +315,20 @@ export class ReportsService {
       (sum, sale) => sum + sale.totalAmount,
       0,
     );
-    
+
     // Cashback stats
     const todayCashbackGiven = todayCashbackSales.reduce(
       (sum, sale) => sum + sale.totalAmount,
       0,
     );
-    
+
     // Cashback profit = service charge (total received - amount given)
     const todayCashbackProfit = todayCashbackSales.reduce((sum, sale) => {
       // Get payments to calculate service charge
-      const totalReceived = sale.payments.reduce((pSum, p) => pSum + p.amount, 0);
+      const totalReceived = sale.payments.reduce(
+        (pSum, p) => pSum + p.amount,
+        0,
+      );
       const serviceCharge = totalReceived - sale.totalAmount; // This is the profit
       return sum + serviceCharge;
     }, 0);
@@ -130,13 +341,15 @@ export class ReportsService {
       );
       return sum + saleProfit;
     }, 0);
-    
+
     const todayProfit = todayPurchaseProfit + todayCashbackProfit; // Net profit (purchase profit + cashback service charge)
     const todaySalesCount = todayPurchaseSales.length; // Only count purchases for sales count
 
     // Separate purchase and cashback for yesterday
-    const yesterdayPurchaseSales = yesterdaySales.filter((sale) => sale.transactionType === 'PURCHASE');
-    
+    const yesterdayPurchaseSales = yesterdaySales.filter(
+      (sale) => sale.transactionType === 'PURCHASE',
+    );
+
     // Calculate yesterday's metrics (net)
     const yesterdayPurchaseRevenue = yesterdayPurchaseSales.reduce(
       (sum, sale) => sum + sale.totalAmount,
@@ -147,7 +360,9 @@ export class ReportsService {
     // Revenue comparison
     const revenueChange =
       yesterdayPurchaseRevenue > 0
-        ? ((todayPurchaseRevenue - yesterdayPurchaseRevenue) / yesterdayPurchaseRevenue) * 100
+        ? ((todayPurchaseRevenue - yesterdayPurchaseRevenue) /
+            yesterdayPurchaseRevenue) *
+          100
         : todayPurchaseRevenue > 0
           ? 100
           : 0;
@@ -588,7 +803,10 @@ export class ReportsService {
       },
       paymentStatus: PaymentStatus.PAID,
       ...(params.cashierId && { cashierId: params.cashierId }),
-      ...(params.transactionType && { transactionType: params.transactionType }),
+      ...(params.transactionType && {
+        transactionType: params.transactionType,
+      }),
+      ...(params.sessionId && { sessionId: params.sessionId }),
     };
 
     // Fetch all sales with items and payments
@@ -628,12 +846,19 @@ export class ReportsService {
     });
 
     // Separate purchase and cashback transactions
-    const purchaseSales = sales.filter((sale) => sale.transactionType === 'PURCHASE');
-    const cashbackSales = sales.filter((sale) => sale.transactionType === 'CASHBACK');
+    const purchaseSales = sales.filter(
+      (sale) => sale.transactionType === 'PURCHASE',
+    );
+    const cashbackSales = sales.filter(
+      (sale) => sale.transactionType === 'CASHBACK',
+    );
 
     // Calculate summary for purchases
     const purchaseTotalSales = purchaseSales.length;
-    const purchaseTotalRevenue = purchaseSales.reduce((sum, sale) => sum + sale.totalAmount, 0);
+    const purchaseTotalRevenue = purchaseSales.reduce(
+      (sum, sale) => sum + sale.totalAmount,
+      0,
+    );
     const purchaseTotalProfit = purchaseSales.reduce((sum, sale) => {
       const saleProfit = sale.items.reduce(
         (itemSum, item) =>
@@ -646,7 +871,10 @@ export class ReportsService {
     // Calculate summary for cashbacks
     // For cashback: revenue = amount given (negative), profit = service charge (positive)
     const cashbackTotalSales = cashbackSales.length;
-    const cashbackTotalRevenue = cashbackSales.reduce((sum, sale) => sum + sale.totalAmount, 0);
+    const cashbackTotalRevenue = cashbackSales.reduce(
+      (sum, sale) => sum + sale.totalAmount,
+      0,
+    );
     // Cashback profit is the service charge, which is stored in notes or calculated from payments
     // Service charge = total received - amount given
     // We can extract it from payments (total payment amount - sale total amount)
@@ -655,7 +883,10 @@ export class ReportsService {
       // Customer sends: amount + service charge
       // We give: amount
       // Profit: service charge = total received - amount given
-      const totalReceived = sale.payments.reduce((pSum, p) => pSum + p.amount, 0);
+      const totalReceived = sale.payments.reduce(
+        (pSum, p) => pSum + p.amount,
+        0,
+      );
       const serviceCharge = totalReceived - sale.totalAmount; // This is the profit
       return sum + serviceCharge;
     }, 0);
@@ -742,6 +973,25 @@ export class ReportsService {
         paymentStatus: sale.paymentStatus,
       })),
     };
+  }
+
+  /**
+   * Get session report
+   */
+  async getSessionReport(branchId: string, sessionId: string) {
+    const session = await this.prisma.session.findUnique({
+      where: { id: sessionId },
+    });
+
+    if (!session) {
+      throw new Error('Session not found');
+    }
+
+    return this.getSalesReport(branchId, {
+      startDate: session.startTime.toISOString(),
+      endDate: (session.endTime || new Date()).toISOString(),
+      sessionId: sessionId,
+    });
   }
 
   /**
@@ -894,7 +1144,7 @@ export class ReportsService {
       const reportData = await this.getSalesReport(branchId, {
         startDate: params.startDate,
         endDate: params.endDate,
-        transactionType: 'CASHBACK' as any, // Force type as it might not be in DTO yet but service supports it
+        transactionType: 'CASHBACK',
       });
       filename = `cashback-report-${format(new Date(params.startDate), 'yyyyMMdd')}-${format(new Date(params.endDate), 'yyyyMMdd')}`;
 
@@ -943,11 +1193,14 @@ export class ReportsService {
       }
 
       const existing = grouped.get(key) || { sales: 0, revenue: 0, profit: 0 };
-      
+
       let saleProfit = 0;
       if (sale.transactionType === 'CASHBACK') {
         // For cashback, profit is the service charge
-        const totalReceived = sale.payments.reduce((pSum, p) => pSum + p.amount, 0);
+        const totalReceived = sale.payments.reduce(
+          (pSum, p) => pSum + p.amount,
+          0,
+        );
         saleProfit = totalReceived - sale.totalAmount;
       } else {
         // For purchases, profit is (price - cost) * quantity
@@ -1579,7 +1832,10 @@ export class ReportsService {
       ['Metric', 'Value'],
       ['Total Transactions', reportData.summary.cashback.totalSales],
       ['Total Amount Given', reportData.summary.cashback.totalRevenue],
-      ['Total Service Charge (Profit)', reportData.summary.cashback.totalProfit],
+      [
+        'Total Service Charge (Profit)',
+        reportData.summary.cashback.totalProfit,
+      ],
     ];
     const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
     XLSX.utils.book_append_sheet(workbook, summarySheet, 'Summary');
@@ -1640,8 +1896,14 @@ export class ReportsService {
     const summaryData = [
       ['Metric', 'Value'],
       ['Total Transactions', reportData.summary.cashback.totalSales.toString()],
-      ['Total Amount Given', `₦${reportData.summary.cashback.totalRevenue.toFixed(2)}`],
-      ['Total Service Charge', `₦${reportData.summary.cashback.totalProfit.toFixed(2)}`],
+      [
+        'Total Amount Given',
+        `₦${reportData.summary.cashback.totalRevenue.toFixed(2)}`,
+      ],
+      [
+        'Total Service Charge',
+        `₦${reportData.summary.cashback.totalProfit.toFixed(2)}`,
+      ],
     ];
 
     autoTable(doc, {
@@ -1665,14 +1927,24 @@ export class ReportsService {
       tx.cashier,
       `₦${tx.totalAmount.toFixed(2)}`,
       // We need service charge here too
-      '-', 
+      '-',
       '-',
       tx.paymentStatus,
     ]);
 
     autoTable(doc, {
       startY: yPos,
-      head: [['Receipt #', 'Date', 'Cashier', 'Amount', 'S. Charge', 'Total', 'Status']],
+      head: [
+        [
+          'Receipt #',
+          'Date',
+          'Cashier',
+          'Amount',
+          'S. Charge',
+          'Total',
+          'Status',
+        ],
+      ],
       body: transactionsData,
       theme: 'striped',
       headStyles: { fillColor: [249, 115, 22] },

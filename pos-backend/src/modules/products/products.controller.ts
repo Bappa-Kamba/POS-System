@@ -31,7 +31,10 @@ export class ProductsController {
     @Body() createProductDto: CreateProductDto,
     @CurrentUser() user: AuthenticatedRequestUser,
   ) {
-    const product = await this.productsService.create(createProductDto, user.id);
+    const product = await this.productsService.create(
+      createProductDto,
+      user.id,
+    );
     return {
       success: true,
       data: product,
@@ -109,7 +112,11 @@ export class ProductsController {
     @Body() updateProductDto: UpdateProductDto,
     @CurrentUser() user: AuthenticatedRequestUser,
   ) {
-    const product = await this.productsService.update(id, updateProductDto, user.id);
+    const product = await this.productsService.update(
+      id,
+      updateProductDto,
+      user.id,
+    );
     return {
       success: true,
       data: product,

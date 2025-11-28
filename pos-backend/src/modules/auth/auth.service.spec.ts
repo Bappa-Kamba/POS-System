@@ -68,33 +68,37 @@ describe('AuthService', () => {
     }).compile();
 
     service = module.get(AuthService);
-    usersService = module.get(UsersService) as jest.Mocked<UsersService>;
-    jwtService = module.get(JwtService) as jest.Mocked<JwtService>;
-    configService = module.get(ConfigService) as jest.Mocked<ConfigService>;
+    usersService = module.get(UsersService);
+    jwtService = module.get(JwtService);
+    configService = module.get(ConfigService);
 
-    (configService.getOrThrow as jest.Mock).mockImplementation((key: string) => {
-      switch (key) {
-        case 'JWT_SECRET':
-          return 'jwt-secret';
-        case 'JWT_REFRESH_SECRET':
-          return 'refresh-secret';
-        default:
-          throw new Error(`Missing config for ${key}`);
-      }
-    });
+    (configService.getOrThrow as jest.Mock).mockImplementation(
+      (key: string) => {
+        switch (key) {
+          case 'JWT_SECRET':
+            return 'jwt-secret';
+          case 'JWT_REFRESH_SECRET':
+            return 'refresh-secret';
+          default:
+            throw new Error(`Missing config for ${key}`);
+        }
+      },
+    );
 
-    (configService.get as jest.Mock).mockImplementation((key: string, defaultValue?: unknown) => {
-      switch (key) {
-        case 'JWT_EXPIRATION':
-          return '24h';
-        case 'JWT_REFRESH_EXPIRATION':
-          return '7d';
-        case 'BCRYPT_ROUNDS':
-          return '10';
-        default:
-          return defaultValue;
-      }
-    });
+    (configService.get as jest.Mock).mockImplementation(
+      (key: string, defaultValue?: unknown) => {
+        switch (key) {
+          case 'JWT_EXPIRATION':
+            return '24h';
+          case 'JWT_REFRESH_EXPIRATION':
+            return '7d';
+          case 'BCRYPT_ROUNDS':
+            return '10';
+          default:
+            return defaultValue;
+        }
+      },
+    );
   });
 
   afterEach(() => {
@@ -109,20 +113,26 @@ describe('AuthService', () => {
       jwtService.signAsync.mockResolvedValueOnce('access-token');
       jwtService.signAsync.mockResolvedValueOnce('refresh-token');
 
-      const result = await service.login({ username: 'admin', password: 'password' });
+      const result = await service.login({
+        username: 'admin',
+        password: 'password',
+      });
 
       expect(result.tokens.accessToken).toBe('access-token');
       expect(result.tokens.refreshToken).toBe('refresh-token');
-      expect(usersService.updateRefreshToken).toHaveBeenCalledWith('user-1', 'hashed-refresh-token');
+      expect(usersService.updateRefreshToken).toHaveBeenCalledWith(
+        'user-1',
+        'hashed-refresh-token',
+      );
     });
 
     it('should throw when credentials are invalid', async () => {
       usersService.findByUsername.mockResolvedValue(mockUser);
       (bcrypt.compare as jest.Mock).mockResolvedValue(false);
 
-      await expect(service.login({ username: 'admin', password: 'wrong' })).rejects.toThrow(
-        'Invalid credentials',
-      );
+      await expect(
+        service.login({ username: 'admin', password: 'wrong' }),
+      ).rejects.toThrow('Invalid credentials');
     });
   });
 
@@ -140,10 +150,15 @@ describe('AuthService', () => {
       jwtService.signAsync.mockResolvedValueOnce('new-access');
       jwtService.signAsync.mockResolvedValueOnce('new-refresh');
 
-      const result = await service.refreshTokens({ refreshToken: 'refresh-token' });
+      const result = await service.refreshTokens({
+        refreshToken: 'refresh-token',
+      });
 
       expect(result.accessToken).toBe('new-access');
-      expect(usersService.updateRefreshToken).toHaveBeenCalledWith('user-1', 'new-refresh-hash');
+      expect(usersService.updateRefreshToken).toHaveBeenCalledWith(
+        'user-1',
+        'new-refresh-hash',
+      );
     });
 
     it('should throw unauthorized for invalid refresh token', async () => {
@@ -151,10 +166,9 @@ describe('AuthService', () => {
         throw new Error('invalid token');
       });
 
-      await expect(service.refreshTokens({ refreshToken: 'bad-token' })).rejects.toThrow(
-        'Invalid refresh token',
-      );
+      await expect(
+        service.refreshTokens({ refreshToken: 'bad-token' }),
+      ).rejects.toThrow('Invalid refresh token');
     });
   });
 });
-

@@ -6,6 +6,7 @@ import App from './App';
 import './index.css';
 import { ErrorBoundary } from './router/ErrorBoundary';
 import { useThemeStore } from './store/themeStore';
+import { SessionProvider } from './contexts/SessionContext';
 
 const queryClient = new QueryClient();
 
@@ -39,10 +40,12 @@ ReactDOM.createRoot(document.getElementById('app') as HTMLElement).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <ErrorBoundary>
-          <ThemeInitializer />
-          <App />
-        </ErrorBoundary>
+        <SessionProvider>
+          <ErrorBoundary>
+            <ThemeInitializer />
+            <App />
+          </ErrorBoundary>
+        </SessionProvider>
       </BrowserRouter>
     </QueryClientProvider>
   </React.StrictMode>,

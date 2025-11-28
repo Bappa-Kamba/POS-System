@@ -9,11 +9,16 @@ import { CreateSaleDto, FindAllSalesDto } from './dto';
 import { PaymentStatus, InventoryChangeType, Prisma } from '@prisma/client';
 import { format, startOfDay, endOfDay } from 'date-fns';
 
+import { SessionsService } from '../sessions/sessions.service';
+
 @Injectable()
 export class SalesService {
   private readonly logger = new Logger(SalesService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly sessionsService: SessionsService,
+  ) {}
 
   /**
    * Generate unique receipt number
@@ -45,6 +50,13 @@ export class SalesService {
   async create(data: CreateSaleDto, cashierId: string, branchId: string) {
     const transactionType = data.transactionType || 'PURCHASE';
 
+    // Get active session
+    const activeSession = await this.sessionsService.getActiveSession(branchId);
+    // Optional: Enforce active session
+    // if (!activeSession) {
+    //   throw new BadRequestException('No active session found. Please start a session first.');
+    // }
+
     // Validate based on transaction type
     if (transactionType === 'PURCHASE') {
       if (!data.items || data.items.length === 0) {
@@ -52,7 +64,9 @@ export class SalesService {
       }
     } else if (transactionType === 'CASHBACK') {
       if (!data.cashbackAmount || data.cashbackAmount <= 0) {
-        throw new BadRequestException('Cashback amount is required and must be greater than 0');
+        throw new BadRequestException(
+          'Cashback amount is required and must be greater than 0',
+        );
       }
       // Cashback doesn't need items
     }
@@ -96,10 +110,10 @@ export class SalesService {
 
       const cashbackAmount = data.cashbackAmount!;
       // Use manual service charge if provided, otherwise default to 0 (or throw error if required)
-      const serviceCharge = data.serviceCharge !== undefined ? data.serviceCharge : 0;
+      const serviceCharge =
+        data.serviceCharge !== undefined ? data.serviceCharge : 0;
       const totalReceived = cashbackAmount + serviceCharge; // Customer sends this
 
-      // Check if enough capital
       if (branch.cashbackCapital < cashbackAmount) {
         throw new BadRequestException(
           `Insufficient cashback capital. Available: ${branch.cashbackCapital}, Required: ${cashbackAmount}`,
@@ -129,7 +143,8 @@ export class SalesService {
         // Calculate payment totals
         const totalPaid = data.payments.reduce((sum, p) => sum + p.amount, 0);
         const amountDue = totalAmount - totalPaid;
-        const changeGiven = totalPaid > totalAmount ? totalPaid - totalAmount : 0;
+        const changeGiven =
+          totalPaid > totalAmount ? totalPaid - totalAmount : 0;
         const paymentStatus =
           amountDue <= 0 ? PaymentStatus.PAID : PaymentStatus.PARTIAL;
 
@@ -317,6 +332,7 @@ export class SalesService {
           receiptNumber,
           cashierId,
           branchId,
+          sessionId: activeSession?.id,
           transactionType,
           subtotal,
           taxAmount,
@@ -441,9 +457,6 @@ export class SalesService {
 
         // Calculate service charge (profit)
         const cashbackAmount = totalAmount; // Amount given to customer (subtotal)
-        // Service charge is the difference between what customer paid and what they received
-        const serviceCharge = totalPaid - cashbackAmount;
-        const totalReceived = totalPaid; // Customer sends this amount
 
         // Check if enough capital
         if (branch.cashbackCapital < cashbackAmount) {
@@ -627,7 +640,9 @@ export class SalesService {
 
     // Cashback transactions don't generate receipts
     if (sale.transactionType === 'CASHBACK') {
-      throw new BadRequestException('Cashback transactions do not generate receipts');
+      throw new BadRequestException(
+        'Cashback transactions do not generate receipts',
+      );
     }
 
     const cashierName = sale.cashier.firstName

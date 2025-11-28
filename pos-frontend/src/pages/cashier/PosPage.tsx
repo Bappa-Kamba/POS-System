@@ -17,8 +17,14 @@ import type { Variant } from '../../services/variant.service';
 import type { Payment } from '../../services/sale.service';
 import { ProductCategory } from '../../types/product';
 
+import { useSession } from '../../contexts/SessionContext';
+import { SessionControls } from '../../components/session/SessionControls';
+import { LogOut } from 'lucide-react';
+
 export const PosPage: React.FC = () => {
   const { user } = useAuth();
+  const { activeSession, isLoading: isSessionLoading } = useSession();
+  const [isSessionModalOpen, setIsSessionModalOpen] = useState(false);
   const [transactionType, setTransactionType] = useState<'PURCHASE' | 'CASHBACK' | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
@@ -205,6 +211,22 @@ export const PosPage: React.FC = () => {
     { value: 'OTHER', label: 'Other' },
   ];
 
+  // Check for active session
+  if (isSessionLoading) {
+    return <div className="flex h-screen items-center justify-center">Loading session...</div>;
+  }
+
+  if (!activeSession) {
+    return (
+      <div className="h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
+        <div className="max-w-md w-full">
+          <h1 className="text-2xl font-bold text-center mb-6">Start Session</h1>
+          <SessionControls />
+        </div>
+      </div>
+    );
+  }
+
   // Show transaction type selector if no type selected
   if (!transactionType) {
     return (
@@ -215,17 +237,26 @@ export const PosPage: React.FC = () => {
               <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
                 Point of Sale
               </h1>
-              <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
-                {user?.firstName
-                  ? `Hello, ${user.firstName}`
-                  : `Hello, ${user?.username}`}
-              </p>
+              <div className="flex items-center gap-2 mt-1">
+                <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                  {user?.firstName
+                    ? `Hello, ${user.firstName}`
+                    : `Hello, ${user?.username}`}
+                </p>
+                <span className="text-neutral-300">•</span>
+                <span className="text-sm text-green-600 font-medium bg-green-50 px-2 py-0.5 rounded-full">
+                  {activeSession.name} Session
+                </span>
+              </div>
             </div>
-            <div className="text-right">
-              <p className="text-sm text-neutral-500 dark:text-neutral-400">Branch</p>
-              <p className="font-medium text-neutral-900 dark:text-neutral-100">
-                {user?.branchId || 'N/A'}
-              </p>
+            <div className="flex items-center gap-4">
+              <div className="text-right">
+                <p className="text-sm text-neutral-500 dark:text-neutral-400">Branch</p>
+                <p className="font-medium text-neutral-900 dark:text-neutral-100">
+                  {user?.branchId || 'N/A'}
+                </p>
+              </div>
+              {/* Add a way to end session here if needed, or keep it in a separate settings area */}
             </div>
           </div>
         </div>
@@ -294,6 +325,10 @@ export const PosPage: React.FC = () => {
             </div>
             <Button variant="ghost" onClick={handleBackToSelection}>
               ← Back to Selection
+            </Button>
+            <Button variant="danger" size="sm" onClick={() => setIsSessionModalOpen(true)}>
+              <LogOut className="w-4 h-4 mr-2" />
+              End Session
             </Button>
           </div>
         </div>
@@ -364,6 +399,22 @@ export const PosPage: React.FC = () => {
             : null
         }
       />
+
+      {/* Session Control Modal */}
+      {isSessionModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white dark:bg-neutral-800 rounded-lg shadow-xl w-full max-w-md p-6 relative">
+            <button 
+              onClick={() => setIsSessionModalOpen(false)}
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+            >
+              ✕
+            </button>
+            <h2 className="text-xl font-bold mb-4">Session Management</h2>
+            <SessionControls />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

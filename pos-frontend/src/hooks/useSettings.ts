@@ -7,8 +7,9 @@ import {
 
 export const useBranch = () => {
   return useQuery({
-    queryKey: ['branch'],
+    queryKey: ["branch"],
     queryFn: () => settingsService.getBranch(),
+    retry: false,
   });
 };
 

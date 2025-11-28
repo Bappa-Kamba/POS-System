@@ -7,6 +7,15 @@ export enum ReportGroupBy {
   MONTH = 'month',
 }
 
+export enum ReportFrequency {
+  DAILY = 'daily',
+  WEEKLY = 'weekly',
+  MONTHLY = 'monthly',
+  QUARTERLY = 'quarterly',
+  SEMI_ANNUAL = 'semi-annual',
+  YEARLY = 'yearly',
+}
+
 export class SalesReportDto {
   @IsDateString()
   startDate!: string;
@@ -29,4 +38,12 @@ export class SalesReportDto {
   @IsOptional()
   @IsEnum(TransactionType)
   transactionType?: TransactionType;
+
+  @IsOptional()
+  @IsString()
+  sessionId?: string;
+
+  @IsOptional()
+  @IsEnum(ReportFrequency)
+  frequency?: ReportFrequency;
 }

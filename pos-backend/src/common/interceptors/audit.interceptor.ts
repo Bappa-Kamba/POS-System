@@ -55,9 +55,10 @@ export class AuditInterceptor implements NestInterceptor {
           // For UPDATE operations, try to get old values from the response if available
           let oldValues: string | undefined;
           if (action === AuditAction.UPDATE && data?.oldValues) {
-            oldValues = typeof data.oldValues === 'string' 
-              ? data.oldValues 
-              : JSON.stringify(data.oldValues);
+            oldValues =
+              typeof data.oldValues === 'string'
+                ? data.oldValues
+                : JSON.stringify(data.oldValues);
           }
 
           await this.prisma.auditLog.create({
@@ -85,9 +86,12 @@ export class AuditInterceptor implements NestInterceptor {
     // Remove API prefix if present
     const apiIndex = parts.findIndex((p) => p === 'api');
     const startIndex = apiIndex >= 0 ? apiIndex + 2 : 0;
-    const entityPart = parts[startIndex] || parts[parts.length - 2] || 'unknown';
+    const entityPart =
+      parts[startIndex] || parts[parts.length - 2] || 'unknown';
     // Capitalize first letter
-    return entityPart.charAt(0).toUpperCase() + entityPart.slice(1).replace(/s$/, '');
+    return (
+      entityPart.charAt(0).toUpperCase() + entityPart.slice(1).replace(/s$/, '')
+    );
   }
 
   private extractEntityId(url: string): string | null {
@@ -97,4 +101,3 @@ export class AuditInterceptor implements NestInterceptor {
     return match ? match[0] : null;
   }
 }
-

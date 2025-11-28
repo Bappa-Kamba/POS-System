@@ -19,19 +19,33 @@ import {
 import { useAuth } from '../../hooks/useAuth';
 import { useAuthStore } from '../../store/authStore';
 import { useThemeStore } from '../../store/themeStore';
+import { useSafeLogout } from '../../hooks/useSafeLogout';
+import { SessionClosingModal } from '../session/SessionClosingModal';
 
 export const Navbar = () => {
   const { user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const logout = useAuthStore((state) => state.logout);
   const { isDarkMode, toggleTheme } = useThemeStore();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const profileDropdownRef = useRef<HTMLDivElement>(null);
 
+  const {
+    handleSafeLogout,
+    handleConfirmClosingBalance,
+    handleCancel,
+    isLoading,
+    closingBalance,
+    setClosingBalance,
+    showClosingModal,
+    activeSession,
+  } = useSafeLogout({
+    onLogoutComplete: () => navigate('/login'),
+  });
+
   const handleLogout = async () => {
-    await logout();
-    navigate('/login');
+    setIsProfileOpen(false);
+    await handleSafeLogout();
   };
 
   // Close dropdown when clicking outside
@@ -243,6 +257,17 @@ export const Navbar = () => {
           })}
         </div>
       </div>
+
+      <SessionClosingModal
+        isOpen={showClosingModal}
+        isLoading={isLoading}
+        closingBalance={closingBalance}
+        onClosingBalanceChange={setClosingBalance}
+        onConfirm={handleConfirmClosingBalance}
+        onCancel={handleCancel}
+        sessionName={activeSession?.name}
+        openingBalance={activeSession?.openingBalance}
+      />
     </nav>
   );
 };

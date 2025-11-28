@@ -16,6 +16,7 @@ import { AuditModule } from './modules/audit/audit.module';
 import { SettingsModule } from './modules/settings/settings.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuditInterceptor } from './common/interceptors/audit.interceptor';
+import { SessionsModule } from './modules/sessions/sessions.module';
 
 @Module({
   imports: [
@@ -37,7 +38,9 @@ import { AuditInterceptor } from './common/interceptors/audit.interceptor';
     InventoryModule,
     ExpensesModule,
     AuditModule,
+    AuditModule,
     SettingsModule,
+    SessionsModule,
   ],
   controllers: [AppController],
   providers: [

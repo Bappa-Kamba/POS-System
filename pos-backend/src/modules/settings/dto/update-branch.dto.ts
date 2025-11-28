@@ -65,4 +65,3 @@ export class UpdateBranchDto {
   @IsOptional()
   cashbackServiceChargeRate?: number;
 }
-

@@ -12,11 +12,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { ExpensesService } from './expenses.service';
-import {
-  CreateExpenseDto,
-  UpdateExpenseDto,
-  FindAllExpensesDto,
-} from './dto';
+import { CreateExpenseDto, UpdateExpenseDto, FindAllExpensesDto } from './dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -114,4 +110,3 @@ export class ExpensesController {
     };
   }
 }
-

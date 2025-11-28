@@ -1,5 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import {
+  NotFoundException,
+  ConflictException,
+  BadRequestException,
+} from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ProductCategory, UnitType, AuditAction } from '@prisma/client';
@@ -59,7 +63,7 @@ describe('ProductsService', () => {
     }).compile();
 
     service = module.get<ProductsService>(ProductsService);
-    prisma = module.get(PrismaService) as jest.Mocked<PrismaService>;
+    prisma = module.get(PrismaService);
   });
 
   afterEach(() => {
@@ -230,4 +234,3 @@ describe('ProductsService', () => {
     });
   });
 });
-

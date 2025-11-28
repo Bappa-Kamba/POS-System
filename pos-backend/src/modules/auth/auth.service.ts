@@ -91,7 +91,7 @@ export class AuthService {
 
       const refreshMatches = await bcrypt.compare(
         refreshToken,
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+
         user.refreshTokenHash,
       );
 
@@ -108,7 +108,37 @@ export class AuthService {
     }
   }
 
-  async logout(userId: string, ipAddress?: string, userAgent?: string): Promise<void> {
+  async logout(
+    userId: string,
+    ipAddress?: string,
+    userAgent?: string,
+  ): Promise<void> {
+    // Get user to find branchId and end active session
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    // End any active session for this user's branch
+    if (user?.branchId) {
+      const activeSession = await this.prisma.session.findFirst({
+        where: {
+          branchId: user.branchId,
+          status: 'OPEN',
+        },
+      });
+
+      if (activeSession) {
+        await this.prisma.session.update({
+          where: { id: activeSession.id },
+          data: {
+            status: 'CLOSED',
+            endTime: new Date(),
+            closedById: userId,
+          },
+        });
+      }
+    }
+
     await this.usersService.updateRefreshToken(userId, null);
 
     // Log logout

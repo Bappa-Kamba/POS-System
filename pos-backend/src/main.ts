@@ -18,12 +18,15 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
       transform: true,
       transformOptions: { enableImplicitConversion: true },
+      errorHttpStatusCode: 400,
     }),
   );
 
   const corsOrigin = configService.get<string>('CORS_ORIGIN');
   app.enableCors({
-    origin: corsOrigin ? corsOrigin.split(',').map((value) => value.trim()) : true,
+    origin: corsOrigin
+      ? corsOrigin.split(',').map((value) => value.trim())
+      : true,
     credentials: true,
   });
 

@@ -23,7 +23,7 @@ export class SettingsController {
   constructor(private readonly settingsService: SettingsService) {}
 
   @Get('branch')
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.ADMIN, UserRole.CASHIER)
   async getBranch(@CurrentUser() user: AuthenticatedRequestUser) {
     const branch = await this.settingsService.getBranch(user.branchId);
     return {

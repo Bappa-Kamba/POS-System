@@ -27,10 +27,12 @@ model User {
 
   sales     Sale[]
   auditLogs AuditLog[]
+  openedSessions Session[] @relation("OpenedSessions")
+  closedSessions Session[] @relation("ClosedSessions")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
+  
   @@index([username])
   @@index([branchId])
   @@map("users")
@@ -70,6 +72,7 @@ model Branch {
   products Product[]
   sales    Sale[]
   expenses Expense[]
+  sessions Session[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -246,6 +249,10 @@ model Sale {
   customerName  String?
   customerPhone String?
 
+  // Session
+  sessionId String?
+  session   Session? @relation(fields: [sessionId], references: [id])
+
   // Relations
   items         SaleItem[]
   payments      Payment[]
@@ -343,10 +350,14 @@ model Expense {
   branchId String
   branch   Branch @relation(fields: [branchId], references: [id])
 
+  sessionId String?
+  session   Session? @relation(fields: [sessionId], references: [id])
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([branchId])
+  @@index([sessionId])
   @@index([date])
   @@index([category])
   @@map("expenses")
@@ -430,4 +441,46 @@ enum BackupStatus {
   IN_PROGRESS
   COMPLETED
   FAILED
+}
+
+// ============================================
+// SESSION MANAGEMENT
+// ============================================
+
+model Session {
+  id String @id @default(uuid())
+
+  branchId String
+  branch   Branch @relation(fields: [branchId], references: [id])
+
+  name String // "Morning", "Evening", etc.
+
+  startTime DateTime  @default(now())
+  endTime   DateTime?
+
+  status SessionStatus @default(OPEN)
+
+  openingBalance Float  @default(0)
+  closingBalance Float?
+
+  openedById String
+  openedBy   User   @relation("OpenedSessions", fields: [openedById], references: [id])
+
+  closedById String?
+  closedBy   User?   @relation("ClosedSessions", fields: [closedById], references: [id])
+
+  sales    Sale[]
+  expenses Expense[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([branchId])
+  @@index([status])
+  @@map("sessions")
+}
+
+enum SessionStatus {
+  OPEN
+  CLOSED
 }

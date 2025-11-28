@@ -6,11 +6,21 @@ export enum ReportType {
   INVENTORY = 'inventory',
   EXPENSES = 'expenses',
   CASHBACK = 'cashback',
+  SESSION = 'session',
 }
 
 export enum ExportFormat {
   PDF = 'pdf',
   EXCEL = 'excel',
+}
+
+export enum ReportFrequency {
+  DAILY = 'daily',
+  WEEKLY = 'weekly',
+  MONTHLY = 'monthly',
+  QUARTERLY = 'quarterly',
+  SEMI_ANNUAL = 'semi-annual',
+  YEARLY = 'yearly',
 }
 
 export class ExportReportDto {
@@ -25,6 +35,10 @@ export class ExportReportDto {
 
   @IsDateString()
   endDate!: string;
+
+  @IsOptional()
+  @IsEnum(ReportFrequency)
+  frequency?: ReportFrequency;
 
   @IsOptional()
   @IsObject()

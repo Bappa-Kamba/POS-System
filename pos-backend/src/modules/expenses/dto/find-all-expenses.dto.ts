@@ -40,4 +40,3 @@ export class FindAllExpensesDto {
   @IsOptional()
   branchId?: string;
 }
-
