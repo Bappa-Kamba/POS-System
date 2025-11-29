@@ -1,13 +1,14 @@
 import {
   IsString,
-  IsNotEmpty,
   IsEmail,
+  IsNotEmpty,
   IsEnum,
   IsBoolean,
   IsOptional,
   MinLength,
+  IsUUID,
 } from 'class-validator';
-import { UserRole, ProductSubdivision } from '@prisma/client';
+import { UserRole } from '@prisma/client';
 
 export class CreateUserDto {
   @IsString()
@@ -38,9 +39,9 @@ export class CreateUserDto {
   @IsNotEmpty()
   branchId!: string;
 
-  @IsEnum(ProductSubdivision)
+  @IsUUID()
   @IsOptional()
-  assignedSubdivision?: ProductSubdivision;
+  assignedSubdivisionId?: string;
 
   @IsBoolean()
   @IsOptional()

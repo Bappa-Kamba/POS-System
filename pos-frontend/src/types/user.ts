@@ -1,5 +1,3 @@
-import { ProductSubdivision } from "./subdivision";
-
 export type UserRole = "ADMIN" | "CASHIER";
 
 export interface AuthUser {
@@ -11,5 +9,5 @@ export interface AuthUser {
   firstName?: string | null;
   lastName?: string | null;
   email?: string | null;
-  assignedSubdivision?: ProductSubdivision | null;
+  assignedSubdivisionId?: string | null;
 }

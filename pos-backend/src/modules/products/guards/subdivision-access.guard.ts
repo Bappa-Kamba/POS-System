@@ -5,7 +5,7 @@ import {
   ForbiddenException,
   Logger,
 } from '@nestjs/common';
-import { UserRole, ProductSubdivision } from '@prisma/client';
+import { UserRole } from '@prisma/client';
 
 /**
  * Guard to verify user has access to product subdivision
@@ -27,7 +27,7 @@ export class SubdivisionAccessGuard implements CanActivate {
 
     // CASHIER users must have an assigned subdivision
     if (user?.role === UserRole.CASHIER) {
-      if (!user?.assignedSubdivision) {
+      if (!user?.assignedSubdivisionId) {
         this.logger.warn(
           `Unauthorized subdivision access attempt by user ${user?.id}: no subdivision assigned`,
         );

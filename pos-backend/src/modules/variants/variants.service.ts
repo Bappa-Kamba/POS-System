@@ -128,8 +128,6 @@ export class VariantsService {
                 name: true,
               },
             },
-            taxable: true,
-            taxRate: true,
           },
         },
       },

@@ -16,10 +16,7 @@ export const CartItem: React.FC<CartItemProps> = ({
   const [localQuantity, setLocalQuantity] = useState<string>(item.quantity.toString());
 
   const itemSubtotal = item.unitPrice * item.quantity;
-  const itemTaxAmount = item.taxable
-    ? itemSubtotal * item.taxRate
-    : 0;
-  const itemTotal = itemSubtotal + itemTaxAmount;
+  const itemTotal = itemSubtotal; // No tax
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-NG', {

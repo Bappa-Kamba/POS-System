@@ -8,12 +8,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateProductDto, UpdateProductDto, FindAllProductsDto } from './dto';
-import {
-  Prisma,
-  AuditAction,
-  UserRole,
-  ProductSubdivision,
-} from '@prisma/client';
+import { Prisma, AuditAction, UserRole } from '@prisma/client';
 import { AuthenticatedRequestUser } from '../auth/types/authenticated-user.type';
 
 @Injectable()
@@ -24,7 +19,7 @@ export class ProductsService {
   /**
    * Build where clause based on user role and assigned subdivision
    * ADMIN: returns empty object (no filtering)
-   * CASHIER: filters by branchId and assignedSubdivision
+   * CASHIER: filters by branchId and assignedSubdivisionId
    */
   private buildAccessibleProductsWhere(
     user: AuthenticatedRequestUser,
@@ -34,7 +29,7 @@ export class ProductsService {
     }
 
     if (user.role === UserRole.CASHIER) {
-      if (!user.assignedSubdivision) {
+      if (!user.assignedSubdivisionId) {
         throw new ForbiddenException(
           'You have not been assigned to a product subdivision',
         );
@@ -42,7 +37,7 @@ export class ProductsService {
 
       return {
         branchId: user.branchId,
-        subdivision: user.assignedSubdivision,
+        subdivisionId: user.assignedSubdivisionId,
       };
     }
 
@@ -73,7 +68,7 @@ export class ProductsService {
     if (user.role === UserRole.CASHIER) {
       if (
         product.branchId !== user.branchId ||
-        product.subdivision !== user.assignedSubdivision
+        product.subdivisionId !== user.assignedSubdivisionId
       ) {
         this.logger.warn(
           `Unauthorized product access attempt by user ${user.id} on product ${productId}`,
@@ -136,17 +131,16 @@ export class ProductsService {
     }
 
     // For CASHIER users, force their assigned subdivision
-    let subdivisionToUse =
-      data.subdivision || ProductSubdivision.CASHBACK_ACCESSORIES;
-    if (user.role === UserRole.CASHIER && user.assignedSubdivision) {
-      subdivisionToUse = user.assignedSubdivision;
+    let subdivisionIdToUse = data.subdivisionId;
+    if (user.role === UserRole.CASHIER && user.assignedSubdivisionId) {
+      subdivisionIdToUse = user.assignedSubdivisionId;
     }
 
     // Create product
     const product = await this.prisma.product.create({
       data: {
         ...data,
-        subdivision: subdivisionToUse,
+        subdivisionId: subdivisionIdToUse,
         isActive: true,
       },
       include: {
@@ -253,15 +247,14 @@ export class ProductsService {
             select: {
               id: true,
               name: true,
-              taxable: true,
-              taxRate: true,
               branchId: true,
             },
           },
         },
         take: 50, // Limit variant results
       });
-      variantResults = variants;
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      variantResults = variants as any; // Type cast since we removed tax fields
     }
 
     const [products, total] = await Promise.all([
@@ -384,8 +377,8 @@ export class ProductsService {
     // CASHIER cannot change subdivision
     if (
       user?.role === UserRole.CASHIER &&
-      data.subdivision &&
-      data.subdivision !== product.subdivision
+      data.subdivisionId &&
+      data.subdivisionId !== product.subdivisionId
     ) {
       throw new ForbiddenException('You cannot change the product subdivision');
     }
@@ -670,7 +663,9 @@ export class ProductsService {
         },
       });
     } catch (error) {
-      this.logger.error(`Failed to create audit log: ${error}`);
+      this.logger.error(
+        `Failed to create audit log: ${error instanceof Error ? error.message : String(error)}`,
+      );
       // Don't throw - audit logging failure shouldn't break the operation
     }
   }

@@ -1,22 +1,20 @@
 import { api } from './api';
 import type { ApiResponse, PaginatedApiResponse } from '../types/api';
 
-import { ProductSubdivision } from '../types/subdivision';
-
 export interface User {
   id: string;
   username: string;
   email?: string | null;
   firstName?: string | null;
   lastName?: string | null;
-  role: 'ADMIN' | 'CASHIER';
+  role: "ADMIN" | "CASHIER";
   isActive: boolean;
   branchId: string;
   branch?: {
     id: string;
     name: string;
   };
-  assignedSubdivision?: ProductSubdivision | null;
+  assignedSubdivisionId?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -27,10 +25,10 @@ export interface CreateUserPayload {
   password: string;
   firstName?: string;
   lastName?: string;
-  role: 'ADMIN' | 'CASHIER';
+  role: "ADMIN" | "CASHIER";
   branchId: string;
   isActive?: boolean;
-  assignedSubdivision?: ProductSubdivision | null;
+  assignedSubdivisionId?: string | null;
 }
 
 export interface UpdateUserPayload {
@@ -39,10 +37,10 @@ export interface UpdateUserPayload {
   password?: string;
   firstName?: string;
   lastName?: string;
-  role?: 'ADMIN' | 'CASHIER';
+  role?: "ADMIN" | "CASHIER";
   branchId?: string;
   isActive?: boolean;
-  assignedSubdivision?: ProductSubdivision | null;
+  assignedSubdivisionId?: string | null;
 }
 
 export interface FindAllUsersParams {

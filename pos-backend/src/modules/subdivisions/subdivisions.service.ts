@@ -120,13 +120,29 @@ export class SubdivisionsService {
       throw new ConflictException('Subdivision with this name already exists');
     }
 
+    // Auto-generate color if not provided
+    const defaultColors = [
+      '#3B82F6',
+      '#10B981',
+      '#F59E0B',
+      '#EF4444',
+      '#8B5CF6',
+      '#EC4899',
+    ];
+    const color =
+      data.color ||
+      defaultColors[Math.floor(Math.random() * defaultColors.length)];
+
+    // Auto-generate icon if not provided
+    const icon = data.icon || 'Package';
+
     const subdivision = await this.prisma.subdivision.create({
       data: {
         name: data.name,
         displayName: data.displayName,
         description: data.description,
-        color: data.color,
-        icon: data.icon,
+        color,
+        icon,
         status: SubdivisionStatus.ACTIVE,
       },
     });

@@ -28,7 +28,6 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
       name: category?.name || '',
       description: category?.description || '',
       subdivisionId: category?.subdivisionId || '',
-      displayOrder: category?.displayOrder || 0,
     },
   });
 
@@ -36,7 +35,7 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div>
         <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-          Category Name
+          Category Name *
         </label>
         <input
           {...register('name', { required: 'Name is required' })}
@@ -50,7 +49,7 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
 
       <div>
         <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-          Subdivision
+          Subdivision *
         </label>
         <select
           {...register('subdivisionId', { required: 'Subdivision is required' })}
@@ -71,24 +70,13 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
 
       <div>
         <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-          Description
+          Description (Optional)
         </label>
         <textarea
           {...register('description')}
           className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
           rows={3}
           placeholder="Optional description..."
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-          Display Order
-        </label>
-        <input
-          type="number"
-          {...register('displayOrder', { valueAsNumber: true })}
-          className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
         />
       </div>
 

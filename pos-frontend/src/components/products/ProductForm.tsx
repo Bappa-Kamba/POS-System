@@ -8,23 +8,22 @@ import { Barcode, Printer } from 'lucide-react';
 import type { Product } from '../../services/product.service';
 import { useGenerateBarcode } from '../../hooks/useProducts';
 import { BarcodePrint } from './BarcodePrint';
-import { ProductSubdivision, SubdivisionLabels } from '../../types/subdivision';
+import { useCategories } from '../../hooks/useCategories';
+import { useSubdivisions } from '../../hooks/useSubdivisions';
 
 const productSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   description: z.string().optional(),
   sku: z.string().min(1, 'SKU is required'),
   barcode: z.string().optional(),
-  category: z.enum(['FROZEN', 'DRINKS', 'ACCESSORIES', 'OTHER']),
-  subdivision: z.nativeEnum(ProductSubdivision).optional(),
+  categoryId: z.string().min(1, 'Category is required'),
+  subdivisionId: z.string().optional(),
   hasVariants: z.boolean().optional(),
   costPrice: z.number().min(0, 'Cost price must be positive').optional(),
   sellingPrice: z.number().min(0, 'Selling price must be positive').optional(),
   quantityInStock: z.number().min(0, 'Stock must be positive').optional(),
   unitType: z.enum(['PIECE', 'WEIGHT', 'VOLUME']).optional(),
   lowStockThreshold: z.number().min(0, 'Threshold must be positive').optional(),
-  taxable: z.boolean().optional(),
-  taxRate: z.number().min(0).max(1).optional(),
   branchId: z.string().min(1, 'Branch is required'),
 }).refine(
   (data) => {
@@ -63,6 +62,11 @@ export const ProductForm: React.FC<ProductFormProps> = ({
 }) => {
   const generateBarcode = useGenerateBarcode();
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+  const { data: categoriesResponse } = useCategories();
+  const { data: subdivisionsResponse } = useSubdivisions();
+  
+  const categories = categoriesResponse?.success ? categoriesResponse.data : [];
+  const subdivisions = subdivisionsResponse?.success ? subdivisionsResponse.data : [];
 
   const {
     register,
@@ -70,7 +74,6 @@ export const ProductForm: React.FC<ProductFormProps> = ({
     formState: { errors },
     watch,
     setValue,
-    reset,
   } = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
     defaultValues: product
@@ -79,63 +82,43 @@ export const ProductForm: React.FC<ProductFormProps> = ({
           description: product.description || '',
           sku: product.sku,
           barcode: product.barcode || '',
-          category: product.category,
-          subdivision: product.subdivision,
+          categoryId: product.category, // Map old category to categoryId
+          subdivisionId: product.subdivision,
           hasVariants: product.hasVariants,
           costPrice: product.costPrice ?? undefined,
           sellingPrice: product.sellingPrice ?? undefined,
           quantityInStock: product.quantityInStock ?? undefined,
           unitType: product.unitType || 'PIECE',
           lowStockThreshold: product.lowStockThreshold ?? undefined,
-          taxable: product.taxable,
-          taxRate: product.taxRate ?? undefined,
           branchId: product.branchId,
         }
       : {
           hasVariants: false,
-          taxable: true,
           unitType: 'PIECE',
           quantityInStock: 0,
           lowStockThreshold: 10,
           branchId: branchId || '',
-          subdivision: ProductSubdivision.CASHBACK_ACCESSORIES,
         },
   });
 
-  // Reset form when product changes
-  React.useEffect(() => {
-    if (product) {
-      reset({
-        name: product.name,
-        description: product.description || '',
-        sku: product.sku,
-        barcode: product.barcode || '',
-        category: product.category,
-        subdivision: product.subdivision,
-        hasVariants: product.hasVariants,
-        costPrice: product.costPrice ?? undefined,
-        sellingPrice: product.sellingPrice ?? undefined,
-        quantityInStock: product.quantityInStock ?? undefined,
-        unitType: product.unitType || 'PIECE',
-        lowStockThreshold: product.lowStockThreshold ?? undefined,
-        taxable: product.taxable,
-        taxRate: product.taxRate ?? undefined,
-        branchId: product.branchId,
-      });
-    } else {
-      reset({
-        hasVariants: false,
-        taxable: true,
-        unitType: 'PIECE',
-        quantityInStock: 0,
-        lowStockThreshold: 10,
-        branchId: branchId || '',
-        subdivision: ProductSubdivision.CASHBACK_ACCESSORIES,
-      });
-    }
-  }, [product, branchId, reset]);
-
   const hasVariants = watch('hasVariants');
+  const productName = watch('name');
+  const categoryId = watch('categoryId');
+
+  // Auto-generate SKU from product name and category
+  React.useEffect(() => {
+    if (!product && productName && categoryId) {
+      const category = categories.find(c => c.id === categoryId);
+      const categoryPrefix = category?.name.substring(0, 3).toUpperCase() || 'PRD';
+      const namePrefix = productName
+        .replace(/[^a-zA-Z0-9]/g, '')
+        .substring(0, 6)
+        .toUpperCase();
+      const timestamp = Date.now().toString().slice(-4);
+      const generatedSKU = `${categoryPrefix}-${namePrefix}-${timestamp}`;
+      setValue('sku', generatedSKU);
+    }
+  }, [productName, categoryId, product, categories, setValue]);
 
   // Clear pricing and inventory fields when hasVariants is toggled on
   React.useEffect(() => {
@@ -173,24 +156,32 @@ export const ProductForm: React.FC<ProductFormProps> = ({
           />
 
           <div>
-            <label className="block text-sm font-medium text-neutral-700 mb-1">
-              Description
+            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+              Description (Optional)
             </label>
             <textarea
               {...register('description')}
-              className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
               rows={3}
               placeholder="Optional product description"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <Input
-              label="SKU *"
-              {...register('sku')}
-              error={errors.sku?.message}
-              placeholder="e.g., DRINK-001"
-            />
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                SKU (Auto-generated) *
+              </label>
+              <Input
+                {...register('sku')}
+                error={errors.sku?.message}
+                placeholder="AUTO-GENERATED"
+                className="bg-neutral-50 dark:bg-neutral-700"
+              />
+              <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                Auto-generated from product name. Can be edited manually.
+              </p>
+            </div>
 
             <div>
               <label className="block text-sm font-medium text-neutral-700 mb-1">
@@ -228,34 +219,37 @@ export const ProductForm: React.FC<ProductFormProps> = ({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-1">
+              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
                 Category *
               </label>
               <select
-                {...register('category')}
-                className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                {...register('categoryId')}
+                className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
               >
-                <option value="DRINKS">Drinks</option>
-                <option value="FROZEN">Frozen</option>
-                <option value="ACCESSORIES">Accessories</option>
-                <option value="OTHER">Other</option>
+                <option value="">Select a category</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
               </select>
-              {errors.category && (
-                <p className="mt-1 text-sm text-red-600">{errors.category.message}</p>
+              {errors.categoryId && (
+                <p className="mt-1 text-sm text-red-600">{errors.categoryId.message}</p>
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-1">
-                Subdivision *
+              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                Subdivision (Optional)
               </label>
               <select
-                {...register('subdivision')}
-                className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                {...register('subdivisionId')}
+                className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
               >
-                {Object.values(ProductSubdivision).map((subdivision) => (
-                  <option key={subdivision} value={subdivision}>
-                    {SubdivisionLabels[subdivision]}
+                <option value="">Select a subdivision</option>
+                {subdivisions.map((sub) => (
+                  <option key={sub.id} value={sub.id}>
+                    {sub.displayName}
                   </option>
                 ))}
               </select>
@@ -266,9 +260,9 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                 <input
                   type="checkbox"
                   {...register('hasVariants')}
-                  className="w-4 h-4 text-primary-600 border-neutral-300 rounded focus:ring-primary-500"
+                  className="w-4 h-4 text-primary-600 border-neutral-300 dark:border-neutral-600 rounded focus:ring-primary-500"
                 />
-                <span className="text-sm font-medium text-neutral-700">
+                <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
                   Has Variants
                 </span>
               </label>
@@ -300,17 +294,6 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                 error={errors.sellingPrice?.message}
                 placeholder="0.00"
               />
-            </div>
-
-            <div className="flex items-center gap-4">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  {...register('taxable')}
-                  className="w-4 h-4 text-primary-600 border-neutral-300 rounded focus:ring-primary-500"
-                />
-                <span className="text-sm font-medium text-neutral-700">Taxable</span>
-              </label>
             </div>
           </div>
         </div>

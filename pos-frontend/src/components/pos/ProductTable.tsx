@@ -5,7 +5,6 @@ import { Button } from '../common/Button';
 import { VariantSelector } from './VariantSelector';
 import type { Product } from '../../services/product.service';
 import type { Variant } from '../../services/variant.service';
-import { ProductSubdivision } from '../../types/subdivision';
 
 interface ProductTableProps {
   products: Product[];
@@ -77,10 +76,10 @@ export const ProductTable: React.FC<ProductTableProps> = ({
         id: variant.product.id,
         name: variant.product.name,
         category: variant.product.category as any,
-        subdivision: ProductSubdivision.CASHBACK_ACCESSORIES,
+        // subdivision removed
         hasVariants: true,
         sku: variant.product.id,
-        taxable: true,
+        // tax removed
         isActive: true,
         branchId: variant.product.id,
         createdAt: '',

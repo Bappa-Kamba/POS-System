@@ -8,7 +8,7 @@ import { Button } from '../common/Button';
 import type { User } from '../../services/user.service';
 import { userService } from '../../services/user.service';
 import { useBranches } from '../../hooks/useBranches';
-import { ProductSubdivision, SubdivisionLabels } from '../../types/subdivision';
+import { useSubdivisions } from '../../hooks/useSubdivisions';
 
 // Strong password validation: min 8 chars, uppercase, lowercase, number, special char
 const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
@@ -33,7 +33,7 @@ const createUserSchema = z.object({
   role: z.enum(['ADMIN', 'CASHIER']),
   branchId: z.string().min(1, 'Branch is required'),
   isActive: z.boolean().optional(),
-  assignedSubdivision: z.nativeEnum(ProductSubdivision).optional().nullable(),
+  assignedSubdivisionId: z.string().optional().nullable(),
 });
 
 const updateUserSchema = z.object({
@@ -58,7 +58,7 @@ const updateUserSchema = z.object({
   role: z.enum(['ADMIN', 'CASHIER']),
   branchId: z.string().min(1, 'Branch is required'),
   isActive: z.boolean().optional(),
-  assignedSubdivision: z.nativeEnum(ProductSubdivision).optional().nullable(),
+  assignedSubdivisionId: z.string().optional().nullable(),
 });
 
 // Generate a random strong password
@@ -138,7 +138,10 @@ export const UserForm: React.FC<UserFormProps> = ({
   const [suggestedUsername, setSuggestedUsername] = useState<string>('');
 
   // Fetch branches for selection
-  const { data: branchesData } = useBranches({ limit: 100 });
+  const { data: branchesResponse } = useBranches();
+  const branches = branchesResponse?.success ? branchesResponse.data : [];
+  const { data: subdivisionsResponse } = useSubdivisions();
+  const subdivisions = subdivisionsResponse?.success ? subdivisionsResponse.data : [];
 
   const {
     register,
@@ -159,14 +162,14 @@ export const UserForm: React.FC<UserFormProps> = ({
           role: user.role,
           branchId: user.branchId,
           isActive: user.isActive,
-          assignedSubdivision: user.assignedSubdivision || null,
+          assignedSubdivisionId: user.assignedSubdivisionId || null,
         }
       : {
           role: 'CASHIER',
           isActive: true,
           branchId: branchId || '',
           password: '',
-          assignedSubdivision: null,
+          assignedSubdivisionId: null,
         },
   });
 
@@ -456,16 +459,16 @@ export const UserForm: React.FC<UserFormProps> = ({
           {role === 'CASHIER' && (
             <div>
               <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                Assigned Subdivision
+                Assigned Subdivision (Optional)
               </label>
               <select
-                {...register('assignedSubdivision')}
+                {...register('assignedSubdivisionId')}
                 className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
               >
                 <option value="">None (No Access)</option>
-                {Object.values(ProductSubdivision).map((subdivision) => (
-                  <option key={subdivision} value={subdivision}>
-                    {SubdivisionLabels[subdivision]}
+                {subdivisions.map((subdivision) => (
+                  <option key={subdivision.id} value={subdivision.id}>
+                    {subdivision.displayName}
                   </option>
                 ))}
               </select>
@@ -484,7 +487,7 @@ export const UserForm: React.FC<UserFormProps> = ({
               className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
             >
               <option value="">Select a branch</option>
-              {branchesData?.data?.map((branch) => (
+              {branches.map((branch) => (
                 <option key={branch.id} value={branch.id}>
                   {branch.name} {branch.location ? `- ${branch.location}` : ''}
                 </option>

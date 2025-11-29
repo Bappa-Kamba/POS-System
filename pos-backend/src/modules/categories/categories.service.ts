@@ -110,11 +110,11 @@ export class CategoriesService {
 
     // CASHIER can only create categories in their assigned subdivision
     if (user.role === UserRole.CASHIER) {
-      if (!user.assignedSubdivision) {
+      if (!user.assignedSubdivisionId) {
         throw new ForbiddenException('You do not have an assigned subdivision');
       }
 
-      if (subdivision.name !== user.assignedSubdivision) {
+      if (subdivision.id !== user.assignedSubdivisionId) {
         throw new ForbiddenException(
           'You can only create categories in your assigned subdivision',
         );
@@ -137,12 +137,23 @@ export class CategoriesService {
       );
     }
 
+    // Auto-generate displayOrder if not provided
+    let displayOrder = data.displayOrder;
+    if (displayOrder === undefined) {
+      const maxOrder = await this.prisma.category.findFirst({
+        where: { subdivisionId: data.subdivisionId },
+        orderBy: { displayOrder: 'desc' },
+        select: { displayOrder: true },
+      });
+      displayOrder = (maxOrder?.displayOrder ?? -1) + 1;
+    }
+
     const category = await this.prisma.category.create({
       data: {
         name: data.name,
         subdivisionId: data.subdivisionId,
         description: data.description,
-        displayOrder: data.displayOrder ?? 0,
+        displayOrder,
         isActive: true,
       },
       include: {
@@ -210,7 +221,7 @@ export class CategoriesService {
    * Soft delete category (prevent if has active products)
    */
   async remove(id: string, user: AuthenticatedRequestUser) {
-    const category = await this.findOne(id);
+    await this.findOne(id);
 
     // Verify access
     await this.validateAccess(id, user);
@@ -309,7 +320,7 @@ export class CategoriesService {
 
     // CASHIER can only access categories in their assigned subdivision
     if (user.role === UserRole.CASHIER) {
-      if (!user.assignedSubdivision) {
+      if (!user.assignedSubdivisionId) {
         throw new ForbiddenException('You do not have an assigned subdivision');
       }
 
@@ -324,7 +335,7 @@ export class CategoriesService {
         throw new NotFoundException('Category not found');
       }
 
-      if (category.subdivision.name !== user.assignedSubdivision) {
+      if (category.subdivision.id !== user.assignedSubdivisionId) {
         throw new ForbiddenException(
           'You can only access categories in your assigned subdivision',
         );

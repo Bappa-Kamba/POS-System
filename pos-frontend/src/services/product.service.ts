@@ -1,6 +1,5 @@
 import { api } from "./api";
 import type { ApiResponse, PaginatedApiResponse } from "../types/api";
-import { ProductSubdivision } from "../types/subdivision";
 
 export interface Product {
   id: string;
@@ -9,15 +8,13 @@ export interface Product {
   sku: string;
   barcode?: string;
   category: "FROZEN" | "DRINKS" | "ACCESSORIES" | "OTHER";
-  subdivision: ProductSubdivision;
+  subdivision?: string;
   hasVariants: boolean;
   costPrice?: number;
   sellingPrice?: number;
   quantityInStock?: number;
   unitType?: "PIECE" | "WEIGHT" | "VOLUME";
   lowStockThreshold?: number;
-  taxable: boolean;
-  taxRate?: number;
   isActive: boolean;
   branchId: string;
   branch?: {
@@ -34,7 +31,7 @@ export interface CreateProductPayload {
   sku: string;
   barcode?: string;
   category: string;
-  subdivision?: ProductSubdivision;
+  subdivisionId?: string;
   hasVariants?: boolean;
   costPrice?: number;
   sellingPrice?: number;

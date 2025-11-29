@@ -1,15 +1,9 @@
-import {
-  IsEnum,
-  IsString,
-  IsNotEmpty,
-  IsOptional,
-  IsHexColor,
-} from 'class-validator';
-import { ProductSubdivision } from '@prisma/client';
+import { IsString, IsNotEmpty, IsOptional, IsHexColor } from 'class-validator';
 
 export class CreateSubdivisionDto {
-  @IsEnum(ProductSubdivision)
-  name!: ProductSubdivision;
+  @IsString()
+  @IsNotEmpty()
+  name!: string;
 
   @IsString()
   @IsNotEmpty()

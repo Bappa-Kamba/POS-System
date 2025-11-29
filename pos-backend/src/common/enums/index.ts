@@ -1,2 +1,2 @@
-export * from './product-subdivision.enum';
+// ProductSubdivision enum removed - subdivisions are now dynamic
 export * from './subdivision-status.enum';

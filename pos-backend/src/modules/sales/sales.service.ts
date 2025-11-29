@@ -112,7 +112,6 @@ export class SalesService {
       // Use manual service charge if provided, otherwise default to 0 (or throw error if required)
       const serviceCharge =
         data.serviceCharge !== undefined ? data.serviceCharge : 0;
-      const totalReceived = cashbackAmount + serviceCharge; // Customer sends this
 
       if (branch.cashbackCapital < cashbackAmount) {
         throw new BadRequestException(
@@ -209,8 +208,6 @@ export class SalesService {
       let variant;
       let availableStock: number;
       let costPrice: number;
-      let taxRate: number;
-      let taxable: boolean;
       let itemName: string;
       let itemSku: string;
 
@@ -236,8 +233,6 @@ export class SalesService {
 
         availableStock = variant.quantityInStock;
         costPrice = variant.costPrice;
-        taxRate = product.taxRate || 0;
-        taxable = product.taxable;
         itemName = `${product.name} - ${variant.name}`;
         itemSku = variant.sku;
       } else {
@@ -259,8 +254,6 @@ export class SalesService {
 
         availableStock = product.quantityInStock || 0;
         costPrice = product.costPrice || 0;
-        taxRate = product.taxRate || 0;
-        taxable = product.taxable;
         itemName = product.name;
         itemSku = product.sku;
       }
@@ -272,13 +265,13 @@ export class SalesService {
         );
       }
 
-      // Calculate item totals
+      // Calculate item totals (no tax)
       const itemSubtotal = itemDto.quantity * itemDto.unitPrice;
-      const itemTaxAmount = taxable ? itemSubtotal * taxRate : 0;
-      const itemTotal = itemSubtotal + itemTaxAmount;
+      const itemTaxAmount = 0; // Tax removed
+      const itemTotal = itemSubtotal;
 
       subtotal += itemSubtotal;
-      taxAmount += itemTaxAmount;
+      taxAmount += itemTaxAmount; // Always 0
 
       saleItems.push({
         productId: product.id,
@@ -288,8 +281,8 @@ export class SalesService {
         quantity: itemDto.quantity,
         unitPrice: itemDto.unitPrice,
         costPrice,
-        taxRate,
-        taxAmount: itemTaxAmount,
+        taxRate: 0, // No tax
+        taxAmount: 0, // No tax
         subtotal: itemSubtotal,
         total: itemTotal,
         availableStock,

@@ -12,8 +12,6 @@ export interface CartItem {
   unitPrice: number;
   costPrice: number;
   quantity: number;
-  taxable: boolean;
-  taxRate: number;
   unitType?: "PIECE" | "WEIGHT" | "VOLUME";
   availableStock: number;
 }
@@ -80,8 +78,6 @@ export const useCartStore = create<CartState>((set, get) => ({
           unitPrice: product.sellingPrice || 0,
           costPrice: product.costPrice || 0,
           quantity,
-          taxable: product.taxable,
-          taxRate: product.taxRate || 0,
           unitType: product.unitType,
           availableStock: product.quantityInStock || 0,
         };
@@ -129,8 +125,6 @@ export const useCartStore = create<CartState>((set, get) => ({
           unitPrice: variant.sellingPrice,
           costPrice: variant.costPrice,
           quantity,
-          taxable: product.taxable,
-          taxRate: product.taxRate || 0,
           unitType: "PIECE", // Variants are always piece-based
           availableStock: variant.quantityInStock,
         };
@@ -184,15 +178,11 @@ export const useCartStore = create<CartState>((set, get) => ({
   },
 
   getTaxAmount: () => {
-    return get().items.reduce((sum, item) => {
-      if (!item.taxable) return sum;
-      const itemSubtotal = item.unitPrice * item.quantity;
-      return sum + itemSubtotal * item.taxRate;
-    }, 0);
+    return 0; // Tax removed
   },
 
   getTotal: () => {
-    return get().getSubtotal() + get().getTaxAmount();
+    return get().getSubtotal(); // No tax
   },
 
   getItemCount: () => {

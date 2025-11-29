@@ -19,40 +19,34 @@ export const SubdivisionForm: React.FC<SubdivisionFormProps> = ({
   const {
     register,
     handleSubmit,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<CreateSubdivisionDto>({
     defaultValues: {
       name: subdivision?.name || '',
       displayName: subdivision?.displayName || '',
       description: subdivision?.description || '',
-      color: subdivision?.color || '',
-      icon: subdivision?.icon || '',
     },
   });
+
+  // Auto-generate internal name from display name
+  const displayName = watch('displayName');
+  React.useEffect(() => {
+    if (!subdivision && displayName) {
+      const internalName = displayName
+        .toUpperCase()
+        .replace(/[^A-Z0-9]+/g, '_')
+        .replace(/^_+|_+$/g, '');
+      setValue('name', internalName);
+    }
+  }, [displayName, subdivision, setValue]);
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div>
         <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-          Internal Name (Unique ID)
-        </label>
-        <input
-          {...register('name', { required: 'Name is required' })}
-          className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
-          placeholder="e.g., CASHBACK_ACCESSORIES"
-          disabled={!!subdivision} // Name cannot be changed after creation
-        />
-        {errors.name && (
-          <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>
-        )}
-        <p className="text-xs text-neutral-500 mt-1">
-          This is used internally and cannot be changed later. Use uppercase and underscores.
-        </p>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-          Display Name
+          Display Name *
         </label>
         <input
           {...register('displayName', { required: 'Display name is required' })}
@@ -66,7 +60,26 @@ export const SubdivisionForm: React.FC<SubdivisionFormProps> = ({
 
       <div>
         <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-          Description
+          Internal Name (Auto-generated) *
+        </label>
+        <input
+          {...register('name', { required: 'Name is required' })}
+          className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-neutral-100 dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100"
+          placeholder="AUTO_GENERATED"
+          disabled={!!subdivision} // Name cannot be changed after creation
+          readOnly={!subdivision}
+        />
+        {errors.name && (
+          <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>
+        )}
+        <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+          Auto-generated from display name. Cannot be changed after creation.
+        </p>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+          Description (Optional)
         </label>
         <textarea
           {...register('description')}
@@ -74,29 +87,6 @@ export const SubdivisionForm: React.FC<SubdivisionFormProps> = ({
           rows={3}
           placeholder="Optional description..."
         />
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-            Color (Tailwind Class or Hex)
-          </label>
-          <input
-            {...register('color')}
-            className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
-            placeholder="e.g., bg-blue-500"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-            Icon Name
-          </label>
-          <input
-            {...register('icon')}
-            className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
-            placeholder="e.g., Package"
-          />
-        </div>
       </div>
 
       <div className="flex justify-end gap-3 pt-4">

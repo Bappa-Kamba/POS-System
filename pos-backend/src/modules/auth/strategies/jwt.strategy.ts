@@ -4,14 +4,13 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { UsersService } from '../../users/users.service';
 import { AuthenticatedRequestUser } from '../types/authenticated-user.type';
-import { ProductSubdivision } from '@prisma/client';
 
 interface JwtPayload {
   sub: string;
   username: string;
   role: string;
   branchId: string;
-  assignedSubdivision?: ProductSubdivision | null;
+  assignedSubdivisionId?: string | null;
 }
 
 @Injectable()
@@ -39,7 +38,8 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       username: user.username,
       role: user.role,
       branchId: user.branchId,
-      assignedSubdivision: user.assignedSubdivision,
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      assignedSubdivisionId: user.assignedSubdivisionId ?? null,
     };
   }
 }

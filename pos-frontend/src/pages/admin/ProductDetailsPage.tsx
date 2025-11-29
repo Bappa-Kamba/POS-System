@@ -156,7 +156,7 @@ export const ProductDetailsPage: React.FC = () => {
           <div>
             <p className="text-sm text-neutral-500">Taxable</p>
             <p className="font-medium text-neutral-900 dark:text-neutral-100">
-              {product.taxable ? 'Yes' : 'No'}
+              {false ? 'Yes' : 'No'}
             </p>
           </div>
 

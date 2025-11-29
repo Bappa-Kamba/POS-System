@@ -26,7 +26,7 @@ model User {
   branch       Branch   @relation(fields: [branchId], references: [id])
 
   // Subdivision assignment for CASHIER users (null for ADMIN)
-  assignedSubdivision ProductSubdivision?
+  assignedSubdivisionId String?
 
   sales     Sale[]
   auditLogs AuditLog[]
@@ -38,7 +38,7 @@ model User {
   
   @@index([username])
   @@index([branchId])
-  @@index([assignedSubdivision])
+  @@index([assignedSubdivisionId])
   @@map("users")
 }
 
@@ -90,13 +90,13 @@ model Branch {
 // ============================================
 
 model Subdivision {
-  id          String             @id @default(uuid())
-  name        ProductSubdivision @unique
+  id          String            @id @default(uuid())
+  name        String            @unique
   displayName String
   description String?
-  status      SubdivisionStatus  @default(ACTIVE)
-  color       String?            // Hex color for UI
-  icon        String?            // Icon name for UI
+  status      SubdivisionStatus @default(ACTIVE)
+  color       String?           // Hex color for UI
+  icon        String?           // Icon name for UI
 
   // Relations
   categories         Category[]
@@ -166,8 +166,8 @@ model Product {
   hasVariants Boolean         @default(false)
 
   // Category and Subdivision
-  categoryId  String?
-  subdivision ProductSubdivision @default(CASHBACK_ACCESSORIES)
+  categoryId    String?
+  subdivisionId String?
 
   // Pricing (for products without variants)
   costPrice    Float?
@@ -177,10 +177,6 @@ model Product {
   quantityInStock   Float?
   unitType          UnitType @default(PIECE)
   lowStockThreshold Float?
-
-  // Tax
-  taxable Boolean @default(true)
-  taxRate Float?
 
   // Tracking
   trackInventory Boolean @default(true)
@@ -203,8 +199,8 @@ model Product {
   @@index([barcode])
   @@index([categoryId])
   @@index([branchId])
-  @@index([subdivision])
-  @@index([branchId, subdivision])
+  @@index([subdivisionId])
+  @@index([branchId, subdivisionId])
   @@map("products")
 }
 
@@ -249,11 +245,6 @@ enum ProductCategory {
   DRINKS
   ACCESSORIES
   OTHER
-}
-
-enum ProductSubdivision {
-  CASHBACK_ACCESSORIES
-  FROZEN_DRINKS
 }
 
 enum UnitType {

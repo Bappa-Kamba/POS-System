@@ -7,7 +7,7 @@ import {
   Min,
   IsUUID,
 } from 'class-validator';
-import { UnitType, ProductSubdivision } from '@prisma/client';
+import { UnitType } from '@prisma/client';
 
 export class UpdateProductDto {
   @IsString()
@@ -30,9 +30,9 @@ export class UpdateProductDto {
   @IsOptional()
   categoryId?: string;
 
-  @IsEnum(ProductSubdivision)
+  @IsUUID()
   @IsOptional()
-  subdivision?: ProductSubdivision;
+  subdivisionId?: string;
 
   @IsBoolean()
   @IsOptional()
@@ -61,15 +61,6 @@ export class UpdateProductDto {
   @IsOptional()
   @Min(0)
   lowStockThreshold?: number;
-
-  @IsBoolean()
-  @IsOptional()
-  taxable?: boolean;
-
-  @IsNumber()
-  @IsOptional()
-  @Min(0)
-  taxRate?: number;
 
   @IsString()
   @IsOptional()
