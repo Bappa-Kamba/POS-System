@@ -37,7 +37,9 @@ export class ProductsService {
 
       return {
         branchId: user.branchId,
-        subdivisionId: user.assignedSubdivisionId,
+        category: {
+          subdivisionId: user.assignedSubdivisionId,
+        },
       };
     }
 
@@ -53,6 +55,13 @@ export class ProductsService {
   ): Promise<void> {
     const product = await this.prisma.product.findUnique({
       where: { id: productId },
+      include: {
+        category: {
+          select: {
+            subdivisionId: true,
+          },
+        },
+      },
     });
 
     if (!product) {
@@ -68,7 +77,7 @@ export class ProductsService {
     if (user.role === UserRole.CASHIER) {
       if (
         product.branchId !== user.branchId ||
-        product.subdivisionId !== user.assignedSubdivisionId
+        product.category?.subdivisionId !== user.assignedSubdivisionId
       ) {
         this.logger.warn(
           `Unauthorized product access attempt by user ${user.id} on product ${productId}`,
@@ -130,17 +139,21 @@ export class ProductsService {
       }
     }
 
-    // For CASHIER users, force their assigned subdivision
-    let subdivisionIdToUse = data.subdivisionId;
-    if (user.role === UserRole.CASHIER && user.assignedSubdivisionId) {
-      subdivisionIdToUse = user.assignedSubdivisionId;
-    }
-
-    // Create product
+    // Create product (subdivision inherited from category)
     const product = await this.prisma.product.create({
       data: {
-        ...data,
-        subdivisionId: subdivisionIdToUse,
+        name: data.name,
+        description: data.description,
+        sku: data.sku,
+        barcode: data.barcode,
+        hasVariants: data.hasVariants,
+        costPrice: data.costPrice,
+        sellingPrice: data.sellingPrice,
+        quantityInStock: data.quantityInStock,
+        unitType: data.unitType,
+        lowStockThreshold: data.lowStockThreshold,
+        branchId: data.branchId,
+        categoryId: data.category,
         isActive: true,
       },
       include: {
@@ -374,15 +387,6 @@ export class ProductsService {
     // Check if product exists and user has access
     const product = await this.findOne(id, user);
 
-    // CASHIER cannot change subdivision
-    if (
-      user?.role === UserRole.CASHIER &&
-      data.subdivisionId &&
-      data.subdivisionId !== product.subdivisionId
-    ) {
-      throw new ForbiddenException('You cannot change the product subdivision');
-    }
-
     // Store old values for audit
     const oldValues = JSON.stringify(product);
 
@@ -429,7 +433,19 @@ export class ProductsService {
 
     const updated = await this.prisma.product.update({
       where: { id },
-      data,
+      data: {
+        name: data.name,
+        description: data.description,
+        sku: data.sku,
+        barcode: data.barcode,
+        hasVariants: data.hasVariants,
+        costPrice: data.costPrice,
+        sellingPrice: data.sellingPrice,
+        quantityInStock: data.quantityInStock,
+        unitType: data.unitType,
+        lowStockThreshold: data.lowStockThreshold,
+        categoryId: data.category,
+      },
       include: {
         branch: {
           select: { id: true, name: true },

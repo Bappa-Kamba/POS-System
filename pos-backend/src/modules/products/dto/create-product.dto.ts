@@ -1,12 +1,11 @@
 import {
   IsString,
+  IsOptional,
+  IsNumber,
+  Min,
+  IsBoolean,
   IsNotEmpty,
   IsEnum,
-  IsNumber,
-  IsBoolean,
-  IsOptional,
-  Min,
-  IsUUID,
 } from 'class-validator';
 import { UnitType } from '@prisma/client';
 
@@ -27,13 +26,9 @@ export class CreateProductDto {
   @IsOptional()
   barcode?: string;
 
-  @IsUUID()
-  @IsOptional()
-  categoryId?: string;
-
-  @IsUUID()
-  @IsOptional()
-  subdivisionId?: string;
+  @IsString()
+  @IsNotEmpty()
+  category!: string;
 
   @IsBoolean()
   @IsOptional()

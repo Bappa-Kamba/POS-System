@@ -165,9 +165,8 @@ model Product {
   barcode     String?         @unique
   hasVariants Boolean         @default(false)
 
-  // Category and Subdivision
-  categoryId    String?
-  subdivisionId String?
+  // Category (subdivision inherited from category)
+  categoryId String?
 
   // Pricing (for products without variants)
   costPrice    Float?
@@ -199,8 +198,6 @@ model Product {
   @@index([barcode])
   @@index([categoryId])
   @@index([branchId])
-  @@index([subdivisionId])
-  @@index([branchId, subdivisionId])
   @@map("products")
 }
 

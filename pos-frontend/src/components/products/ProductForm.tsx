@@ -17,7 +17,6 @@ const productSchema = z.object({
   sku: z.string().min(1, 'SKU is required'),
   barcode: z.string().optional(),
   categoryId: z.string().min(1, 'Category is required'),
-  subdivisionId: z.string().optional(),
   hasVariants: z.boolean().optional(),
   costPrice: z.number().min(0, 'Cost price must be positive').optional(),
   sellingPrice: z.number().min(0, 'Selling price must be positive').optional(),
@@ -62,11 +61,17 @@ export const ProductForm: React.FC<ProductFormProps> = ({
 }) => {
   const generateBarcode = useGenerateBarcode();
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+  const [selectedSubdivision, setSelectedSubdivision] = useState<string>('');
   const { data: categoriesResponse } = useCategories();
   const { data: subdivisionsResponse } = useSubdivisions();
   
   const categories = categoriesResponse?.success ? categoriesResponse.data : [];
   const subdivisions = subdivisionsResponse?.success ? subdivisionsResponse.data : [];
+  
+  // Filter categories by selected subdivision
+  const filteredCategories = selectedSubdivision
+    ? categories.filter(cat => cat.subdivisionId === selectedSubdivision)
+    : categories;
 
   const {
     register,
@@ -83,7 +88,6 @@ export const ProductForm: React.FC<ProductFormProps> = ({
           sku: product.sku,
           barcode: product.barcode || '',
           categoryId: product.category, // Map old category to categoryId
-          subdivisionId: product.subdivision,
           hasVariants: product.hasVariants,
           costPrice: product.costPrice ?? undefined,
           sellingPrice: product.sellingPrice ?? undefined,
@@ -220,14 +224,41 @@ export const ProductForm: React.FC<ProductFormProps> = ({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                Subdivision (Filter Categories) *
+              </label>
+              <select
+                value={selectedSubdivision}
+                onChange={(e) => {
+                  setSelectedSubdivision(e.target.value);
+                  setValue('categoryId', ''); // Reset category when subdivision changes
+                }}
+                className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
+              >
+                <option value="">Select a subdivision first</option>
+                {subdivisions.map((sub) => (
+                  <option key={sub.id} value={sub.id}>
+                    {sub.displayName}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs text-neutral-500">
+                Select a subdivision to filter categories
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
                 Category *
               </label>
               <select
                 {...register('categoryId')}
-                className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
+                disabled={!selectedSubdivision}
+                className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <option value="">Select a category</option>
-                {categories.map((cat) => (
+                <option value="">
+                  {selectedSubdivision ? 'Select a category' : 'Select subdivision first'}
+                </option>
+                {filteredCategories.map((cat) => (
                   <option key={cat.id} value={cat.id}>
                     {cat.name}
                   </option>
@@ -236,23 +267,6 @@ export const ProductForm: React.FC<ProductFormProps> = ({
               {errors.categoryId && (
                 <p className="mt-1 text-sm text-red-600">{errors.categoryId.message}</p>
               )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                Subdivision (Optional)
-              </label>
-              <select
-                {...register('subdivisionId')}
-                className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
-              >
-                <option value="">Select a subdivision</option>
-                {subdivisions.map((sub) => (
-                  <option key={sub.id} value={sub.id}>
-                    {sub.displayName}
-                  </option>
-                ))}
-              </select>
             </div>
 
             <div className="flex items-center pt-6">

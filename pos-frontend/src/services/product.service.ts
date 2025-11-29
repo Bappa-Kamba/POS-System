@@ -31,7 +31,6 @@ export interface CreateProductPayload {
   sku: string;
   barcode?: string;
   category: string;
-  subdivisionId?: string;
   hasVariants?: boolean;
   costPrice?: number;
   sellingPrice?: number;
