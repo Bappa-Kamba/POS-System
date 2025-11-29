@@ -7,7 +7,7 @@ import {
   IsOptional,
   MinLength,
 } from 'class-validator';
-import { UserRole } from '@prisma/client';
+import { UserRole, ProductSubdivision } from '@prisma/client';
 
 export class CreateUserDto {
   @IsString()
@@ -37,6 +37,10 @@ export class CreateUserDto {
   @IsString()
   @IsNotEmpty()
   branchId!: string;
+
+  @IsEnum(ProductSubdivision)
+  @IsOptional()
+  assignedSubdivision?: ProductSubdivision;
 
   @IsBoolean()
   @IsOptional()

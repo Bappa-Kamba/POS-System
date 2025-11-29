@@ -32,7 +32,7 @@ export const ProductsPage: React.FC = () => {
     skip,
     take: limit,
     search: search || undefined,
-    category: category || undefined,
+    categoryId: category || undefined,
     isActive,
     lowStock: showLowStock || undefined,
     branchId: user?.branchId,

@@ -2,10 +2,12 @@ import { useEffect } from 'react';
 import { Navigate, Route, Routes, Outlet } from 'react-router-dom';
 import { LoginPage } from './pages/auth/LoginPage';
 import { DashboardPage } from './pages/admin/DashboardPage';
-import { ProductsPage } from './pages/admin/ProductsPage';
+import { ProductManagementPage } from './pages/admin/ProductManagementPage';
 import { ProductDetailsPage } from './pages/admin/ProductDetailsPage';
-import { InventoryPage } from './pages/admin/InventoryPage';
 import { UsersPage } from './pages/admin/UsersPage';
+import { BranchesPage } from './pages/admin/BranchesPage';
+import { SubdivisionsPage } from './pages/admin/SubdivisionsPage';
+import { CategoriesPage } from './pages/admin/CategoriesPage';
 import { ReportsPage } from './pages/admin/ReportsPage';
 import { ExpensesPage } from './pages/admin/ExpensesPage';
 import { AuditLogsPage } from './pages/admin/AuditLogsPage';
@@ -50,7 +52,7 @@ export default function App() {
             path="/products"
             element={
               <RequireRole role="ADMIN">
-                <ProductsPage />
+                <ProductManagementPage />
               </RequireRole>
             }
           />
@@ -62,19 +64,37 @@ export default function App() {
               </RequireRole>
             }
           />
-          <Route
-            path="/inventory"
-            element={
-              <RequireRole role="ADMIN">
-                <InventoryPage />
-              </RequireRole>
-            }
-          />
+          {/* Redirect old inventory route to unified products page */}
+          <Route path="/inventory" element={<Navigate to="/products" replace />} />
           <Route
             path="/users"
             element={
               <RequireRole role="ADMIN">
                 <UsersPage />
+              </RequireRole>
+            }
+          />
+          <Route
+            path="/branches"
+            element={
+              <RequireRole role="ADMIN">
+                <BranchesPage />
+              </RequireRole>
+            }
+          />
+          <Route
+            path="/subdivisions"
+            element={
+              <RequireRole role="ADMIN">
+                <SubdivisionsPage />
+              </RequireRole>
+            }
+          />
+          <Route
+            path="/categories"
+            element={
+              <RequireRole role="ADMIN">
+                <CategoriesPage />
               </RequireRole>
             }
           />

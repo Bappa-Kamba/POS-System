@@ -10,11 +10,11 @@ import {
   useUpdateUser,
   useDeleteUser,
 } from '../../hooks/useUsers';
-import { useAuth } from '../../hooks/useAuth';
+// import { useAuth } from '../../hooks/useAuth';
 import type { User } from '../../services/user.service';
 
 export const UsersPage: React.FC = () => {
-  const { user: currentUser } = useAuth();
+  // const { user: currentUser } = useAuth();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [role, setRole] = useState<string>('');
@@ -32,7 +32,6 @@ export const UsersPage: React.FC = () => {
     search: search || undefined,
     role: role ? (role as 'ADMIN' | 'CASHIER') : undefined,
     isActive,
-    branchId: currentUser?.branchId,
   });
 
   const createUser = useCreateUser();
@@ -60,10 +59,7 @@ export const UsersPage: React.FC = () => {
 
   const handleCreate = async (formData: any) => {
     try {
-      await createUser.mutateAsync({
-        ...formData,
-        branchId: currentUser?.branchId || '',
-      });
+      await createUser.mutateAsync(formData);
       setIsCreateModalOpen(false);
       refetch();
     } catch (error: any) {
@@ -295,7 +291,6 @@ export const UsersPage: React.FC = () => {
           onSubmit={handleCreate}
           onCancel={() => setIsCreateModalOpen(false)}
           isLoading={createUser.isPending}
-          branchId={currentUser?.branchId}
         />
       </Modal>
 
@@ -318,7 +313,6 @@ export const UsersPage: React.FC = () => {
               setSelectedUser(null);
             }}
             isLoading={updateUser.isPending}
-            branchId={currentUser?.branchId}
           />
         )}
       </Modal>

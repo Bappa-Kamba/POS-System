@@ -8,6 +8,7 @@ import { Barcode, Printer } from 'lucide-react';
 import type { Product } from '../../services/product.service';
 import { useGenerateBarcode } from '../../hooks/useProducts';
 import { BarcodePrint } from './BarcodePrint';
+import { ProductSubdivision, SubdivisionLabels } from '../../types/subdivision';
 
 const productSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -15,6 +16,7 @@ const productSchema = z.object({
   sku: z.string().min(1, 'SKU is required'),
   barcode: z.string().optional(),
   category: z.enum(['FROZEN', 'DRINKS', 'ACCESSORIES', 'OTHER']),
+  subdivision: z.nativeEnum(ProductSubdivision).optional(),
   hasVariants: z.boolean().optional(),
   costPrice: z.number().min(0, 'Cost price must be positive').optional(),
   sellingPrice: z.number().min(0, 'Selling price must be positive').optional(),
@@ -78,6 +80,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
           sku: product.sku,
           barcode: product.barcode || '',
           category: product.category,
+          subdivision: product.subdivision,
           hasVariants: product.hasVariants,
           costPrice: product.costPrice ?? undefined,
           sellingPrice: product.sellingPrice ?? undefined,
@@ -95,6 +98,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
           quantityInStock: 0,
           lowStockThreshold: 10,
           branchId: branchId || '',
+          subdivision: ProductSubdivision.CASHBACK_ACCESSORIES,
         },
   });
 
@@ -107,6 +111,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
         sku: product.sku,
         barcode: product.barcode || '',
         category: product.category,
+        subdivision: product.subdivision,
         hasVariants: product.hasVariants,
         costPrice: product.costPrice ?? undefined,
         sellingPrice: product.sellingPrice ?? undefined,
@@ -125,6 +130,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
         quantityInStock: 0,
         lowStockThreshold: 10,
         branchId: branchId || '',
+        subdivision: ProductSubdivision.CASHBACK_ACCESSORIES,
       });
     }
   }, [product, branchId, reset]);
@@ -237,6 +243,22 @@ export const ProductForm: React.FC<ProductFormProps> = ({
               {errors.category && (
                 <p className="mt-1 text-sm text-red-600">{errors.category.message}</p>
               )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">
+                Subdivision *
+              </label>
+              <select
+                {...register('subdivision')}
+                className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              >
+                {Object.values(ProductSubdivision).map((subdivision) => (
+                  <option key={subdivision} value={subdivision}>
+                    {SubdivisionLabels[subdivision]}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="flex items-center pt-6">

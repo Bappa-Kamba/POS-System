@@ -9,8 +9,6 @@ import {
   startOfWeek,
   startOfMonth,
   startOfYear,
-  addMonths,
-  subMonths,
 } from 'date-fns';
 import {
   SalesReportDto,
@@ -35,7 +33,13 @@ type SaleWithRelations = Prisma.SaleGetPayload<{
   include: {
     items: {
       include: {
-        product: { select: { id: true; name: true; category: true } };
+        product: {
+          select: {
+            id: true;
+            name: true;
+            category: { select: { id: true; name: true } };
+          };
+        };
         variant: { select: { id: true; name: true } };
       };
     };
@@ -89,7 +93,7 @@ export class ReportsService {
           label: `Monthly Report - ${format(referenceDate, 'MMMM yyyy')}`,
         };
 
-      case ReportFrequency.QUARTERLY:
+      case ReportFrequency.QUARTERLY: {
         const quarter = Math.floor(referenceDate.getMonth() / 3);
         const quarterStart = new Date(
           referenceDate.getFullYear(),
@@ -101,8 +105,9 @@ export class ReportsService {
           endDate,
           label: `Q${quarter + 1} ${referenceDate.getFullYear()} Report`,
         };
+      }
 
-      case ReportFrequency.SEMI_ANNUAL:
+      case ReportFrequency.SEMI_ANNUAL: {
         const halfYear = referenceDate.getMonth() >= 6 ? 1 : 0;
         const halfYearStart = new Date(
           referenceDate.getFullYear(),
@@ -114,6 +119,7 @@ export class ReportsService {
           endDate,
           label: `${halfYear === 0 ? 'H1' : 'H2'} ${referenceDate.getFullYear()} Report`,
         };
+      }
 
       case ReportFrequency.YEARLY:
         return {
@@ -185,7 +191,7 @@ export class ReportsService {
     // Annotate sessions with frequency information
     return {
       frequency,
-      period: this.getDateRangeByFrequency(endDate, frequency),
+      period: this.getDateRangeByFrequency(frequency, endDate),
       totalSessions: sessions.length,
       groupedSessions,
       sessions: sessions.map((session) => ({
@@ -216,8 +222,14 @@ export class ReportsService {
   /**
    * Group sessions by frequency period
    */
-  private groupByFrequency(sessions: any[], frequency: ReportFrequency): any {
-    const grouped: { [key: string]: any[] } = {};
+  private groupByFrequency(
+    sessions: Array<{ startTime: Date; [key: string]: unknown }>,
+    frequency: ReportFrequency,
+  ): Record<string, Array<{ startTime: Date; [key: string]: unknown }>> {
+    const grouped: Record<
+      string,
+      Array<{ startTime: Date; [key: string]: unknown }>
+    > = {};
 
     sessions.forEach((session) => {
       let key: string;
@@ -226,23 +238,26 @@ export class ReportsService {
         case ReportFrequency.DAILY:
           key = format(session.startTime, 'yyyy-MM-dd');
           break;
-        case ReportFrequency.WEEKLY:
+        case ReportFrequency.WEEKLY: {
           const weekStart = startOfWeek(session.startTime, {
             weekStartsOn: 1,
           });
           key = `Week of ${format(weekStart, 'yyyy-MM-dd')}`;
           break;
+        }
         case ReportFrequency.MONTHLY:
           key = format(session.startTime, 'yyyy-MM');
           break;
-        case ReportFrequency.QUARTERLY:
+        case ReportFrequency.QUARTERLY: {
           const quarter = Math.floor(session.startTime.getMonth() / 3);
           key = `Q${quarter + 1} ${session.startTime.getFullYear()}`;
           break;
-        case ReportFrequency.SEMI_ANNUAL:
+        }
+        case ReportFrequency.SEMI_ANNUAL: {
           const halfYear = session.startTime.getMonth() >= 6 ? 'H2' : 'H1';
           key = `${halfYear} ${session.startTime.getFullYear()}`;
           break;
+        }
         case ReportFrequency.YEARLY:
           key = `${session.startTime.getFullYear()}`;
           break;
@@ -819,7 +834,12 @@ export class ReportsService {
               select: {
                 id: true,
                 name: true,
-                category: true,
+                category: {
+                  select: {
+                    id: true,
+                    name: true,
+                  },
+                },
               },
             },
             variant: {
@@ -1267,9 +1287,9 @@ export class ReportsService {
 
     sales.forEach((sale) => {
       sale.items.forEach((item) => {
-        const category = item.product.category;
-        const existing = categoryMap.get(category) || 0;
-        categoryMap.set(category, existing + item.total);
+        const categoryName = item.product.category?.name || 'Uncategorized';
+        const existing = categoryMap.get(categoryName) || 0;
+        categoryMap.set(categoryName, existing + item.total);
       });
     });
 

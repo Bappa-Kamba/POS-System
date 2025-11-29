@@ -243,7 +243,12 @@ export class InventoryService {
             id: true,
             name: true,
             sku: true,
-            category: true,
+            category: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
           },
         },
       },
@@ -258,7 +263,7 @@ export class InventoryService {
       sku: v.sku,
       productId: v.productId,
       productName: v.product.name,
-      category: v.product.category,
+      category: v.product.category?.name || null,
       currentStock: v.quantityInStock,
       expiryDate: v.expiryDate,
       daysUntilExpiry: v.expiryDate
@@ -283,7 +288,12 @@ export class InventoryService {
         id: true,
         name: true,
         sku: true,
-        category: true,
+        category: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
         quantityInStock: true,
         lowStockThreshold: true,
         unitType: true,
@@ -306,7 +316,12 @@ export class InventoryService {
             id: true,
             name: true,
             sku: true,
-            category: true,
+            category: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
           },
         },
       },
@@ -316,6 +331,7 @@ export class InventoryService {
     return {
       products: products.map((p) => ({
         ...p,
+        category: p.category?.name || null,
         isVariant: false,
       })),
       variants: variants.map((v) => ({
@@ -324,7 +340,7 @@ export class InventoryService {
         sku: v.sku,
         productId: v.productId,
         productName: v.product.name,
-        category: v.product.category,
+        category: v.product.category?.name || null,
         quantityInStock: v.quantityInStock,
         lowStockThreshold: v.lowStockThreshold,
         unitType: 'PIECE' as const,
@@ -356,7 +372,9 @@ export class InventoryService {
         },
       });
     } catch (error) {
-      this.logger.error(`Failed to create audit log: ${error}`);
+      this.logger.error(
+        `Failed to create audit log: ${error instanceof Error ? error.message : String(error)}`,
+      );
       // Don't throw - audit logging failure shouldn't break the operation
     }
   }

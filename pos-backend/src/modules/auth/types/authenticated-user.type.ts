@@ -1,8 +1,9 @@
-import { UserRole } from '@prisma/client';
+import { UserRole, ProductSubdivision } from '@prisma/client';
 
 export interface AuthenticatedRequestUser {
   id: string;
   username: string;
   role: UserRole;
   branchId: string;
+  assignedSubdivision?: ProductSubdivision | null;
 }

@@ -5,8 +5,9 @@ import {
   IsBoolean,
   IsOptional,
   Min,
+  IsUUID,
 } from 'class-validator';
-import { ProductCategory, UnitType } from '@prisma/client';
+import { UnitType, ProductSubdivision } from '@prisma/client';
 
 export class UpdateProductDto {
   @IsString()
@@ -25,9 +26,13 @@ export class UpdateProductDto {
   @IsOptional()
   barcode?: string;
 
-  @IsEnum(ProductCategory)
+  @IsUUID()
   @IsOptional()
-  category?: ProductCategory;
+  categoryId?: string;
+
+  @IsEnum(ProductSubdivision)
+  @IsOptional()
+  subdivision?: ProductSubdivision;
 
   @IsBoolean()
   @IsOptional()

@@ -16,6 +16,7 @@ import type { Product } from '../../services/product.service';
 import type { Variant } from '../../services/variant.service';
 import type { Payment } from '../../services/sale.service';
 import { ProductCategory } from '../../types/product';
+import { ProductSubdivision } from '../../types/subdivision';
 
 import { useSession } from '../../contexts/SessionContext';
 import { SessionControls } from '../../components/session/SessionControls';
@@ -43,7 +44,7 @@ export const PosPage: React.FC = () => {
   // Fetch products (only for PURCHASE mode)
   const { data, isLoading } = useProducts({
     search: searchQuery || undefined,
-    category:
+    categoryId:
       selectedCategory !== 'ALL'
         ? (selectedCategory as ProductCategory)
         : undefined,
@@ -106,6 +107,7 @@ export const PosPage: React.FC = () => {
           id: variant.product.id,
           name: variant.product.name,
           category: variant.product.category as ProductCategory,
+          subdivision: ProductSubdivision.CASHBACK_ACCESSORIES,
           hasVariants: true,
           sku: variant.product.id,
           taxable: true,

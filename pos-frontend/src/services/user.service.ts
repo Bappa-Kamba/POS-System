@@ -1,6 +1,8 @@
 import { api } from './api';
 import type { ApiResponse, PaginatedApiResponse } from '../types/api';
 
+import { ProductSubdivision } from '../types/subdivision';
+
 export interface User {
   id: string;
   username: string;
@@ -14,6 +16,7 @@ export interface User {
     id: string;
     name: string;
   };
+  assignedSubdivision?: ProductSubdivision | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -27,6 +30,7 @@ export interface CreateUserPayload {
   role: 'ADMIN' | 'CASHIER';
   branchId: string;
   isActive?: boolean;
+  assignedSubdivision?: ProductSubdivision | null;
 }
 
 export interface UpdateUserPayload {
@@ -38,6 +42,7 @@ export interface UpdateUserPayload {
   role?: 'ADMIN' | 'CASHIER';
   branchId?: string;
   isActive?: boolean;
+  assignedSubdivision?: ProductSubdivision | null;
 }
 
 export interface FindAllUsersParams {

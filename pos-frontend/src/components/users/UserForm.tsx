@@ -7,6 +7,8 @@ import { Input } from '../common/Input';
 import { Button } from '../common/Button';
 import type { User } from '../../services/user.service';
 import { userService } from '../../services/user.service';
+import { useBranches } from '../../hooks/useBranches';
+import { ProductSubdivision, SubdivisionLabels } from '../../types/subdivision';
 
 // Strong password validation: min 8 chars, uppercase, lowercase, number, special char
 const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
@@ -31,6 +33,7 @@ const createUserSchema = z.object({
   role: z.enum(['ADMIN', 'CASHIER']),
   branchId: z.string().min(1, 'Branch is required'),
   isActive: z.boolean().optional(),
+  assignedSubdivision: z.nativeEnum(ProductSubdivision).optional().nullable(),
 });
 
 const updateUserSchema = z.object({
@@ -55,6 +58,7 @@ const updateUserSchema = z.object({
   role: z.enum(['ADMIN', 'CASHIER']),
   branchId: z.string().min(1, 'Branch is required'),
   isActive: z.boolean().optional(),
+  assignedSubdivision: z.nativeEnum(ProductSubdivision).optional().nullable(),
 });
 
 // Generate a random strong password
@@ -133,6 +137,9 @@ export const UserForm: React.FC<UserFormProps> = ({
   const [isCheckingUsername, setIsCheckingUsername] = useState(false);
   const [suggestedUsername, setSuggestedUsername] = useState<string>('');
 
+  // Fetch branches for selection
+  const { data: branchesData } = useBranches({ limit: 100 });
+
   const {
     register,
     handleSubmit,
@@ -152,18 +159,21 @@ export const UserForm: React.FC<UserFormProps> = ({
           role: user.role,
           branchId: user.branchId,
           isActive: user.isActive,
+          assignedSubdivision: user.assignedSubdivision || null,
         }
       : {
           role: 'CASHIER',
           isActive: true,
           branchId: branchId || '',
           password: '',
+          assignedSubdivision: null,
         },
   });
 
   const firstName = watch('firstName');
   const lastName = watch('lastName');
   const password = watch('password');
+  const role = watch('role');
 
   // Check username uniqueness and return available username with number suffix if needed
   const checkUsernameAvailability = useCallback(
@@ -443,20 +453,46 @@ export const UserForm: React.FC<UserFormProps> = ({
             )}
           </div>
 
+          {role === 'CASHIER' && (
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                Assigned Subdivision
+              </label>
+              <select
+                {...register('assignedSubdivision')}
+                className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
+              >
+                <option value="">None (No Access)</option>
+                {Object.values(ProductSubdivision).map((subdivision) => (
+                  <option key={subdivision} value={subdivision}>
+                    {SubdivisionLabels[subdivision]}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                Determines which products this cashier can sell
+              </p>
+            </div>
+          )}
+
           <div>
             <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
               Branch *
             </label>
-            <input
-              type="text"
+            <select
               {...register('branchId')}
-              value={branchId || watch('branchId')}
-              disabled
-              className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-neutral-100 dark:bg-neutral-700 text-neutral-500 dark:text-neutral-400 cursor-not-allowed"
-            />
-            <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-              Users are assigned to the current branch
-            </p>
+              className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
+            >
+              <option value="">Select a branch</option>
+              {branchesData?.data?.map((branch) => (
+                <option key={branch.id} value={branch.id}>
+                  {branch.name} {branch.location ? `- ${branch.location}` : ''}
+                </option>
+              ))}
+            </select>
+            {errors.branchId && (
+              <p className="mt-1 text-sm text-red-600">{errors.branchId.message}</p>
+            )}
           </div>
 
           <div className="flex items-center gap-2">

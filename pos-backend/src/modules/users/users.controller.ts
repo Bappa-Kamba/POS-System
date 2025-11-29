@@ -42,10 +42,14 @@ export class UsersController {
     @Query() findAllUsersDto: FindAllUsersDto,
     @CurrentUser() user: AuthenticatedRequestUser,
   ) {
-    // If no branchId specified, filter by current user's branch
+    // If user is not ADMIN, force filter by their branch
+    // If user is ADMIN, use provided branchId or return all (undefined branchId)
+    const branchId =
+      user.role === UserRole.ADMIN ? findAllUsersDto.branchId : user.branchId;
+
     const params = {
       ...findAllUsersDto,
-      branchId: findAllUsersDto.branchId || user.branchId,
+      branchId,
     };
 
     const result = await this.usersService.findAll(params);

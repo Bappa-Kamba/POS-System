@@ -6,9 +6,9 @@ import {
   IsNumber,
   Min,
   ValidateIf,
+  IsUUID,
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
-import { ProductCategory } from '@prisma/client';
 
 /**
  * Transform string boolean values to actual booleans
@@ -39,8 +39,8 @@ export class FindAllProductsDto {
   search?: string;
 
   @IsOptional()
-  @IsEnum(ProductCategory)
-  category?: ProductCategory;
+  @IsUUID()
+  categoryId?: string;
 
   @IsOptional()
   @Transform(({ value }) => {

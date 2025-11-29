@@ -77,7 +77,12 @@ export class VariantsService {
           select: {
             id: true,
             name: true,
-            category: true,
+            category: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
           },
         },
       },
@@ -117,7 +122,12 @@ export class VariantsService {
           select: {
             id: true,
             name: true,
-            category: true,
+            category: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
             taxable: true,
             taxRate: true,
           },
@@ -190,7 +200,12 @@ export class VariantsService {
           select: {
             id: true,
             name: true,
-            category: true,
+            category: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
           },
         },
       },
@@ -348,7 +363,12 @@ export class VariantsService {
           select: {
             id: true,
             name: true,
-            category: true,
+            category: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
           },
         },
       },

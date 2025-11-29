@@ -6,7 +6,7 @@ import {
   IsOptional,
   MinLength,
 } from 'class-validator';
-import { UserRole } from '@prisma/client';
+import { UserRole, ProductSubdivision } from '@prisma/client';
 
 export class UpdateUserDto {
   @IsString()
@@ -41,4 +41,8 @@ export class UpdateUserDto {
   @IsBoolean()
   @IsOptional()
   isActive?: boolean;
+
+  @IsEnum(ProductSubdivision)
+  @IsOptional()
+  assignedSubdivision?: ProductSubdivision;
 }

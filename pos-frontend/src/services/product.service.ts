@@ -1,5 +1,6 @@
 import { api } from "./api";
 import type { ApiResponse, PaginatedApiResponse } from "../types/api";
+import { ProductSubdivision } from "../types/subdivision";
 
 export interface Product {
   id: string;
@@ -8,6 +9,7 @@ export interface Product {
   sku: string;
   barcode?: string;
   category: "FROZEN" | "DRINKS" | "ACCESSORIES" | "OTHER";
+  subdivision: ProductSubdivision;
   hasVariants: boolean;
   costPrice?: number;
   sellingPrice?: number;
@@ -32,6 +34,7 @@ export interface CreateProductPayload {
   sku: string;
   barcode?: string;
   category: string;
+  subdivision?: ProductSubdivision;
   hasVariants?: boolean;
   costPrice?: number;
   sellingPrice?: number;
@@ -49,7 +52,7 @@ export interface FindAllProductsParams {
   skip?: number;
   take?: number;
   search?: string;
-  category?: string;
+  categoryId?: string;
   isActive?: boolean;
   hasVariants?: boolean;
   lowStock?: boolean;
@@ -65,24 +68,28 @@ const productService = {
     if (params?.skip !== undefined) queryParams.skip = String(params.skip);
     if (params?.take !== undefined) queryParams.take = String(params.take);
     if (params?.search) queryParams.search = params.search;
-    if (params?.category) queryParams.category = params.category;
-    if (params?.hasVariants !== undefined) queryParams.hasVariants = String(params.hasVariants);
-    if (params?.lowStock !== undefined) queryParams.lowStock = String(params.lowStock);
+    if (params?.categoryId) queryParams.categoryId = params.categoryId;
+    if (params?.hasVariants !== undefined)
+      queryParams.hasVariants = String(params.hasVariants);
+    if (params?.lowStock !== undefined)
+      queryParams.lowStock = String(params.lowStock);
     if (params?.branchId) queryParams.branchId = params.branchId;
     // Handle isActive parameter
     // When true: send 'true' (active products) - this is the default
     // When false: send 'false' (inactive products)
     // When undefined: send 'all' (all products - explicitly requested)
     if (params?.isActive === true) {
-      queryParams.isActive = 'true';
+      queryParams.isActive = "true";
     } else if (params?.isActive === false) {
-      queryParams.isActive = 'false';
+      queryParams.isActive = "false";
     } else {
       // When undefined, send 'all' to explicitly request all products
-      queryParams.isActive = 'all';
+      queryParams.isActive = "all";
     }
 
-    const response = await api.get<PaginatedApiResponse<Product> & { variants?: any[] }>("/products", {
+    const response = await api.get<
+      PaginatedApiResponse<Product> & { variants?: any[] }
+    >("/products", {
       params: queryParams,
     });
     return response.data;
@@ -132,13 +139,13 @@ const productService = {
 
   async findByBarcode(barcode: string): Promise<
     ApiResponse<{
-      type: 'product' | 'variant';
+      type: "product" | "variant";
       data: Product | any; // Variant type would need to be defined
     }>
   > {
     const response = await api.get<
       ApiResponse<{
-        type: 'product' | 'variant';
+        type: "product" | "variant";
         data: Product | any;
       }>
     >(`/products/by-barcode/${barcode}`);

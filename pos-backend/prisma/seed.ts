@@ -3,6 +3,8 @@ import {
   UserRole,
   ProductCategory,
   UnitType,
+  ProductSubdivision,
+  SubdivisionStatus,
 } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
@@ -29,6 +31,103 @@ async function main() {
   });
 
   console.log('✅ Branch created');
+
+  // Create Subdivisions
+  const cashbackSubdivision = await prisma.subdivision.create({
+    data: {
+      name: ProductSubdivision.CASHBACK_ACCESSORIES,
+      displayName: 'Cashback & Accessories',
+      description: 'Mobile accessories, phone cases, chargers, and cashback services',
+      status: SubdivisionStatus.ACTIVE,
+      color: '#3B82F6', // Blue
+      icon: 'Smartphone',
+    },
+  });
+
+  const frozenDrinksSubdivision = await prisma.subdivision.create({
+    data: {
+      name: ProductSubdivision.FROZEN_DRINKS,
+      displayName: 'Frozen Products & Drinks',
+      description: 'Frozen foods, beverages, ice cream, and cold drinks',
+      status: SubdivisionStatus.ACTIVE,
+      color: '#10B981', // Green
+      icon: 'Snowflake',
+    },
+  });
+
+  console.log('✅ Subdivisions created');
+
+  // Assign Subdivisions to Branch
+  await prisma.branchSubdivision.createMany({
+    data: [
+      {
+        branchId: branch.id,
+        subdivisionId: cashbackSubdivision.id,
+        isActive: true,
+      },
+      {
+        branchId: branch.id,
+        subdivisionId: frozenDrinksSubdivision.id,
+        isActive: true,
+      },
+    ],
+  });
+
+  console.log('✅ Subdivisions assigned to branch');
+
+  // Create Categories for Cashback & Accessories
+  const mobileAccessoriesCategory = await prisma.category.create({
+    data: {
+      name: 'Mobile Accessories',
+      subdivisionId: cashbackSubdivision.id,
+      description: 'Phone cases, chargers, screen protectors',
+      displayOrder: 1,
+      isActive: true,
+    },
+  });
+
+  const cashbackServicesCategory = await prisma.category.create({
+    data: {
+      name: 'Cashback Services',
+      subdivisionId: cashbackSubdivision.id,
+      description: 'Mobile money cashback services',
+      displayOrder: 2,
+      isActive: true,
+    },
+  });
+
+  // Create Categories for Frozen & Drinks
+  const beveragesCategory = await prisma.category.create({
+    data: {
+      name: 'Beverages',
+      subdivisionId: frozenDrinksSubdivision.id,
+      description: 'Soft drinks, juices, water',
+      displayOrder: 1,
+      isActive: true,
+    },
+  });
+
+  const frozenFoodsCategory = await prisma.category.create({
+    data: {
+      name: 'Frozen Foods',
+      subdivisionId: frozenDrinksSubdivision.id,
+      description: 'Frozen chicken, fish, vegetables',
+      displayOrder: 2,
+      isActive: true,
+    },
+  });
+
+  const iceCreamCategory = await prisma.category.create({
+    data: {
+      name: 'Ice Cream & Desserts',
+      subdivisionId: frozenDrinksSubdivision.id,
+      description: 'Ice cream, frozen desserts',
+      displayOrder: 3,
+      isActive: true,
+    },
+  });
+
+  console.log('✅ Categories created');
 
   // Create Admin User
   const adminPassword = await bcrypt.hash('admin123', 10);
@@ -57,6 +156,7 @@ async function main() {
       lastName: 'Cashier',
       role: UserRole.CASHIER,
       branchId: branch.id,
+      assignedSubdivision: ProductSubdivision.FROZEN_DRINKS,
     },
   });
 
@@ -64,13 +164,14 @@ async function main() {
 
   // Create Sample Products
   const products = await Promise.all([
-    // Simple product without variants
+    // Beverage product
     prisma.product.create({
       data: {
         name: 'Coca Cola 500ml',
         sku: 'DRINK-001',
         barcode: '5000112637588',
-        category: ProductCategory.DRINKS,
+        categoryId: beveragesCategory.id,
+        subdivision: ProductSubdivision.FROZEN_DRINKS,
         hasVariants: false,
         costPrice: 150,
         sellingPrice: 250,
@@ -82,46 +183,47 @@ async function main() {
       },
     }),
 
-    // Product with variants
+    // Mobile accessory with variants
     prisma.product.create({
       data: {
-        name: 'T-Shirt',
+        name: 'Phone Case',
         sku: 'ACC-001',
-        category: ProductCategory.ACCESSORIES,
+        categoryId: mobileAccessoriesCategory.id,
+        subdivision: ProductSubdivision.CASHBACK_ACCESSORIES,
         hasVariants: true,
         taxable: true,
         branchId: branch.id,
         variants: {
           create: [
             {
-              name: 'Small - Black',
-              sku: 'ACC-001-S-BLK',
+              name: 'iPhone 14 - Black',
+              sku: 'ACC-001-IP14-BLK',
               barcode: '1234567890001',
               costPrice: 1000,
               sellingPrice: 2000,
               quantityInStock: 50,
               lowStockThreshold: 10,
-              attributes: JSON.stringify({ size: 'S', color: 'Black' }),
+              attributes: JSON.stringify({ model: 'iPhone 14', color: 'Black' }),
             },
             {
-              name: 'Medium - Black',
-              sku: 'ACC-001-M-BLK',
+              name: 'iPhone 14 - Clear',
+              sku: 'ACC-001-IP14-CLR',
               barcode: '1234567890002',
               costPrice: 1000,
               sellingPrice: 2000,
               quantityInStock: 75,
               lowStockThreshold: 10,
-              attributes: JSON.stringify({ size: 'M', color: 'Black' }),
+              attributes: JSON.stringify({ model: 'iPhone 14', color: 'Clear' }),
             },
             {
-              name: 'Large - White',
-              sku: 'ACC-001-L-WHT',
+              name: 'Samsung S23 - Black',
+              sku: 'ACC-001-S23-BLK',
               barcode: '1234567890003',
-              costPrice: 1000,
-              sellingPrice: 2000,
+              costPrice: 900,
+              sellingPrice: 1800,
               quantityInStock: 60,
               lowStockThreshold: 10,
-              attributes: JSON.stringify({ size: 'L', color: 'White' }),
+              attributes: JSON.stringify({ model: 'Samsung S23', color: 'Black' }),
             },
           ],
         },
@@ -134,13 +236,33 @@ async function main() {
         name: 'Frozen Chicken',
         sku: 'FROZEN-001',
         barcode: '7890123456789',
-        category: ProductCategory.FROZEN,
+        categoryId: frozenFoodsCategory.id,
+        subdivision: ProductSubdivision.FROZEN_DRINKS,
         hasVariants: false,
         costPrice: 1500,
         sellingPrice: 2500,
         quantityInStock: 45.5,
         unitType: UnitType.WEIGHT,
         lowStockThreshold: 10,
+        taxable: true,
+        branchId: branch.id,
+      },
+    }),
+
+    // Ice cream product
+    prisma.product.create({
+      data: {
+        name: 'Vanilla Ice Cream 500ml',
+        sku: 'ICE-001',
+        barcode: '9876543210123',
+        categoryId: iceCreamCategory.id,
+        subdivision: ProductSubdivision.FROZEN_DRINKS,
+        hasVariants: false,
+        costPrice: 800,
+        sellingPrice: 1500,
+        quantityInStock: 30,
+        unitType: UnitType.PIECE,
+        lowStockThreshold: 5,
         taxable: true,
         branchId: branch.id,
       },

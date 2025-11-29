@@ -3,11 +3,11 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
   Package,
-  Warehouse,
   ShoppingCart,
   LogOut,
   User,
   Users,
+  Building2,
   BarChart3,
   DollarSign,
   FileText,
@@ -15,9 +15,14 @@ import {
   Moon,
   Sun,
   ChevronDown,
+  Layers,
+  Tag,
+  FolderTree,
+  UserCog,
+  ClipboardList,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
-import { useAuthStore } from '../../store/authStore';
+
 import { useThemeStore } from '../../store/themeStore';
 import { useSafeLogout } from '../../hooks/useSafeLogout';
 import { SessionClosingModal } from '../session/SessionClosingModal';
@@ -28,7 +33,11 @@ export const Navbar = () => {
   const navigate = useNavigate();
   const { isDarkMode, toggleTheme } = useThemeStore();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const profileDropdownRef = useRef<HTMLDivElement>(null);
+  const catalogDropdownRef = useRef<HTMLDivElement>(null);
+  const managementDropdownRef = useRef<HTMLDivElement>(null);
+  const reportsDropdownRef = useRef<HTMLDivElement>(null);
 
   const {
     handleSafeLogout,
@@ -48,7 +57,7 @@ export const Navbar = () => {
     await handleSafeLogout();
   };
 
-  // Close dropdown when clicking outside
+  // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -57,16 +66,27 @@ export const Navbar = () => {
       ) {
         setIsProfileOpen(false);
       }
+      
+      if (
+        catalogDropdownRef.current &&
+        !catalogDropdownRef.current.contains(event.target as Node) &&
+        managementDropdownRef.current &&
+        !managementDropdownRef.current.contains(event.target as Node) &&
+        reportsDropdownRef.current &&
+        !reportsDropdownRef.current.contains(event.target as Node)
+      ) {
+        setOpenDropdown(null);
+      }
     };
 
-    if (isProfileOpen) {
+    if (isProfileOpen || openDropdown) {
       document.addEventListener('mousedown', handleClickOutside);
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isProfileOpen]);
+  }, [isProfileOpen, openDropdown]);
 
   const isActive = (path: string) => {
     if (path === '/dashboard') {
@@ -75,51 +95,31 @@ export const Navbar = () => {
     return location.pathname.startsWith(path);
   };
 
-  const navLinks = [
-    ...(user?.role === 'ADMIN'
-      ? [
-          {
-            path: '/dashboard',
-            label: 'Dashboard',
-            icon: LayoutDashboard,
-          },
-          {
-            path: '/products',
-            label: 'Products',
-            icon: Package,
-          },
-          {
-            path: '/inventory',
-            label: 'Inventory',
-            icon: Warehouse,
-          },
-          {
-            path: '/users',
-            label: 'Users',
-            icon: Users,
-          },
-          {
-            path: '/reports',
-            label: 'Reports',
-            icon: BarChart3,
-          },
-          {
-            path: '/expenses',
-            label: 'Expenses',
-            icon: DollarSign,
-          },
-          {
-            path: '/audit-logs',
-            label: 'Audit Logs',
-            icon: FileText,
-          },
-        ]
-      : []),
-    {
-      path: '/pos',
-      label: 'POS',
-      icon: ShoppingCart,
-    },
+  // Check if any path in a group is active
+  const isGroupActive = (paths: string[]) => {
+    return paths.some(path => location.pathname.startsWith(path));
+  };
+
+  const toggleDropdown = (dropdownName: string) => {
+    setOpenDropdown(openDropdown === dropdownName ? null : dropdownName);
+  };
+
+  // Grouped navigation structure
+  const catalogItems = [
+    { path: '/products', label: 'Products & Inventory', icon: Package },
+    { path: '/subdivisions', label: 'Subdivisions', icon: Layers },
+    { path: '/categories', label: 'Categories', icon: Tag },
+  ];
+
+  const managementItems = [
+    { path: '/users', label: 'Users', icon: Users },
+    { path: '/branches', label: 'Branches', icon: Building2 },
+    { path: '/expenses', label: 'Expenses', icon: DollarSign },
+  ];
+
+  const reportsItems = [
+    { path: '/reports', label: 'Reports', icon: BarChart3 },
+    { path: '/audit-logs', label: 'Audit Logs', icon: FileText },
   ];
 
   return (
@@ -142,24 +142,155 @@ export const Navbar = () => {
 
             {/* Navigation Links */}
             <div className="hidden md:flex items-center gap-1">
-              {navLinks.map((link) => {
-                const Icon = link.icon;
-                const active = isActive(link.path);
-                return (
+              {user?.role === 'ADMIN' && (
+                <>
+                  {/* Dashboard Link */}
                   <Link
-                    key={link.path}
-                    to={link.path}
+                    to="/dashboard"
                     className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      active
+                      isActive('/dashboard')
                         ? 'bg-primary-100 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
                         : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-700 hover:text-neutral-900 dark:hover:text-neutral-100'
                     }`}
                   >
-                    <Icon className="w-4 h-4" />
-                    {link.label}
+                    <LayoutDashboard className="w-4 h-4" />
+                    Dashboard
                   </Link>
-                );
-              })}
+
+                  {/* Catalog Dropdown */}
+                  <div className="relative" ref={catalogDropdownRef}>
+                    <button
+                      onClick={() => toggleDropdown('catalog')}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                        isGroupActive(catalogItems.map(i => i.path))
+                          ? 'bg-primary-100 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
+                          : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-700 hover:text-neutral-900 dark:hover:text-neutral-100'
+                      }`}
+                    >
+                      <FolderTree className="w-4 h-4" />
+                      Catalog
+                      <ChevronDown className={`w-3 h-3 transition-transform ${
+                        openDropdown === 'catalog' ? 'rotate-180' : ''
+                      }`} />
+                    </button>
+                    {openDropdown === 'catalog' && (
+                      <div className="absolute left-0 mt-2 w-48 bg-white dark:bg-neutral-800 rounded-lg shadow-lg border border-neutral-200 dark:border-neutral-700 py-1 z-50">
+                        {catalogItems.map((item) => {
+                          const Icon = item.icon;
+                          return (
+                            <Link
+                              key={item.path}
+                              to={item.path}
+                              onClick={() => setOpenDropdown(null)}
+                              className={`flex items-center gap-2 px-4 py-2 text-sm transition-colors ${
+                                isActive(item.path)
+                                  ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
+                                  : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700'
+                              }`}
+                            >
+                              <Icon className="w-4 h-4" />
+                              {item.label}
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Management Dropdown */}
+                  <div className="relative" ref={managementDropdownRef}>
+                    <button
+                      onClick={() => toggleDropdown('management')}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                        isGroupActive(managementItems.map(i => i.path))
+                          ? 'bg-primary-100 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
+                          : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-700 hover:text-neutral-900 dark:hover:text-neutral-100'
+                      }`}
+                    >
+                      <UserCog className="w-4 h-4" />
+                      Management
+                      <ChevronDown className={`w-3 h-3 transition-transform ${
+                        openDropdown === 'management' ? 'rotate-180' : ''
+                      }`} />
+                    </button>
+                    {openDropdown === 'management' && (
+                      <div className="absolute left-0 mt-2 w-48 bg-white dark:bg-neutral-800 rounded-lg shadow-lg border border-neutral-200 dark:border-neutral-700 py-1 z-50">
+                        {managementItems.map((item) => {
+                          const Icon = item.icon;
+                          return (
+                            <Link
+                              key={item.path}
+                              to={item.path}
+                              onClick={() => setOpenDropdown(null)}
+                              className={`flex items-center gap-2 px-4 py-2 text-sm transition-colors ${
+                                isActive(item.path)
+                                  ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
+                                  : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700'
+                              }`}
+                            >
+                              <Icon className="w-4 h-4" />
+                              {item.label}
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Reports Dropdown */}
+                  <div className="relative" ref={reportsDropdownRef}>
+                    <button
+                      onClick={() => toggleDropdown('reports')}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                        isGroupActive(reportsItems.map(i => i.path))
+                          ? 'bg-primary-100 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
+                          : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-700 hover:text-neutral-900 dark:hover:text-neutral-100'
+                      }`}
+                    >
+                      <ClipboardList className="w-4 h-4" />
+                      Reports
+                      <ChevronDown className={`w-3 h-3 transition-transform ${
+                        openDropdown === 'reports' ? 'rotate-180' : ''
+                      }`} />
+                    </button>
+                    {openDropdown === 'reports' && (
+                      <div className="absolute left-0 mt-2 w-48 bg-white dark:bg-neutral-800 rounded-lg shadow-lg border border-neutral-200 dark:border-neutral-700 py-1 z-50">
+                        {reportsItems.map((item) => {
+                          const Icon = item.icon;
+                          return (
+                            <Link
+                              key={item.path}
+                              to={item.path}
+                              onClick={() => setOpenDropdown(null)}
+                              className={`flex items-center gap-2 px-4 py-2 text-sm transition-colors ${
+                                isActive(item.path)
+                                  ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
+                                  : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700'
+                              }`}
+                            >
+                              <Icon className="w-4 h-4" />
+                              {item.label}
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+
+              {/* POS Link (always visible) */}
+              <Link
+                to="/pos"
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  isActive('/pos')
+                    ? 'bg-primary-100 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
+                    : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-700 hover:text-neutral-900 dark:hover:text-neutral-100'
+                }`}
+              >
+                <ShoppingCart className="w-4 h-4" />
+                POS
+              </Link>
             </div>
           </div>
 
@@ -237,24 +368,83 @@ export const Navbar = () => {
       {/* Mobile Navigation */}
       <div className="md:hidden border-t border-neutral-200 dark:border-neutral-700">
         <div className="px-4 py-2 flex items-center gap-1 overflow-x-auto">
-          {navLinks.map((link) => {
-            const Icon = link.icon;
-            const active = isActive(link.path);
-            return (
+          {user?.role === 'ADMIN' && (
+            <>
               <Link
-                key={link.path}
-                to={link.path}
+                to="/dashboard"
                 className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-                  active
+                  isActive('/dashboard')
                     ? 'bg-primary-100 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
                     : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-700'
                 }`}
               >
-                <Icon className="w-4 h-4" />
-                {link.label}
+                <LayoutDashboard className="w-4 h-4" />
+                Dashboard
               </Link>
-            );
-          })}
+              {catalogItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+                      isActive(item.path)
+                        ? 'bg-primary-100 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
+                        : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-700'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    {item.label}
+                  </Link>
+                );
+              })}
+              {managementItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+                      isActive(item.path)
+                        ? 'bg-primary-100 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
+                        : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-700'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    {item.label}
+                  </Link>
+                );
+              })}
+              {reportsItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+                      isActive(item.path)
+                        ? 'bg-primary-100 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
+                        : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-700'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </>
+          )}
+          <Link
+            to="/pos"
+            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+              isActive('/pos')
+                ? 'bg-primary-100 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
+                : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-700'
+            }`}
+          >
+            <ShoppingCart className="w-4 h-4" />
+            POS
+          </Link>
         </div>
       </div>
 

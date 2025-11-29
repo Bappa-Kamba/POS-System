@@ -25,6 +25,9 @@ model User {
   branchId     String
   branch       Branch   @relation(fields: [branchId], references: [id])
 
+  // Subdivision assignment for CASHIER users (null for ADMIN)
+  assignedSubdivision ProductSubdivision?
+
   sales     Sale[]
   auditLogs AuditLog[]
   openedSessions Session[] @relation("OpenedSessions")
@@ -35,6 +38,7 @@ model User {
   
   @@index([username])
   @@index([branchId])
+  @@index([assignedSubdivision])
   @@map("users")
 }
 
@@ -68,16 +72,85 @@ model Branch {
   cashbackServiceChargeRate Float @default(0.02) // Service charge rate (e.g., 0.02 = 2%)
 
   // Relations
-  users    User[]
-  products Product[]
-  sales    Sale[]
-  expenses Expense[]
-  sessions Session[]
+  users              User[]
+  products           Product[]
+  sales              Sale[]
+  expenses           Expense[]
+  sessions           Session[]
+  branchSubdivisions BranchSubdivision[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@map("branches")
+}
+
+// ============================================
+// SUBDIVISION MANAGEMENT
+// ============================================
+
+model Subdivision {
+  id          String             @id @default(uuid())
+  name        ProductSubdivision @unique
+  displayName String
+  description String?
+  status      SubdivisionStatus  @default(ACTIVE)
+  color       String?            // Hex color for UI
+  icon        String?            // Icon name for UI
+
+  // Relations
+  categories         Category[]
+  branchSubdivisions BranchSubdivision[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("subdivisions")
+}
+
+model BranchSubdivision {
+  id            String  @id @default(uuid())
+  branchId      String
+  subdivisionId String
+  isActive      Boolean @default(true)
+
+  // Relations
+  branch      Branch      @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  subdivision Subdivision @relation(fields: [subdivisionId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([branchId, subdivisionId])
+  @@index([branchId])
+  @@index([subdivisionId])
+  @@map("branch_subdivisions")
+}
+
+model Category {
+  id           String  @id @default(uuid())
+  name         String
+  subdivisionId String
+  description  String?
+  displayOrder Int     @default(0)
+  isActive     Boolean @default(true)
+
+  // Relations
+  subdivision Subdivision @relation(fields: [subdivisionId], references: [id], onDelete: Cascade)
+  products    Product[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([name, subdivisionId])
+  @@index([subdivisionId])
+  @@map("categories")
+}
+
+enum SubdivisionStatus {
+  ACTIVE
+  INACTIVE
+  ARCHIVED
 }
 
 // ============================================
@@ -90,8 +163,11 @@ model Product {
   description String?
   sku         String          @unique
   barcode     String?         @unique
-  category    ProductCategory
   hasVariants Boolean         @default(false)
+
+  // Category and Subdivision
+  categoryId  String?
+  subdivision ProductSubdivision @default(CASHBACK_ACCESSORIES)
 
   // Pricing (for products without variants)
   costPrice    Float?
@@ -113,6 +189,8 @@ model Product {
   branchId String
   branch   Branch @relation(fields: [branchId], references: [id])
 
+  category Category? @relation(fields: [categoryId], references: [id])
+
   // Relations
   variants      ProductVariant[]
   saleItems     SaleItem[]
@@ -123,8 +201,10 @@ model Product {
 
   @@index([sku])
   @@index([barcode])
-  @@index([category])
+  @@index([categoryId])
   @@index([branchId])
+  @@index([subdivision])
+  @@index([branchId, subdivision])
   @@map("products")
 }
 
@@ -169,6 +249,11 @@ enum ProductCategory {
   DRINKS
   ACCESSORIES
   OTHER
+}
+
+enum ProductSubdivision {
+  CASHBACK_ACCESSORIES
+  FROZEN_DRINKS
 }
 
 enum UnitType {

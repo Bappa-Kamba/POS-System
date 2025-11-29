@@ -6,6 +6,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
+import { BranchesModule } from './modules/branches/branches.module';
 import { ProductsModule } from './modules/products/products.module';
 import { VariantsModule } from './modules/variants/variants.module';
 import { SalesModule } from './modules/sales/sales.module';
@@ -17,6 +18,8 @@ import { SettingsModule } from './modules/settings/settings.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuditInterceptor } from './common/interceptors/audit.interceptor';
 import { SessionsModule } from './modules/sessions/sessions.module';
+import { SubdivisionsModule } from './modules/subdivisions/subdivisions.module';
+import { CategoriesModule } from './modules/categories/categories.module';
 
 @Module({
   imports: [
@@ -30,6 +33,7 @@ import { SessionsModule } from './modules/sessions/sessions.module';
     }),
     PrismaModule,
     UsersModule,
+    BranchesModule,
     AuthModule,
     ProductsModule,
     VariantsModule,
@@ -38,9 +42,10 @@ import { SessionsModule } from './modules/sessions/sessions.module';
     InventoryModule,
     ExpensesModule,
     AuditModule,
-    AuditModule,
     SettingsModule,
     SessionsModule,
+    SubdivisionsModule,
+    CategoriesModule,
   ],
   controllers: [AppController],
   providers: [

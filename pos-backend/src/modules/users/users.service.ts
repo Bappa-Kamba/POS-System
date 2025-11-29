@@ -89,6 +89,7 @@ export class UsersService {
         lastName: data.lastName,
         role: data.role,
         branchId: data.branchId,
+        assignedSubdivision: data.assignedSubdivision,
         isActive: data.isActive ?? true,
       },
     });

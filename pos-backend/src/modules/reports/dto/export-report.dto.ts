@@ -14,14 +14,7 @@ export enum ExportFormat {
   EXCEL = 'excel',
 }
 
-export enum ReportFrequency {
-  DAILY = 'daily',
-  WEEKLY = 'weekly',
-  MONTHLY = 'monthly',
-  QUARTERLY = 'quarterly',
-  SEMI_ANNUAL = 'semi-annual',
-  YEARLY = 'yearly',
-}
+import { SalesReportDto, ReportFrequency } from './sales-report.dto';
 
 export class ExportReportDto {
   @IsEnum(ReportType)

@@ -4,10 +4,17 @@ import {
   ConflictException,
   BadRequestException,
   Logger,
+  ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateProductDto, UpdateProductDto, FindAllProductsDto } from './dto';
-import { Prisma, AuditAction } from '@prisma/client';
+import {
+  Prisma,
+  AuditAction,
+  UserRole,
+  ProductSubdivision,
+} from '@prisma/client';
+import { AuthenticatedRequestUser } from '../auth/types/authenticated-user.type';
 
 @Injectable()
 export class ProductsService {
@@ -15,9 +22,85 @@ export class ProductsService {
   constructor(private readonly prisma: PrismaService) {}
 
   /**
+   * Build where clause based on user role and assigned subdivision
+   * ADMIN: returns empty object (no filtering)
+   * CASHIER: filters by branchId and assignedSubdivision
+   */
+  private buildAccessibleProductsWhere(
+    user: AuthenticatedRequestUser,
+  ): Prisma.ProductWhereInput {
+    if (user.role === UserRole.ADMIN) {
+      return {};
+    }
+
+    if (user.role === UserRole.CASHIER) {
+      if (!user.assignedSubdivision) {
+        throw new ForbiddenException(
+          'You have not been assigned to a product subdivision',
+        );
+      }
+
+      return {
+        branchId: user.branchId,
+        subdivision: user.assignedSubdivision,
+      };
+    }
+
+    throw new ForbiddenException('Invalid user role');
+  }
+
+  /**
+   * Verify user can access a specific product
+   */
+  private async verifyProductAccess(
+    productId: string,
+    user: AuthenticatedRequestUser,
+  ): Promise<void> {
+    const product = await this.prisma.product.findUnique({
+      where: { id: productId },
+    });
+
+    if (!product) {
+      throw new NotFoundException('Product not found');
+    }
+
+    // ADMIN can access all products
+    if (user.role === UserRole.ADMIN) {
+      return;
+    }
+
+    // CASHIER can only access products from their branch and subdivision
+    if (user.role === UserRole.CASHIER) {
+      if (
+        product.branchId !== user.branchId ||
+        product.subdivision !== user.assignedSubdivision
+      ) {
+        this.logger.warn(
+          `Unauthorized product access attempt by user ${user.id} on product ${productId}`,
+        );
+        throw new ForbiddenException('You do not have access to this product');
+      }
+      return;
+    }
+
+    throw new ForbiddenException('Invalid user role');
+  }
+
+  /**
    * Create a new product
    */
-  async create(data: CreateProductDto, userId: string) {
+  async create(
+    data: CreateProductDto,
+    userId: string,
+    user: AuthenticatedRequestUser,
+  ) {
+    // CASHIER can only create products for their own branch
+    if (user.role === UserRole.CASHIER && data.branchId !== user.branchId) {
+      throw new ForbiddenException(
+        'You can only create products for your assigned branch',
+      );
+    }
+
     // Check if SKU already exists
     const existingSku = await this.prisma.product.findUnique({
       where: { sku: data.sku },
@@ -52,10 +135,18 @@ export class ProductsService {
       }
     }
 
+    // For CASHIER users, force their assigned subdivision
+    let subdivisionToUse =
+      data.subdivision || ProductSubdivision.CASHBACK_ACCESSORIES;
+    if (user.role === UserRole.CASHIER && user.assignedSubdivision) {
+      subdivisionToUse = user.assignedSubdivision;
+    }
+
     // Create product
     const product = await this.prisma.product.create({
       data: {
         ...data,
+        subdivision: subdivisionToUse,
         isActive: true,
       },
       include: {
@@ -79,13 +170,14 @@ export class ProductsService {
 
   /**
    * Get all products with filtering and pagination
+   * Automatically filters by user's accessible subdivisions
    */
-  async findAll(params: FindAllProductsDto) {
+  async findAll(params: FindAllProductsDto, user?: AuthenticatedRequestUser) {
     const {
       skip = 0,
       take = 20,
       search,
-      category,
+      categoryId,
       isActive,
       hasVariants,
       lowStock,
@@ -97,7 +189,11 @@ export class ProductsService {
       `Products findAll - isActive: ${isActive} (type: ${typeof isActive})`,
     );
 
+    // Build access control filter
+    const accessFilter = user ? this.buildAccessibleProductsWhere(user) : {};
+
     const where: Prisma.ProductWhereInput = {
+      ...accessFilter,
       ...(branchId && { branchId }),
       // If isActive is 'ALL', it means "all" was explicitly requested (via 'all' string)
       // So we don't filter by isActive (return all products)
@@ -105,7 +201,7 @@ export class ProductsService {
       ...(isActive !== undefined &&
         isActive !== 'ALL' &&
         typeof isActive === 'boolean' && { isActive }),
-      ...(category && { category }),
+      ...(categoryId && { categoryId }),
       ...(hasVariants !== undefined && { hasVariants }),
       ...(search && {
         OR: [
@@ -134,7 +230,6 @@ export class ProductsService {
           select: {
             id: true;
             name: true;
-            category: true;
             taxable: true;
             taxRate: true;
             branchId: true;
@@ -158,7 +253,6 @@ export class ProductsService {
             select: {
               id: true,
               name: true,
-              category: true,
               taxable: true,
               taxRate: true,
               branchId: true,
@@ -249,11 +343,13 @@ export class ProductsService {
   /**
    * Get single product by ID
    */
-  async findOne(id: string) {
+  async findOne(id: string, user?: AuthenticatedRequestUser) {
     const product = await this.prisma.product.findUnique({
       where: { id },
       include: {
-        branch: true,
+        branch: {
+          select: { id: true, name: true },
+        },
         variants: {
           where: { isActive: true },
           orderBy: { name: 'asc' },
@@ -265,15 +361,34 @@ export class ProductsService {
       throw new NotFoundException('Product not found');
     }
 
+    // Verify user has access to this product
+    if (user) {
+      await this.verifyProductAccess(id, user);
+    }
+
     return product;
   }
 
   /**
    * Update product
    */
-  async update(id: string, data: UpdateProductDto, userId: string) {
-    // Check if product exists
-    const product = await this.findOne(id);
+  async update(
+    id: string,
+    data: UpdateProductDto,
+    userId: string,
+    user?: AuthenticatedRequestUser,
+  ) {
+    // Check if product exists and user has access
+    const product = await this.findOne(id, user);
+
+    // CASHIER cannot change subdivision
+    if (
+      user?.role === UserRole.CASHIER &&
+      data.subdivision &&
+      data.subdivision !== product.subdivision
+    ) {
+      throw new ForbiddenException('You cannot change the product subdivision');
+    }
 
     // Store old values for audit
     const oldValues = JSON.stringify(product);
@@ -345,9 +460,9 @@ export class ProductsService {
   /**
    * Soft delete product
    */
-  async remove(id: string, userId: string) {
-    // Check if product exists
-    const product = await this.findOne(id);
+  async remove(id: string, userId: string, user?: AuthenticatedRequestUser) {
+    // Check if product exists and user has access
+    const product = await this.findOne(id, user);
 
     // Store old values for audit
     const oldValues = JSON.stringify(product);
@@ -526,7 +641,6 @@ export class ProductsService {
         sellingPrice: true,
         quantityInStock: true,
         unitType: true,
-        category: true,
       },
     });
 
