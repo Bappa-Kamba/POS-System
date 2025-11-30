@@ -7,6 +7,7 @@ import type { User } from '../../services/user.service';
 
 interface UserTableProps {
   users: User[];
+  onView: (user: User) => void;
   onEdit: (user: User) => void;
   onDelete: (user: User) => void;
   isLoading?: boolean;
@@ -14,6 +15,7 @@ interface UserTableProps {
 
 export const UserTable: React.FC<UserTableProps> = ({
   users,
+  onView,
   onEdit,
   onDelete,
   isLoading,
@@ -67,7 +69,8 @@ export const UserTable: React.FC<UserTableProps> = ({
           {users.map((user) => (
             <tr
               key={user.id}
-              className="hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors"
+              onClick={() => onView(user)}
+              className="hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors cursor-pointer"
             >
               <td className="px-6 py-4 whitespace-nowrap">
                 <div className="flex items-center">
@@ -116,7 +119,10 @@ export const UserTable: React.FC<UserTableProps> = ({
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => onEdit(user)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onEdit(user);
+                    }}
                     className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-500"
                   >
                     <Edit className="w-4 h-4" />
@@ -124,7 +130,10 @@ export const UserTable: React.FC<UserTableProps> = ({
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => onDelete(user)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete(user);
+                    }}
                     className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-500"
                     disabled={!user.isActive} // Can't delete already inactive users
                   >

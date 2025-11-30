@@ -12,17 +12,18 @@ export class SessionsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async startSession(branchId: string, userId: string, dto: StartSessionDto) {
-    // Check if there is already an open session for this branch
+    // Check if this user already has an open session in this branch
     const activeSession = await this.prisma.session.findFirst({
       where: {
         branchId,
+        openedById: userId,
         status: SessionStatus.OPEN,
       },
     });
 
     if (activeSession) {
       throw new BadRequestException(
-        'There is already an active session for this branch.',
+        'You already have an active session in this branch.',
       );
     }
 
@@ -62,10 +63,11 @@ export class SessionsService {
     });
   }
 
-  async getActiveSession(branchId: string) {
+  async getActiveSession(branchId: string, userId: string) {
     return this.prisma.session.findFirst({
       where: {
         branchId,
+        openedById: userId,
         status: SessionStatus.OPEN,
       },
       include: {

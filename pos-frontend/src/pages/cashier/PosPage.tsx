@@ -19,7 +19,10 @@ import { ProductCategory } from '../../types/product';
 
 import { useSession } from '../../contexts/SessionContext';
 import { SessionControls } from '../../components/session/SessionControls';
-import { LogOut } from 'lucide-react';
+import { LogOut, Receipt } from 'lucide-react';
+import { QuickExpenseForm } from '../../components/pos/QuickExpenseForm';
+import { useCreateExpense, useExpenseCategories } from '../../hooks/useExpenses';
+import toast from 'react-hot-toast';
 
 export const PosPage: React.FC = () => {
   const { user } = useAuth();
@@ -31,6 +34,10 @@ export const PosPage: React.FC = () => {
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
   const [completedSaleId, setCompletedSaleId] = useState<string | null>(null);
+  const [isExpenseFormOpen, setIsExpenseFormOpen] = useState(false);
+
+  const createExpense = useCreateExpense();
+  const { data: expenseCategories = [] } = useExpenseCategories();
 
   const addItem = useCartStore((state) => state.addItem);
   const { items, getTotal, clearCart } = useCartStore();
@@ -204,6 +211,26 @@ export const PosPage: React.FC = () => {
     setSelectedCategory('ALL');
   };
 
+  const handleExpenseSubmit = async (data: { title: string; category: string; amount: number; description?: string }) => {
+    if (!user?.branchId) {
+      toast.error('Branch information not found');
+      return;
+    }
+
+    try {
+      await createExpense.mutateAsync({
+        ...data,
+        date: new Date().toISOString(),
+        branchId: user.branchId,
+      });
+      toast.success('Expense recorded successfully');
+      setIsExpenseFormOpen(false);
+    } catch (error) {
+      toast.error('Failed to record expense');
+      console.error(error);
+    }
+  };
+
   const categories = [
     { value: 'ALL', label: 'All' },
     { value: 'FROZEN', label: 'Frozen' },
@@ -324,6 +351,10 @@ export const PosPage: React.FC = () => {
                 {user?.branchId || 'N/A'}
               </p>
             </div>
+            <Button variant="secondary" size="sm" onClick={() => setIsExpenseFormOpen(true)}>
+              <Receipt className="w-4 h-4 mr-2" />
+              Record Expense
+            </Button>
             <Button variant="ghost" onClick={handleBackToSelection}>
               ← Back to Selection
             </Button>
@@ -415,6 +446,16 @@ export const PosPage: React.FC = () => {
             <SessionControls />
           </div>
         </div>
+      )}
+
+      {/* Expense Form Modal */}
+      {isExpenseFormOpen && (
+        <QuickExpenseForm
+          onSubmit={handleExpenseSubmit}
+          onCancel={() => setIsExpenseFormOpen(false)}
+          isLoading={createExpense.isPending}
+          categories={expenseCategories}
+        />
       )}
     </div>
   );

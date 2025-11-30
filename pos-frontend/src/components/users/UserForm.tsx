@@ -150,6 +150,7 @@ export const UserForm: React.FC<UserFormProps> = ({
     watch,
     setValue,
     getValues,
+    reset,
   } = useForm({
     resolver: zodResolver(schema),
     defaultValues: user
@@ -177,6 +178,23 @@ export const UserForm: React.FC<UserFormProps> = ({
   const lastName = watch('lastName');
   const password = watch('password');
   const role = watch('role');
+
+  // Reset form when user prop changes (for edit mode)
+  useEffect(() => {
+    if (user) {
+      reset({
+        username: user.username,
+        email: user.email || undefined,
+        password: '',
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        role: user.role,
+        branchId: user.branchId,
+        isActive: user.isActive,
+        assignedSubdivisionId: user.assignedSubdivisionId || null,
+      });
+    }
+  }, [user, reset]);
 
   // Check username uniqueness and return available username with number suffix if needed
   const checkUsernameAvailability = useCallback(

@@ -50,8 +50,11 @@ export class SalesService {
   async create(data: CreateSaleDto, cashierId: string, branchId: string) {
     const transactionType = data.transactionType || 'PURCHASE';
 
-    // Get active session
-    const activeSession = await this.sessionsService.getActiveSession(branchId);
+    // Get active session for this user
+    const activeSession = await this.sessionsService.getActiveSession(
+      branchId,
+      cashierId,
+    );
     // Optional: Enforce active session
     // if (!activeSession) {
     //   throw new BadRequestException('No active session found. Please start a session first.');

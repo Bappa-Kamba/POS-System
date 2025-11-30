@@ -4,6 +4,8 @@ import { Button } from '../../components/common/Button';
 import { Modal } from '../../components/common/Modal';
 import { UserTable } from '../../components/users/UserTable';
 import { UserForm } from '../../components/users/UserForm';
+import { UserViewModal } from '../../components/users/UserViewModal';
+import { useSubdivisions } from '../../hooks/useSubdivisions';
 import {
   useUsers,
   useCreateUser,
@@ -22,6 +24,7 @@ export const UsersPage: React.FC = () => {
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
   const limit = 20;
@@ -33,6 +36,9 @@ export const UsersPage: React.FC = () => {
     role: role ? (role as 'ADMIN' | 'CASHIER') : undefined,
     isActive,
   });
+
+  const { data: subdivisionsResponse } = useSubdivisions();
+  const subdivisions = subdivisionsResponse?.success ? subdivisionsResponse.data : [];
 
   const createUser = useCreateUser();
   const updateUser = useUpdateUser();
@@ -95,8 +101,18 @@ export const UsersPage: React.FC = () => {
     }
   };
 
+  const handleView = (user: User) => {
+    setSelectedUser(user);
+    setIsViewModalOpen(true);
+  };
+
   const handleEdit = (user: User) => {
     setSelectedUser(user);
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditFromView = () => {
+    setIsViewModalOpen(false);
     setIsEditModalOpen(true);
   };
 
@@ -195,6 +211,7 @@ export const UsersPage: React.FC = () => {
       <div className="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-6">
         <UserTable
           users={users}
+          onView={handleView}
           onEdit={handleEdit}
           onDelete={handleDelete}
           isLoading={isLoading}
@@ -316,6 +333,21 @@ export const UsersPage: React.FC = () => {
           />
         )}
       </Modal>
+
+      {/* View Modal */}
+      {isViewModalOpen && selectedUser && (
+        <UserViewModal
+          user={selectedUser}
+          onClose={() => {
+            setIsViewModalOpen(false);
+            setSelectedUser(null);
+          }}
+          onEdit={handleEditFromView}
+          subdivisionName={
+            subdivisions.find(s => s.id === selectedUser.assignedSubdivisionId)?.displayName
+          }
+        />
+      )}
     </div>
   );
 };

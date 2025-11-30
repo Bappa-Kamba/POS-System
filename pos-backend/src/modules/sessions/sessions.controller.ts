@@ -58,6 +58,7 @@ export class SessionsController {
   async getActiveSession(@Request() req: any) {
     const session = await this.sessionsService.getActiveSession(
       req.user.branchId,
+      req.user.id,
     );
     return {
       success: true,

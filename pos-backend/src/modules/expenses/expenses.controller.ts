@@ -21,12 +21,13 @@ import { UserRole } from '@prisma/client';
 import type { AuthenticatedRequestUser } from '../auth/types/authenticated-user.type';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.ADMIN)
 @Controller('expenses')
 export class ExpensesController {
   constructor(private readonly expensesService: ExpensesService) {}
 
+  // Allow both ADMIN and CASHIER to create expenses
   @Post()
+  @Roles(UserRole.ADMIN, UserRole.CASHIER)
   @HttpCode(HttpStatus.CREATED)
   async create(
     @Body() createExpenseDto: CreateExpenseDto,
@@ -44,6 +45,7 @@ export class ExpensesController {
   }
 
   @Get()
+  @Roles(UserRole.ADMIN, UserRole.CASHIER)
   async findAll(
     @Query() findAllExpensesDto: FindAllExpensesDto,
     @CurrentUser() user: AuthenticatedRequestUser,
@@ -62,6 +64,7 @@ export class ExpensesController {
   }
 
   @Get('categories')
+  @Roles(UserRole.ADMIN, UserRole.CASHIER)
   async getCategories(@CurrentUser() user: AuthenticatedRequestUser) {
     const categories = await this.expensesService.getCategories(user.branchId);
     return {
@@ -71,6 +74,7 @@ export class ExpensesController {
   }
 
   @Get(':id')
+  @Roles(UserRole.ADMIN, UserRole.CASHIER)
   async findOne(@Param('id') id: string) {
     const expense = await this.expensesService.findOne(id);
     return {
@@ -80,6 +84,7 @@ export class ExpensesController {
   }
 
   @Put(':id')
+  @Roles(UserRole.ADMIN)
   async update(
     @Param('id') id: string,
     @Body() updateExpenseDto: UpdateExpenseDto,
@@ -98,6 +103,7 @@ export class ExpensesController {
   }
 
   @Delete(':id')
+  @Roles(UserRole.ADMIN)
   @HttpCode(HttpStatus.OK)
   async remove(
     @Param('id') id: string,
