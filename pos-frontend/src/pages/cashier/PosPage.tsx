@@ -5,7 +5,6 @@ import { ProductTable } from '../../components/pos/ProductTable';
 import { Cart } from '../../components/pos/Cart';
 import { PaymentModal } from '../../components/pos/PaymentModal';
 import { ReceiptPreview } from '../../components/pos/ReceiptPreview';
-import { TransactionTypeSelector } from '../../components/pos/TransactionTypeSelector';
 import { CashbackForm } from '../../components/pos/CashbackForm';
 import { Button } from '../../components/common/Button';
 import { useProducts } from '../../hooks/useProducts';
@@ -15,29 +14,31 @@ import { useBranch } from '../../hooks/useSettings';
 import type { Product } from '../../services/product.service';
 import type { Variant } from '../../services/variant.service';
 import type { Payment } from '../../services/sale.service';
-import { ProductCategory } from '../../types/product';
 
 import { useSession } from '../../contexts/SessionContext';
 import { SessionControls } from '../../components/session/SessionControls';
-import { LogOut, Receipt } from 'lucide-react';
+import { SessionEndModal } from '../../components/session/SessionEndModal';
+import { LogOut, Receipt, DollarSign } from 'lucide-react';
 import { QuickExpenseForm } from '../../components/pos/QuickExpenseForm';
 import { useCreateExpense, useExpenseCategories } from '../../hooks/useExpenses';
+import { useSubdivisionCategories } from '../../hooks/useCategories';
 import toast from 'react-hot-toast';
 
 export const PosPage: React.FC = () => {
   const { user } = useAuth();
   const { activeSession, isLoading: isSessionLoading } = useSession();
   const [isSessionModalOpen, setIsSessionModalOpen] = useState(false);
-  const [transactionType, setTransactionType] = useState<'PURCHASE' | 'CASHBACK' | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
   const [completedSaleId, setCompletedSaleId] = useState<string | null>(null);
   const [isExpenseFormOpen, setIsExpenseFormOpen] = useState(false);
+  const [isCashbackModalOpen, setIsCashbackModalOpen] = useState(false);
 
   const createExpense = useCreateExpense();
   const { data: expenseCategories = [] } = useExpenseCategories();
+  const { data: categoriesResponse } = useSubdivisionCategories(user?.assignedSubdivisionId || '');
 
   const addItem = useCartStore((state) => state.addItem);
   const { items, getTotal, clearCart } = useCartStore();
@@ -47,17 +48,11 @@ export const PosPage: React.FC = () => {
 
   const total = getTotal();
 
-  // Fetch products (only for PURCHASE mode)
+  // Fetch products
   const { data, isLoading } = useProducts({
     search: searchQuery || undefined,
-    categoryId:
-      selectedCategory !== 'ALL'
-        ? (selectedCategory as ProductCategory)
-        : undefined,
     isActive: true,
     branchId: user?.branchId,
-  }, {
-    enabled: transactionType === 'PURCHASE',
   });
 
   const products = useMemo(() => {
@@ -67,33 +62,69 @@ export const PosPage: React.FC = () => {
   const variants = useMemo(() => {
     const allVariants = (data as any)?.variants || [];
     if (selectedCategory === 'ALL') return allVariants;
+    
+    // Find the category name for the selected ID
+    const apiCategories = categoriesResponse?.success ? categoriesResponse.data : [];
+    const selectedCat = apiCategories.find(cat => cat.id === selectedCategory);
+    
+    if (!selectedCat) return allVariants;
+    
+    // Filter variants by matching product category name (case-insensitive)
     return allVariants.filter(
-      (v: Variant) => v.product?.category === selectedCategory
+      (v: Variant) => v.product?.category?.name?.toUpperCase() === selectedCat.name.toUpperCase()
     );
-  }, [data, selectedCategory]);
+  }, [data, selectedCategory, categoriesResponse]);
 
   const filteredProducts = useMemo(() => {
     if (selectedCategory === 'ALL') return products;
-    return products.filter((p) => p.category === selectedCategory);
-  }, [products, selectedCategory]);
+    
+    // Find the category name for the selected ID
+    const apiCategories = categoriesResponse?.success ? categoriesResponse.data : [];
+    const selectedCat = apiCategories.find(cat => cat.id === selectedCategory);
+    
+    if (!selectedCat) return products;
+    
+    // Filter products by matching category ID
+    return products.filter((p) => p.category?.id === selectedCategory);
+  }, [products, selectedCategory, categoriesResponse]);
 
-  const categoryCounts = useMemo(() => {
+  const categories = useMemo(() => {
+    const apiCategories = categoriesResponse?.success ? categoriesResponse.data : [];
+    
+    // Create a map of category names to IDs for matching with product.category enum
+    const categoryNameMap: Record<string, string> = {};
+    apiCategories.forEach(cat => {
+      // Map category names (case-insensitive) to their IDs
+      categoryNameMap[cat.name.toUpperCase()] = cat.id;
+    });
+
+    // Count products per category
     const counts: Record<string, number> = {
       ALL: products.length,
-      FROZEN: 0,
-      DRINKS: 0,
-      ACCESSORIES: 0,
-      OTHER: 0,
     };
 
+    apiCategories.forEach(cat => {
+      counts[cat.id] = 0;
+    });
+
     products.forEach((product) => {
-      if (counts[product.category] !== undefined) {
-        counts[product.category]++;
+      // Count products by their category ID
+      if (product.category?.id) {
+        if (counts[product.category.id] !== undefined) {
+          counts[product.category.id]++;
+        }
       }
     });
 
-    return counts;
-  }, [products]);
+    return [
+      { id: 'ALL', name: 'All', count: counts.ALL },
+      ...apiCategories.map(cat => ({
+        id: cat.id,
+        name: cat.name,
+        count: counts[cat.id] || 0
+      }))
+    ];
+  }, [categoriesResponse, products]);
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
@@ -112,7 +143,7 @@ export const PosPage: React.FC = () => {
         const parentProduct: Product = {
           id: variant.product.id,
           name: variant.product.name,
-          category: variant.product.category as ProductCategory,
+          category: variant.product.category,
           // subdivision removed
           hasVariants: true,
           sku: variant.product.id,
@@ -173,27 +204,30 @@ export const PosPage: React.FC = () => {
     amount: number,
     serviceCharge: number,
     totalReceived: number,
+    notes?: string,
   ) => {
     try {
+      const transactionNotes = notes 
+        ? `Service Charge: ${serviceCharge.toFixed(2)} | Override Reason: ${notes}`
+        : `Service Charge: ${serviceCharge.toFixed(2)}`;
+      
       const response = await createSaleMutation.mutateAsync({
         cashbackAmount: amount,
-        serviceCharge, // Pass manual service charge
+        serviceCharge,
         payments: [
           {
             method: 'TRANSFER',
             amount: totalReceived,
             reference: `Cashback-${Date.now()}`,
-            notes: `Service Charge: ${serviceCharge.toFixed(2)}`,
+            notes: transactionNotes,
           },
         ],
         transactionType: 'CASHBACK',
-        notes: `Service Charge: ${serviceCharge.toFixed(2)}`,
+        notes: transactionNotes,
       });
 
       if (response.success && response.data) {
-        alert('Cashback transaction completed successfully!');
-        // Reset to transaction type selection
-        setTransactionType(null);
+        toast.success('Cashback transaction completed successfully!');
       }
     } catch (error: any) {
       console.error('Cashback creation failed:', error);
@@ -204,11 +238,15 @@ export const PosPage: React.FC = () => {
     }
   };
 
-  const handleBackToSelection = () => {
-    setTransactionType(null);
-    clearCart();
-    setSearchQuery('');
-    setSelectedCategory('ALL');
+  const handleCashbackClick = () => {
+    // Check if user has access to cashback (admin always has access)
+    if (user?.role !== 'ADMIN' && 
+        branch?.cashbackSubdivisionId && 
+        user?.assignedSubdivisionId !== branch.cashbackSubdivisionId) {
+      toast.error('You are not authorized to process cashback transactions. Only cashiers in the designated cashback subdivision can perform this action.');
+      return;
+    }
+    setIsCashbackModalOpen(true);
   };
 
   const handleExpenseSubmit = async (data: { title: string; category: string; amount: number; description?: string }) => {
@@ -231,13 +269,6 @@ export const PosPage: React.FC = () => {
     }
   };
 
-  const categories = [
-    { value: 'ALL', label: 'All' },
-    { value: 'FROZEN', label: 'Frozen' },
-    { value: 'DRINKS', label: 'Drinks' },
-    { value: 'ACCESSORIES', label: 'Accessories' },
-    { value: 'OTHER', label: 'Other' },
-  ];
 
   // Check for active session
   if (isSessionLoading) {
@@ -255,80 +286,6 @@ export const PosPage: React.FC = () => {
     );
   }
 
-  // Show transaction type selector if no type selected
-  if (!transactionType) {
-    return (
-      <div className="h-screen flex flex-col">
-        <div className="bg-white dark:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-700 px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
-                Point of Sale
-              </h1>
-              <div className="flex items-center gap-2 mt-1">
-                <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                  {user?.firstName
-                    ? `Hello, ${user.firstName}`
-                    : `Hello, ${user?.username}`}
-                </p>
-                <span className="text-neutral-300">•</span>
-                <span className="text-sm text-green-600 font-medium bg-green-50 px-2 py-0.5 rounded-full">
-                  {activeSession.name} Session
-                </span>
-              </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="text-right">
-                <p className="text-sm text-neutral-500 dark:text-neutral-400">Branch</p>
-                <p className="font-medium text-neutral-900 dark:text-neutral-100">
-                  {user?.branchId || 'N/A'}
-                </p>
-              </div>
-              {/* Add a way to end session here if needed, or keep it in a separate settings area */}
-            </div>
-          </div>
-        </div>
-        <div className="flex-1">
-          <TransactionTypeSelector onSelect={setTransactionType} />
-        </div>
-      </div>
-    );
-  }
-
-  // Show cashback form if cashback selected
-  if (transactionType === 'CASHBACK') {
-    return (
-      <div className="h-screen flex flex-col">
-        <div className="bg-white dark:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-700 px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
-                Cashback Service
-              </h1>
-              <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
-                {user?.firstName
-                  ? `Hello, ${user.firstName}`
-                  : `Hello, ${user?.username}`}
-              </p>
-            </div>
-            <Button variant="ghost" onClick={handleBackToSelection}>
-              ← Back to Selection
-            </Button>
-          </div>
-        </div>
-        <div className="flex-1 flex overflow-hidden">
-          <div className="flex-1 flex flex-col">
-            <CashbackForm
-              availableCapital={branch?.cashbackCapital || 0}
-              onComplete={handleCompleteCashback}
-              onCancel={handleBackToSelection}
-            />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   // Show purchase interface
   return (
     <div className="h-screen flex flex-col">
@@ -336,7 +293,7 @@ export const PosPage: React.FC = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
-              Point of Sale - Purchase
+              Point of Sale • {branch?.name || 'N/A'}
             </h1>
             <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
               {user?.firstName
@@ -344,19 +301,17 @@ export const PosPage: React.FC = () => {
                 : `Hello, ${user?.username}`}
             </p>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="text-right">
-              <p className="text-sm text-neutral-500 dark:text-neutral-400">Branch</p>
-              <p className="font-medium text-neutral-900 dark:text-neutral-100">
-                {user?.branchId || 'N/A'}
-              </p>
-            </div>
+          <div className="flex items-center gap-2">
+            {/* Show cashback button if: admin OR no subdivision assigned OR user is in the cashback subdivision */}
+            {(user?.role === 'ADMIN' || !branch?.cashbackSubdivisionId || user?.assignedSubdivisionId === branch.cashbackSubdivisionId) && (
+              <Button variant="secondary" size="sm" onClick={handleCashbackClick}>
+                <DollarSign className="w-4 h-4 mr-2" />
+                Cashback
+              </Button>
+            )}
             <Button variant="secondary" size="sm" onClick={() => setIsExpenseFormOpen(true)}>
               <Receipt className="w-4 h-4 mr-2" />
-              Record Expense
-            </Button>
-            <Button variant="ghost" onClick={handleBackToSelection}>
-              ← Back to Selection
+              Expense
             </Button>
             <Button variant="danger" size="sm" onClick={() => setIsSessionModalOpen(true)}>
               <LogOut className="w-4 h-4 mr-2" />
@@ -368,7 +323,7 @@ export const PosPage: React.FC = () => {
 
       <div className="flex-1 flex overflow-hidden">
         <div className="flex-1 flex flex-col overflow-hidden border-r border-neutral-200 dark:border-neutral-700">
-          <div className="p-4 border-b border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800">
+          <div className="p-6 border-b border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800">
             <ProductSearch
               onSearch={handleSearch}
               onProductFound={handleProductFound}
@@ -376,28 +331,28 @@ export const PosPage: React.FC = () => {
             />
           </div>
 
-          <div className="px-4 py-3 bg-white dark:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-700">
-            <div className="flex gap-2 overflow-x-auto">
+          <div className="px-6 py-4 bg-white dark:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-700">
+            <div className="flex gap-2 overflow-x-auto pb-1">
               {categories.map((category) => (
                 <button
-                  key={category.value}
-                  onClick={() => setSelectedCategory(category.value)}
+                  key={category.id}
+                  onClick={() => setSelectedCategory(category.id)}
                   className={`px-4 py-2 rounded-lg font-medium text-sm whitespace-nowrap transition-colors ${
-                    selectedCategory === category.value
+                    selectedCategory === category.id
                       ? 'bg-primary-600 text-white'
                       : 'bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-600'
                   }`}
                 >
-                  {category.label}
+                  {category.name}
                   <span className="ml-2 text-xs opacity-75">
-                    ({categoryCounts[category.value] || 0})
+                    ({category.count})
                   </span>
                 </button>
               ))}
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-4">
+          <div className="flex-1 overflow-y-auto px-6 py-4">
             <ProductTable
               products={filteredProducts}
               variants={variants}
@@ -407,7 +362,7 @@ export const PosPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="w-full md:w-96 lg:w-[400px] flex flex-col border-l border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800">
+        <div className="w-full md:w-96 lg:w-[420px] flex flex-col border-l border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800">
           <Cart onCheckout={handleCheckout} />
         </div>
       </div>
@@ -432,21 +387,11 @@ export const PosPage: React.FC = () => {
         }
       />
 
-      {/* Session Control Modal */}
-      {isSessionModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white dark:bg-neutral-800 rounded-lg shadow-xl w-full max-w-md p-6 relative">
-            <button 
-              onClick={() => setIsSessionModalOpen(false)}
-              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
-            >
-              ✕
-            </button>
-            <h2 className="text-xl font-bold mb-4">Session Management</h2>
-            <SessionControls />
-          </div>
-        </div>
-      )}
+      {/* Session End Modal */}
+      <SessionEndModal
+        isOpen={isSessionModalOpen}
+        onClose={() => setIsSessionModalOpen(false)}
+      />
 
       {/* Expense Form Modal */}
       {isExpenseFormOpen && (
@@ -456,6 +401,32 @@ export const PosPage: React.FC = () => {
           isLoading={createExpense.isPending}
           categories={expenseCategories}
         />
+      )}
+
+      {/* Cashback Modal */}
+      {isCashbackModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto relative">
+            <button 
+              onClick={() => setIsCashbackModalOpen(false)}
+              className="absolute top-4 right-4 z-10 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-2xl font-bold w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            >
+              ✕
+            </button>
+            <div className="p-6">
+              <h2 className="text-2xl font-bold mb-6 text-neutral-900 dark:text-neutral-100">Cashback Service</h2>
+              <CashbackForm
+                availableCapital={branch?.cashbackCapital || 0}
+                standardRate={branch?.cashbackServiceChargeRate || 0.02}
+                onComplete={(amount, serviceCharge, totalReceived, notes) => {
+                  handleCompleteCashback(amount, serviceCharge, totalReceived, notes);
+                  setIsCashbackModalOpen(false);
+                }}
+                onCancel={() => setIsCashbackModalOpen(false)}
+              />
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

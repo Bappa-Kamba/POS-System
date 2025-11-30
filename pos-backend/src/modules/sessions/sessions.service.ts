@@ -117,7 +117,28 @@ export class SessionsService {
         closedBy: true,
         sales: {
           include: {
-            items: true,
+            items: {
+              include: {
+                product: {
+                  select: {
+                    id: true,
+                    name: true,
+                    category: {
+                      select: {
+                        id: true,
+                        name: true,
+                      },
+                    },
+                  },
+                },
+                variant: {
+                  select: {
+                    id: true,
+                    name: true,
+                  },
+                },
+              },
+            },
             payments: true,
           },
         },
@@ -129,75 +150,219 @@ export class SessionsService {
       throw new NotFoundException('Session not found');
     }
 
+    // Separate sales by transaction type
+    const purchaseSales = session.sales.filter(
+      (s) => s.transactionType === 'PURCHASE',
+    );
+    const cashbackSales = session.sales.filter(
+      (s) => s.transactionType === 'CASHBACK',
+    );
+
     // Calculate session totals
-    const totalSales = session.sales.length;
-    const totalRevenue = session.sales.reduce(
+    const totalSales = purchaseSales.length;
+    const totalRevenue = purchaseSales.reduce(
       (sum, sale) => sum + sale.totalAmount,
       0,
     );
 
-    // Calculate cash payments specifically (for cash drawer reconciliation)
-    const cashPayments = session.sales.reduce((sum: number, sale) => {
-      const cashPayment = sale.payments.find((p) => p.method === 'CASH');
-      return sum + (cashPayment ? cashPayment.amount : 0);
-    }, 0);
+    // Payment method breakdown
+    const paymentBreakdown = {
+      cash: { count: 0, amount: 0 },
+      transfer: { count: 0, amount: 0 },
+      card: { count: 0, amount: 0 },
+      pos: { count: 0, amount: 0 },
+    };
 
-    // Calculate total expenses for the session
+    session.sales.forEach((sale) => {
+      sale.payments.forEach((payment) => {
+        const method =
+          payment.method.toLowerCase() as keyof typeof paymentBreakdown;
+        if (paymentBreakdown[method]) {
+          paymentBreakdown[method].count++;
+          paymentBreakdown[method].amount += payment.amount;
+        }
+      });
+    });
+
+    // Cashback summary
+    const cashbackSummary = {
+      count: cashbackSales.length,
+      totalAmount: cashbackSales.reduce((sum, s) => sum + s.totalAmount, 0),
+      totalServiceCharge: cashbackSales.reduce(
+        (sum, s) => sum + (s.subtotal - s.totalAmount),
+        0,
+      ),
+      totalReceived: cashbackSales.reduce((sum, s) => sum + s.amountPaid, 0),
+    };
+
+    // Expenses breakdown by category
+    const expensesByCategory: Record<string, number> = {};
+    session.expenses.forEach((expense) => {
+      const categoryName = expense.category || 'Uncategorized';
+      expensesByCategory[categoryName] =
+        (expensesByCategory[categoryName] || 0) + expense.amount;
+    });
+
     const totalExpenses = session.expenses.reduce(
       (sum, expense) => sum + expense.amount,
       0,
     );
 
     // Calculate expected cash in drawer
-    // Expected = Opening Balance + Cash Payments (from sales) - Expenses
-    // Expenses are deducted because they represent cash paid out during the session
+    const cashSalesAmount = paymentBreakdown.cash.amount;
+    const cashbackPaid = cashbackSummary.totalAmount;
     const expectedCashInDrawer =
-      session.openingBalance + cashPayments - totalExpenses;
+      session.openingBalance + cashSalesAmount - cashbackPaid - totalExpenses;
 
-    // Calculate variance (difference between actual and expected)
+    // Calculate variance
     const actualCash = session.closingBalance || 0;
     const variance = actualCash - expectedCashInDrawer;
     const variancePercentage =
       expectedCashInDrawer > 0 ? (variance / expectedCashInDrawer) * 100 : 0;
 
-    // Other payment methods total
-    const otherPayments = session.sales.reduce((sum: number, sale) => {
-      const otherPayment =
-        sale.totalAmount -
-        (sale.payments.find((p) => p.method === 'CASH')?.amount || 0);
-      return sum + otherPayment;
-    }, 0);
+    // Session duration
+    const durationMinutes = session.endTime
+      ? Math.round(
+          (session.endTime.getTime() - session.startTime.getTime()) / 60000,
+        )
+      : null;
+
+    // Hourly breakdown
+    const hourlyBreakdown: Array<{
+      hour: string;
+      salesCount: number;
+      revenue: number;
+    }> = [];
+
+    if (session.startTime) {
+      const hourlyData: Record<string, { count: number; revenue: number }> = {};
+
+      purchaseSales.forEach((sale) => {
+        const hour = new Date(sale.createdAt).getHours();
+        const hourKey = `${hour.toString().padStart(2, '0')}:00`;
+
+        if (!hourlyData[hourKey]) {
+          hourlyData[hourKey] = { count: 0, revenue: 0 };
+        }
+
+        hourlyData[hourKey].count++;
+        hourlyData[hourKey].revenue += sale.totalAmount;
+      });
+
+      // Convert to array and sort
+      hourlyBreakdown.push(
+        ...Object.entries(hourlyData)
+          .map(([hour, data]) => ({
+            hour,
+            salesCount: data.count,
+            revenue: data.revenue,
+          }))
+          .sort((a, b) => a.hour.localeCompare(b.hour)),
+      );
+    }
+
+    // Top products
+    const productSales: Record<
+      string,
+      { name: string; quantity: number; revenue: number }
+    > = {};
+
+    purchaseSales.forEach((sale) => {
+      sale.items.forEach((item) => {
+        const productKey = item.variantId || item.productId;
+        const productName = item.variant
+          ? `${item.product.name} - ${item.variant.name}`
+          : item.product.name;
+
+        if (!productSales[productKey]) {
+          productSales[productKey] = {
+            name: productName,
+            quantity: 0,
+            revenue: 0,
+          };
+        }
+
+        productSales[productKey].quantity += item.quantity;
+        productSales[productKey].revenue += item.total;
+      });
+    });
+
+    const topProducts = Object.values(productSales)
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 10);
+
+    // Category breakdown
+    const categoryBreakdown: Record<
+      string,
+      { itemsSold: number; revenue: number }
+    > = {};
+
+    purchaseSales.forEach((sale) => {
+      sale.items.forEach((item) => {
+        const categoryName = item.product.category?.name || 'Uncategorized';
+
+        if (!categoryBreakdown[categoryName]) {
+          categoryBreakdown[categoryName] = { itemsSold: 0, revenue: 0 };
+        }
+
+        categoryBreakdown[categoryName].itemsSold += item.quantity;
+        categoryBreakdown[categoryName].revenue += item.total;
+      });
+    });
+
+    const categoryBreakdownArray = Object.entries(categoryBreakdown).map(
+      ([name, data]) => ({
+        categoryName: name,
+        itemsSold: data.itemsSold,
+        revenue: data.revenue,
+      }),
+    );
 
     return {
       ...session,
       summary: {
-        // Totals
+        // Sales totals
         totalSales,
         totalRevenue,
 
         // Payment breakdown
-        cashPayments,
-        otherPayments,
+        payments: paymentBreakdown,
+
+        // Cashback
+        cashback: cashbackSummary,
 
         // Expenses
-        totalExpenses,
+        expenses: {
+          count: session.expenses.length,
+          totalAmount: totalExpenses,
+          byCategory: Object.entries(expensesByCategory).map(
+            ([category, amount]) => ({
+              category,
+              amount,
+            }),
+          ),
+        },
 
-        // Cash reconciliation
-        openingBalance: session.openingBalance,
-        expectedCashInDrawer,
-        actualCashInDrawer: actualCash,
+        // Cash flow reconciliation
+        cashFlow: {
+          openingBalance: session.openingBalance,
+          cashSales: cashSalesAmount,
+          cashbackPaid: cashbackPaid,
+          expensesPaid: totalExpenses,
+          expectedCash: expectedCashInDrawer,
+          actualCash: actualCash,
+          variance: variance,
+          variancePercentage: variancePercentage,
+          isBalanced: Math.abs(variance) < 0.01,
+        },
 
-        // Variance analysis
-        variance,
-        variancePercentage,
-        isBalanced: Math.abs(variance) < 0.01, // Allow for rounding errors
+        // Session info
+        durationMinutes,
 
-        // Session duration
-        durationMinutes: session.endTime
-          ? Math.round(
-              (session.endTime.getTime() - session.startTime.getTime()) / 60000,
-            )
-          : null,
+        // Detailed breakdowns
+        hourlyBreakdown,
+        topProducts,
+        categoryBreakdown: categoryBreakdownArray,
       },
     };
   }

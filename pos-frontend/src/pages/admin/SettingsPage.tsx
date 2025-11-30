@@ -14,6 +14,7 @@ import {
   Minus,
 } from 'lucide-react';
 import { useBranch, useUpdateBranch, useAdjustCashbackCapital } from '../../hooks/useSettings';
+import { useSubdivisions } from '../../hooks/useSubdivisions';
 import { useThemeStore } from '../../store/themeStore';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
@@ -41,6 +42,7 @@ const receiptSettingsSchema = z.object({
 
 const cashbackSettingsSchema = z.object({
   cashbackServiceChargeRate: z.number().min(0).max(1, 'Rate must be between 0 and 1'),
+  cashbackSubdivisionId: z.string().optional(),
 });
 
 type TabType = 'branch' | 'tax' | 'receipt' | 'cashback' | 'system';
@@ -48,6 +50,7 @@ type TabType = 'branch' | 'tax' | 'receipt' | 'cashback' | 'system';
 export const SettingsPage = () => {
   const [activeTab, setActiveTab] = useState<TabType>('branch');
   const { data: branch, isLoading } = useBranch();
+  const { data: subdivisions } = useSubdivisions();
   const updateBranch = useUpdateBranch();
   const adjustCapital = useAdjustCashbackCapital();
   const { isDarkMode, toggleTheme } = useThemeStore();
@@ -110,10 +113,12 @@ export const SettingsPage = () => {
     resolver: zodResolver(cashbackSettingsSchema),
     defaultValues: {
       cashbackServiceChargeRate: branch?.cashbackServiceChargeRate || 0.02,
+      cashbackSubdivisionId: branch?.cashbackSubdivisionId || '',
     },
     values: branch
       ? {
           cashbackServiceChargeRate: branch.cashbackServiceChargeRate || 0.02,
+          cashbackSubdivisionId: branch.cashbackSubdivisionId || '',
         }
       : undefined,
   });
@@ -361,26 +366,47 @@ export const SettingsPage = () => {
                 </div>
               </div>
 
-              {/* Service Charge Rate */}
+              {/* Cashback Configuration */}
               <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-6">
                 <h3 className="text-lg font-medium text-neutral-900 dark:text-neutral-100 mb-4">
-                  Service Charge Rate
+                  Cashback Configuration
                 </h3>
                 <form
                   onSubmit={cashbackForm.handleSubmit(async (data) => {
                     try {
                       await updateBranch.mutateAsync({
                         cashbackServiceChargeRate: data.cashbackServiceChargeRate,
+                        cashbackSubdivisionId: data.cashbackSubdivisionId || undefined,
                       });
                       cashbackForm.reset(data);
-                      alert('Service charge rate updated successfully');
+                      alert('Cashback settings updated successfully');
                     } catch (error) {
-                      console.error('Failed to update service charge rate:', error);
-                      alert('Failed to update service charge rate');
+                      console.error('Failed to update cashback settings:', error);
+                      alert('Failed to update cashback settings');
                     }
                   })}
                   className="space-y-4"
                 >
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                      Cashback Subdivision
+                    </label>
+                    <select
+                      {...cashbackForm.register('cashbackSubdivisionId')}
+                      className="w-full max-w-xs px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    >
+                      <option value="">No subdivision assigned</option>
+                      {subdivisions && 'data' in subdivisions && Array.isArray(subdivisions.data) && subdivisions.data.map((subdivision: any) => (
+                        <option key={subdivision.id} value={subdivision.id}>
+                          {subdivision.name}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+                      Only cashiers assigned to this subdivision can process cashback transactions.
+                    </p>
+                  </div>
+
                   <div>
                     <Input
                       label="Service Charge Rate"
@@ -407,7 +433,7 @@ export const SettingsPage = () => {
                       isLoading={updateBranch.isPending}
                       disabled={!cashbackForm.formState.isDirty}
                     >
-                      Save Rate
+                      Save Settings
                     </Button>
                   </div>
                 </form>

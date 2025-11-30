@@ -87,7 +87,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
           description: product.description || '',
           sku: product.sku,
           barcode: product.barcode || '',
-          categoryId: product.category, // Map old category to categoryId
+          categoryId: product.categoryId || product.category?.id || '', // Use categoryId or category.id
           hasVariants: product.hasVariants,
           costPrice: product.costPrice ?? undefined,
           sellingPrice: product.sellingPrice ?? undefined,

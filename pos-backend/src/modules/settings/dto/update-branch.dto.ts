@@ -64,4 +64,8 @@ export class UpdateBranchDto {
   @Max(1)
   @IsOptional()
   cashbackServiceChargeRate?: number;
+
+  @IsString()
+  @IsOptional()
+  cashbackSubdivisionId?: string;
 }

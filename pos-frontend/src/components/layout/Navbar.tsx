@@ -25,7 +25,7 @@ import { useAuth } from '../../hooks/useAuth';
 
 import { useThemeStore } from '../../store/themeStore';
 import { useSafeLogout } from '../../hooks/useSafeLogout';
-import { SessionClosingModal } from '../session/SessionClosingModal';
+import { SessionEndModal } from '../session/SessionEndModal';
 
 export const Navbar = () => {
   const { user } = useAuth();
@@ -41,13 +41,9 @@ export const Navbar = () => {
 
   const {
     handleSafeLogout,
-    handleConfirmClosingBalance,
+    handleSessionEndComplete,
     handleCancel,
-    isLoading,
-    closingBalance,
-    setClosingBalance,
-    showClosingModal,
-    activeSession,
+    showSessionEndModal,
   } = useSafeLogout({
     onLogoutComplete: () => navigate('/login'),
   });
@@ -448,15 +444,10 @@ export const Navbar = () => {
         </div>
       </div>
 
-      <SessionClosingModal
-        isOpen={showClosingModal}
-        isLoading={isLoading}
-        closingBalance={closingBalance}
-        onClosingBalanceChange={setClosingBalance}
-        onConfirm={handleConfirmClosingBalance}
-        onCancel={handleCancel}
-        sessionName={activeSession?.name}
-        openingBalance={activeSession?.openingBalance}
+      <SessionEndModal
+        isOpen={showSessionEndModal}
+        onClose={handleCancel}
+        onSessionEnded={handleSessionEndComplete}
       />
     </nav>
   );

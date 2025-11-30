@@ -55,6 +55,7 @@ export class ProductsController {
       success: true,
       data: result.data,
       meta: result.meta,
+      ...(result.variants && { variants: result.variants }),
     };
   }
 

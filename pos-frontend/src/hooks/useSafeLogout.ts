@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useAuthStore } from "../store/authStore";
 import { useSession } from "../contexts/SessionContext";
-import { api } from "../services/api";
 import { toast } from "react-hot-toast";
 
 interface LogoutOptions {
@@ -11,16 +10,15 @@ interface LogoutOptions {
 
 /**
  * Hook that provides a safe logout experience
- * If there's an active session, prompts user to provide closing balance
+ * If there's an active session, shows SessionEndModal to end session
  * before logging out, ensuring complete audit trail
  */
 export const useSafeLogout = (options: LogoutOptions = {}) => {
   const { onLogoutComplete, onCancelled } = options;
   const logout = useAuthStore((state) => state.logout);
-  const { activeSession, refreshSession } = useSession();
+  const { activeSession } = useSession();
   const [isLoading, setIsLoading] = useState(false);
-  const [closingBalance, setClosingBalance] = useState<string>("");
-  const [showClosingModal, setShowClosingModal] = useState(false);
+  const [showSessionEndModal, setShowSessionEndModal] = useState(false);
 
   const completeLogout = async () => {
     setIsLoading(true);
@@ -37,9 +35,9 @@ export const useSafeLogout = (options: LogoutOptions = {}) => {
   };
 
   const handleSafeLogout = async () => {
-    // If there's an active session, require closing balance
+    // If there's an active session, show SessionEndModal
     if (activeSession?.status === "OPEN") {
-      setShowClosingModal(true);
+      setShowSessionEndModal(true);
       return;
     }
 
@@ -47,55 +45,24 @@ export const useSafeLogout = (options: LogoutOptions = {}) => {
     await completeLogout();
   };
 
-  const handleConfirmClosingBalance = async () => {
-    if (!activeSession) {
-      toast.error("No active session found");
-      return;
-    }
-
-    if (!closingBalance) {
-      toast.error("Please enter the closing balance");
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      // End the session with closing balance
-      await api.post(`/sessions/${activeSession.id}/end`, {
-        closingBalance: parseFloat(closingBalance) || 0,
-      });
-
-      toast.success("Session ended successfully");
-      setShowClosingModal(false);
-      setClosingBalance("");
-
-      // Refresh session data to clear it
-      await refreshSession();
-
-      // Now proceed with logout
-      await completeLogout();
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to end session");
-      console.error(error);
-    } finally {
-      setIsLoading(false);
-    }
+  const handleSessionEndComplete = async () => {
+    // Session has been ended, now proceed with logout
+    setShowSessionEndModal(false);
+    await completeLogout();
   };
 
   const handleCancel = () => {
-    setShowClosingModal(false);
-    setClosingBalance("");
+    setShowSessionEndModal(false);
     onCancelled?.();
   };
 
   return {
     handleSafeLogout,
-    handleConfirmClosingBalance,
+    handleSessionEndComplete,
     handleCancel,
     isLoading,
-    closingBalance,
-    setClosingBalance,
-    showClosingModal,
+    showSessionEndModal,
+    setShowSessionEndModal,
     activeSession,
   };
 };

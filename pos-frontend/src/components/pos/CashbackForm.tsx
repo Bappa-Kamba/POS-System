@@ -6,33 +6,54 @@ import { formatCurrency } from '../../utils/formatters';
 
 interface CashbackFormProps {
   availableCapital: number;
-  onComplete: (amount: number, serviceCharge: number, totalReceived: number) => void;
+  standardRate: number; // e.g., 0.02 for 2%
+  onComplete: (amount: number, serviceCharge: number, totalReceived: number, notes?: string) => void;
   onCancel: () => void;
 }
 
 export const CashbackForm: React.FC<CashbackFormProps> = ({
   availableCapital,
+  standardRate,
   onComplete,
   onCancel,
 }) => {
   const [amount, setAmount] = useState('');
+  const [useManualRate, setUseManualRate] = useState(false);
   const [serviceChargeInput, setServiceChargeInput] = useState('');
+  const [notes, setNotes] = useState('');
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
 
   const cashbackAmount = parseFloat(amount) || 0;
-  const serviceCharge = parseFloat(serviceChargeInput) || 0;
+  
+  // Calculate service charge: use manual if override is enabled, otherwise use standard rate
+  const calculatedServiceCharge = cashbackAmount * standardRate;
+  const manualServiceCharge = parseFloat(serviceChargeInput) || 0;
+  const serviceCharge = useManualRate ? manualServiceCharge : calculatedServiceCharge;
+  
   const totalReceived = cashbackAmount + serviceCharge; // Customer sends this amount
-  const isValid = cashbackAmount > 0 && cashbackAmount <= availableCapital && serviceCharge >= 0;
+  
+  // Check if rate is overridden (different from standard)
+  const isRateOverridden = useManualRate && Math.abs(manualServiceCharge - calculatedServiceCharge) > 0.01;
+  const isNotesRequired = isRateOverridden && notes.trim().length === 0;
+  
+  const isValid = cashbackAmount > 0 && 
+                  cashbackAmount <= availableCapital && 
+                  serviceCharge >= 0 && 
+                  !isNotesRequired;
 
   const handleSubmit = () => {
     if (!isValid) {
-      alert(
-        `Invalid amount. Must be between 0 and ${formatCurrency(availableCapital)}`,
-      );
+      if (isNotesRequired) {
+        alert('Please provide a reason for overriding the standard service rate.');
+      } else {
+        alert(
+          `Invalid amount. Must be between 0 and ${formatCurrency(availableCapital)}`,
+        );
+      }
       return;
     }
-    onComplete(cashbackAmount, serviceCharge, totalReceived);
+    onComplete(cashbackAmount, serviceCharge, totalReceived, isRateOverridden ? notes : undefined);
   };
 
   return (
@@ -87,24 +108,68 @@ export const CashbackForm: React.FC<CashbackFormProps> = ({
           )}
         </div>
 
-        {/* Service Charge Input */}
+        {/* Service Charge */}
         <div>
-          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-            Service Charge
-          </label>
-          <Input
-            type="number"
-            value={serviceChargeInput}
-            onChange={(e) => setServiceChargeInput(e.target.value)}
-            placeholder="Enter service charge"
-            min="0"
-            step="0.01"
-            className="text-lg font-semibold"
-          />
+          <div className="flex items-center justify-between mb-2">
+            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
+              Service Charge
+            </label>
+            <button
+              type="button"
+              onClick={() => setUseManualRate(!useManualRate)}
+              className="text-xs text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 font-medium"
+            >
+              {useManualRate ? 'Use Standard Rate' : 'Override Rate'}
+            </button>
+          </div>
+          
+          {useManualRate ? (
+            <Input
+              type="number"
+              value={serviceChargeInput}
+              onChange={(e) => setServiceChargeInput(e.target.value)}
+              placeholder="Enter service charge"
+              min="0"
+              step="0.01"
+              className="text-lg font-semibold"
+            />
+          ) : (
+            <div className="px-3 py-2 bg-neutral-100 dark:bg-neutral-700 rounded-lg border border-neutral-300 dark:border-neutral-600">
+              <span className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                {formatCurrency(calculatedServiceCharge)}
+              </span>
+            </div>
+          )}
+          
           <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-500">
-            Enter the fee for this transaction
+            {useManualRate 
+              ? `Standard rate: ${(standardRate * 100).toFixed(1)}% = ${formatCurrency(calculatedServiceCharge)}`
+              : `Automatic: ${(standardRate * 100).toFixed(1)}% of cashback amount`
+            }
           </p>
         </div>
+
+        {/* Notes (Required if rate is overridden) */}
+        {isRateOverridden && (
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+              Reason for Rate Override <span className="text-red-600">*</span>
+            </label>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Explain why you're charging a different rate..."
+              rows={3}
+              className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
+              required
+            />
+            {isNotesRequired && (
+              <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                Required: Explain why the rate differs from the standard {(standardRate * 100).toFixed(1)}%
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Customer Info (Optional) */}
         <div className="space-y-4">

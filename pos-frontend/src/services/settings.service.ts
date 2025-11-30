@@ -15,6 +15,7 @@ export interface Branch {
   receiptFooter?: string | null;
   cashbackCapital: number;
   cashbackServiceChargeRate: number;
+  cashbackSubdivisionId?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -33,6 +34,7 @@ export interface UpdateBranchData {
   receiptFooter?: string;
   cashbackCapital?: number;
   cashbackServiceChargeRate?: number;
+  cashbackSubdivisionId?: string;
 }
 
 export interface AdjustCashbackCapitalData {

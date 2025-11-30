@@ -35,8 +35,6 @@ export class CategoriesService {
             id: true,
             name: true,
             displayName: true,
-            color: true,
-            icon: true,
           },
         },
         _count: {

@@ -13,6 +13,11 @@ import { StartSessionDto, EndSessionDto } from './dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
+import type { AuthenticatedRequestUser } from '../auth/types/authenticated-user.type';
+
+interface AuthenticatedRequest extends Request {
+  user: AuthenticatedRequestUser;
+}
 
 @Controller('sessions')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -21,27 +26,26 @@ export class SessionsController {
 
   @Post('start')
   @Roles(UserRole.ADMIN, UserRole.CASHIER)
-  async startSession(@Request() req: any, @Body() dto: StartSessionDto) {
-    try {
-      const session = await this.sessionsService.startSession(
-        req.user.branchId,
-        req.user.id,
-        dto,
-      );
-      return {
-        success: true,
-        data: session,
-        message: 'Session started successfully',
-      };
-    } catch (error: any) {
-      throw error;
-    }
+  async startSession(
+    @Request() req: AuthenticatedRequest,
+    @Body() dto: StartSessionDto,
+  ) {
+    const session = await this.sessionsService.startSession(
+      req.user.branchId,
+      req.user.id,
+      dto,
+    );
+    return {
+      success: true,
+      data: session,
+      message: 'Session started successfully',
+    };
   }
 
   @Post(':id/end')
   @Roles(UserRole.ADMIN, UserRole.CASHIER)
   async endSession(
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
     @Param('id') id: string,
     @Body() dto: EndSessionDto,
   ) {
@@ -55,7 +59,7 @@ export class SessionsController {
 
   @Get('active')
   @Roles(UserRole.ADMIN, UserRole.CASHIER)
-  async getActiveSession(@Request() req: any) {
+  async getActiveSession(@Request() req: AuthenticatedRequest) {
     const session = await this.sessionsService.getActiveSession(
       req.user.branchId,
       req.user.id,
@@ -68,7 +72,7 @@ export class SessionsController {
 
   @Get('history')
   @Roles(UserRole.ADMIN, UserRole.CASHIER)
-  async getSessionHistory(@Request() req: any) {
+  async getSessionHistory(@Request() req: AuthenticatedRequest) {
     const history = await this.sessionsService.getSessionHistory(
       req.user.branchId,
     );

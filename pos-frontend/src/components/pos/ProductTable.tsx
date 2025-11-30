@@ -136,6 +136,9 @@ export const ProductTable: React.FC<ProductTableProps> = ({
               <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
                 Price
               </th>
+              <th className="px-4 py-3 text-center text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                Qty
+              </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
                 Stock
               </th>
@@ -164,6 +167,9 @@ export const ProductTable: React.FC<ProductTableProps> = ({
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-primary-600 dark:text-primary-400">
                   {formatCurrency(variant.sellingPrice)}
+                </td>
+                <td className="px-4 py-3 whitespace-nowrap text-center text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                  {variant.quantityInStock}
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap">
                   {getVariantStockBadge(variant)}
@@ -206,6 +212,13 @@ export const ProductTable: React.FC<ProductTableProps> = ({
                     <span className="text-neutral-500">See variants</span>
                   ) : (
                     formatCurrency(product.sellingPrice)
+                  )}
+                </td>
+                <td className="px-4 py-3 whitespace-nowrap text-center text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                  {product.hasVariants ? (
+                    <span className="text-neutral-500">-</span>
+                  ) : (
+                    product.quantityInStock ?? 'N/A'
                   )}
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap">{getStockBadge(product)}</td>

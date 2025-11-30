@@ -71,7 +71,7 @@ export const ProductViewModal: React.FC<ProductViewModalProps> = ({
               <div>
                 <p className="text-sm text-neutral-500">Category</p>
                 <p className="font-medium text-neutral-900 dark:text-neutral-100 mt-1">
-                  {product.category}
+                  {product.category?.name || 'N/A'}
                 </p>
               </div>
               <div>

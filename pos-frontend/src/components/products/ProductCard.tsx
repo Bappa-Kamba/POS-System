@@ -91,7 +91,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
         {/* Category and Stock */}
         <div className="flex items-center gap-2 flex-wrap">
-          {getCategoryBadge(product.category)}
+          {product.category && getCategoryBadge(product.category.name)}
           {getStockBadge()}
         </div>
 

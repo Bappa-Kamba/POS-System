@@ -19,7 +19,10 @@ export interface Variant {
   product?: {
     id: string;
     name: string;
-    category: string;
+    category?: {
+      id: string;
+      name: string;
+    };
   };
 }
 

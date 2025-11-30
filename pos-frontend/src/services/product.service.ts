@@ -7,7 +7,11 @@ export interface Product {
   description?: string;
   sku: string;
   barcode?: string;
-  category: "FROZEN" | "DRINKS" | "ACCESSORIES" | "OTHER";
+  categoryId?: string;
+  category?: {
+    id: string;
+    name: string;
+  };
   subdivision?: string;
   hasVariants: boolean;
   costPrice?: number;

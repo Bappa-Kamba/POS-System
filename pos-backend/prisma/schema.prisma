@@ -68,8 +68,9 @@ model Branch {
   receiptFooter   String?
 
   // Cashback Service Settings
-  cashbackCapital      Float   @default(0) // Starting capital for cashback service
-  cashbackServiceChargeRate Float @default(0.02) // Service charge rate (e.g., 0.02 = 2%)
+  cashbackCapital           Float   @default(0) // Starting capital for cashback service
+  cashbackServiceChargeRate Float   @default(0.02) // Service charge rate (e.g., 0.02 = 2%)
+  cashbackSubdivisionId     String? // Subdivision assigned to handle cashback transactions
 
   // Relations
   users              User[]

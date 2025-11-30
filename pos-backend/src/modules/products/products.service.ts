@@ -237,23 +237,50 @@ export class ProductsService {
           select: {
             id: true;
             name: true;
-            taxable: true;
-            taxRate: true;
             branchId: true;
+            category: {
+              select: {
+                id: true;
+                name: true;
+              };
+            };
           };
         };
       };
     }>;
     let variantResults: VariantWithProduct[] = [];
     if (search) {
+      this.logger.log(
+        `Searching variants with query: ${search}, branchId: ${branchId}`,
+      );
+
+      // Build product filter for variants based on user access
+      const productFilter: Prisma.ProductWhereInput = {
+        ...(branchId && { branchId }),
+        isActive: true,
+      };
+
+      // Apply subdivision filter for cashiers
+      if (user && user.role === UserRole.CASHIER) {
+        if (!user.assignedSubdivisionId) {
+          throw new ForbiddenException(
+            'You have not been assigned to a product subdivision',
+          );
+        }
+        productFilter.category = {
+          subdivisionId: user.assignedSubdivisionId,
+        };
+      }
+
       const variants = await this.prisma.productVariant.findMany({
         where: {
           isActive: true,
-          sku: { contains: search },
-          product: {
-            ...(branchId && { branchId }),
-            isActive: true,
-          },
+          OR: [
+            { name: { contains: search } },
+            { sku: { contains: search } },
+            { barcode: { contains: search } },
+          ],
+          product: productFilter,
         },
         include: {
           product: {
@@ -261,6 +288,12 @@ export class ProductsService {
               id: true,
               name: true,
               branchId: true,
+              category: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
             },
           },
         },
@@ -268,6 +301,9 @@ export class ProductsService {
       });
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       variantResults = variants as any; // Type cast since we removed tax fields
+      this.logger.log(
+        `Found ${variantResults.length} variants matching search`,
+      );
     }
 
     const [products, total] = await Promise.all([
@@ -277,6 +313,9 @@ export class ProductsService {
         take,
         include: {
           branch: {
+            select: { id: true, name: true },
+          },
+          category: {
             select: { id: true, name: true },
           },
           variants: search
@@ -310,6 +349,9 @@ export class ProductsService {
         branch: {
           select: { id: true; name: true };
         };
+        category: {
+          select: { id: true; name: true };
+        };
         variants?: {
           where: { isActive: true };
           take: number;
@@ -341,8 +383,14 @@ export class ProductsService {
     // Include variants in response if search was performed
     if (search && variantResults.length > 0) {
       responseData.variants = variantResults;
+      this.logger.log(
+        `Including ${variantResults.length} variants in response`,
+      );
     }
 
+    this.logger.log(
+      `Returning response with ${responseData.data.length} products and ${responseData.variants?.length || 0} variants`,
+    );
     return responseData;
   }
 
@@ -354,6 +402,9 @@ export class ProductsService {
       where: { id },
       include: {
         branch: {
+          select: { id: true, name: true },
+        },
+        category: {
           select: { id: true, name: true },
         },
         variants: {

@@ -144,7 +144,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
                 )}
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
-                {getCategoryBadge(product.category)}
+                {product.category && getCategoryBadge(product.category.name)}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900 dark:text-neutral-100">
                 {product.hasVariants ? (
