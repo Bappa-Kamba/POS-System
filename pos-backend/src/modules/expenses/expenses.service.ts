@@ -33,12 +33,21 @@ export class ExpensesService {
         description: data.description,
         date: expenseDate,
         branchId: data.branchId,
+        createdById: userId,
       },
       include: {
         branch: {
           select: {
             id: true,
             name: true,
+          },
+        },
+        createdBy: {
+          select: {
+            id: true,
+            username: true,
+            firstName: true,
+            lastName: true,
           },
         },
       },
@@ -113,6 +122,14 @@ export class ExpensesService {
               name: true,
             },
           },
+          createdBy: {
+            select: {
+              id: true,
+              username: true,
+              firstName: true,
+              lastName: true,
+            },
+          },
         },
         orderBy: { date: 'desc' },
       }),
@@ -140,6 +157,14 @@ export class ExpensesService {
           select: {
             id: true,
             name: true,
+          },
+        },
+        createdBy: {
+          select: {
+            id: true,
+            username: true,
+            firstName: true,
+            lastName: true,
           },
         },
       },
@@ -187,6 +212,14 @@ export class ExpensesService {
           select: {
             id: true,
             name: true,
+          },
+        },
+        createdBy: {
+          select: {
+            id: true,
+            username: true,
+            firstName: true,
+            lastName: true,
           },
         },
       },
@@ -308,7 +341,9 @@ export class ExpensesService {
         },
       });
     } catch (error) {
-      this.logger.error(`Failed to create audit log: ${error}`);
+      this.logger.error(
+        `Failed to create audit log: ${error instanceof Error ? error.message : String(error)}`,
+      );
       // Don't throw - audit logging failure shouldn't break the operation
     }
   }

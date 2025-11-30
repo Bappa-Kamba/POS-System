@@ -128,6 +128,7 @@ export interface SalesReport {
     subtotal: number;
     taxAmount: number;
     totalAmount: number;
+    serviceCharge?: number;
     paymentStatus: string;
   }>;
 }

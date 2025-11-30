@@ -990,6 +990,10 @@ export class ReportsService {
         subtotal: sale.subtotal,
         taxAmount: sale.taxAmount,
         totalAmount: sale.totalAmount,
+        serviceCharge:
+          sale.transactionType === 'CASHBACK'
+            ? sale.subtotal - sale.totalAmount
+            : 0,
         paymentStatus: sale.paymentStatus,
       })),
     };
@@ -1021,7 +1025,7 @@ export class ReportsService {
     const startDate = startOfDay(new Date(params.startDate));
     const endDate = endOfDay(new Date(params.endDate));
 
-    // Get all sales in period
+    // Get all PURCHASE sales in period (exclude CASHBACK transactions)
     const sales = await this.prisma.sale.findMany({
       where: {
         branchId,
@@ -1030,6 +1034,7 @@ export class ReportsService {
           lte: endDate,
         },
         paymentStatus: PaymentStatus.PAID,
+        transactionType: 'PURCHASE', // Only include purchase transactions
       },
       include: {
         items: true,

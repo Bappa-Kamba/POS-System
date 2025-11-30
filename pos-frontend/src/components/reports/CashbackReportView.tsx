@@ -148,6 +148,12 @@ export const CashbackReportView: React.FC<CashbackReportViewProps> = ({
                   Amount Given
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                  Service Charge
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                  Total Received
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
                   Status
                 </th>
               </tr>
@@ -166,6 +172,12 @@ export const CashbackReportView: React.FC<CashbackReportViewProps> = ({
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900 dark:text-neutral-100">
                     {formatCurrency(transaction.totalAmount)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-green-600 dark:text-green-400">
+                    {formatCurrency(transaction.serviceCharge || 0)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                    {formatCurrency(transaction.totalAmount + (transaction.serviceCharge || 0))}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-400">
                     {transaction.paymentStatus}

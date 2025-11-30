@@ -56,9 +56,10 @@ interface SessionSummary {
 
 interface SessionSummaryReportProps {
   sessionId: string;
+  previewClosingBalance?: number; // Optional: for real-time variance calculation
 }
 
-export const SessionSummaryReport: React.FC<SessionSummaryReportProps> = ({ sessionId }) => {
+export const SessionSummaryReport: React.FC<SessionSummaryReportProps> = ({ sessionId, previewClosingBalance }) => {
   const { data, isLoading } = useQuery({
     queryKey: ['session-details', sessionId],
     queryFn: async () => {
@@ -66,6 +67,22 @@ export const SessionSummaryReport: React.FC<SessionSummaryReportProps> = ({ sess
       return response.data.data;
     },
   });
+
+  // Calculate real-time variance if preview closing balance is provided
+  const summaryData = data?.summary;
+  const displayCashFlow = summaryData?.cashFlow ? {
+    ...summaryData.cashFlow,
+    actualCash: previewClosingBalance !== undefined ? previewClosingBalance : summaryData.cashFlow.actualCash,
+    variance: previewClosingBalance !== undefined 
+      ? previewClosingBalance - summaryData.cashFlow.expectedCash 
+      : summaryData.cashFlow.variance,
+    variancePercentage: previewClosingBalance !== undefined && summaryData.cashFlow.expectedCash > 0
+      ? ((previewClosingBalance - summaryData.cashFlow.expectedCash) / summaryData.cashFlow.expectedCash) * 100
+      : summaryData.cashFlow.variancePercentage,
+    isBalanced: previewClosingBalance !== undefined
+      ? Math.abs(previewClosingBalance - summaryData.cashFlow.expectedCash) < 0.01
+      : summaryData.cashFlow.isBalanced,
+  } : null;
 
   if (isLoading) {
     return (
@@ -122,7 +139,7 @@ export const SessionSummaryReport: React.FC<SessionSummaryReportProps> = ({ sess
           <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
             Cash Reconciliation
           </h3>
-          {summary.cashFlow.isBalanced ? (
+          {displayCashFlow?.isBalanced ? (
             <CheckCircle2 className="w-5 h-5 text-green-600" />
           ) : (
             <AlertTriangle className="w-5 h-5 text-yellow-600" />
@@ -132,56 +149,56 @@ export const SessionSummaryReport: React.FC<SessionSummaryReportProps> = ({ sess
         <div className="space-y-3">
           <div className="flex justify-between text-sm">
             <span className="text-gray-600 dark:text-gray-400">Opening Balance</span>
-            <span className="font-medium">{formatCurrency(summary.cashFlow.openingBalance)}</span>
+            <span className="font-medium">{formatCurrency(displayCashFlow?.openingBalance || 0)}</span>
           </div>
 
           <div className="flex justify-between text-sm">
             <span className="text-gray-600 dark:text-gray-400">+ Cash Sales</span>
             <span className="font-medium text-green-600">
-              +{formatCurrency(summary.cashFlow.cashSales)}
+              +{formatCurrency(displayCashFlow?.cashSales || 0)}
             </span>
           </div>
 
           <div className="flex justify-between text-sm">
             <span className="text-gray-600 dark:text-gray-400">- Cashback Paid</span>
             <span className="font-medium text-red-600">
-              -{formatCurrency(summary.cashFlow.cashbackPaid)}
+              -{formatCurrency(displayCashFlow?.cashbackPaid || 0)}
             </span>
           </div>
 
           <div className="flex justify-between text-sm">
             <span className="text-gray-600 dark:text-gray-400">- Expenses Paid</span>
             <span className="font-medium text-red-600">
-              -{formatCurrency(summary.cashFlow.expensesPaid)}
+              -{formatCurrency(displayCashFlow?.expensesPaid || 0)}
             </span>
           </div>
 
           <div className="border-t-2 border-gray-300 dark:border-gray-600 pt-3 mt-3">
             <div className="flex justify-between font-semibold">
               <span>Expected Cash</span>
-              <span>{formatCurrency(summary.cashFlow.expectedCash)}</span>
+              <span>{formatCurrency(displayCashFlow?.expectedCash || 0)}</span>
             </div>
           </div>
 
           <div className="flex justify-between text-sm">
             <span className="text-gray-600 dark:text-gray-400">Actual Cash (Counted)</span>
-            <span className="font-medium">{formatCurrency(summary.cashFlow.actualCash)}</span>
+            <span className="font-medium">{formatCurrency(displayCashFlow?.actualCash || 0)}</span>
           </div>
 
           <div className={`flex justify-between font-bold text-lg pt-2 border-t ${
-            summary.cashFlow.variance >= 0 ? 'text-green-600' : 'text-red-600'
+            (displayCashFlow?.variance || 0) >= 0 ? 'text-green-600' : 'text-red-600'
           }`}>
             <span>Variance</span>
             <span>
-              {summary.cashFlow.variance >= 0 ? '+' : ''}
-              {formatCurrency(summary.cashFlow.variance)}
+              {(displayCashFlow?.variance || 0) >= 0 ? '+' : ''}
+              {formatCurrency(displayCashFlow?.variance || 0)}
               <span className="text-xs ml-2 font-normal">
-                ({summary.cashFlow.variancePercentage.toFixed(2)}%)
+                ({(displayCashFlow?.variancePercentage || 0).toFixed(2)}%)
               </span>
             </span>
           </div>
 
-          {Math.abs(summary.cashFlow.variance) > 100 && (
+          {Math.abs(displayCashFlow?.variance || 0) > 100 && (
             <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg flex items-start gap-2">
               <AlertTriangle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
               <div className="text-sm text-yellow-800 dark:text-yellow-200">

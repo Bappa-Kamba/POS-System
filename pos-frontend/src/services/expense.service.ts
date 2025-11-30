@@ -13,6 +13,13 @@ export interface Expense {
     id: string;
     name: string;
   };
+  createdById?: string;
+  createdBy?: {
+    id: string;
+    username: string;
+    firstName?: string;
+    lastName?: string;
+  };
   createdAt: string;
   updatedAt: string;
 }

@@ -122,10 +122,10 @@ export class SalesService {
         );
       }
 
-      // For cashback: subtotal = amount given, total = amount given (service charge is profit, not part of sale total)
-      subtotal = cashbackAmount;
+      // For cashback: subtotal = amount given + service charge (total received), totalAmount = amount given
+      subtotal = cashbackAmount + serviceCharge; // Total received from customer
       taxAmount = 0; // No tax on cashback
-      const totalAmount = cashbackAmount; // Total is just the amount given
+      const totalAmount = cashbackAmount; // Amount given to customer
 
       // Generate receipt number
       const receiptNumber = await this.generateReceiptNumber(new Date());

@@ -54,6 +54,9 @@ export const ExpenseTable: React.FC<ExpenseTableProps> = ({
               Date
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+              Submitted By
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
               Description
             </th>
             <th className="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">
@@ -75,6 +78,12 @@ export const ExpenseTable: React.FC<ExpenseTableProps> = ({
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-400">
                 {formatDate(expense.date)}
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-400">
+                {expense.createdBy 
+                  ? `${expense.createdBy.firstName || ''} ${expense.createdBy.lastName || ''}`.trim() || expense.createdBy.username
+                  : '-'
+                }
               </td>
               <td className="px-6 py-4 text-sm text-neutral-500 dark:text-neutral-400 max-w-xs truncate">
                 {expense.description || '-'}
