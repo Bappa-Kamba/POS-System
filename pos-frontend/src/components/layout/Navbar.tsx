@@ -26,6 +26,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useThemeStore } from '../../store/themeStore';
 import { useSafeLogout } from '../../hooks/useSafeLogout';
 import { SessionEndModal } from '../session/SessionEndModal';
+import { RefreshControl } from '../common/RefreshControl';
 
 export const Navbar = () => {
   const { user } = useAuth();
@@ -292,6 +293,9 @@ export const Navbar = () => {
 
           {/* User Info & Actions */}
           <div className="flex items-center gap-2">
+            {/* Refresh Control */}
+            <RefreshControl />
+
             {/* Theme Toggle */}
             <button
               onClick={toggleTheme}

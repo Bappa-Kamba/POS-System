@@ -912,9 +912,13 @@ export class ReportsService {
     }, 0);
 
     // Overall totals
-    const totalSales = sales.length;
-    const totalRevenue = purchaseTotalRevenue - cashbackTotalRevenue; // Net revenue
-    const totalProfit = purchaseTotalProfit + cashbackTotalProfit; // Net profit (Purchase Profit + Cashback Service Charge)
+    // Total sales should only count purchases (cashback is a service, not a sale)
+    const totalSales = purchaseTotalSales;
+    // Revenue should only be from purchases (cashback is not revenue, it's money given out)
+    const totalRevenue = purchaseTotalRevenue;
+    // Total profit includes both product profit and service charges
+    const totalProfit = purchaseTotalProfit + cashbackTotalProfit;
+    // Average order value based on purchases only
     const averageOrderValue = totalSales > 0 ? totalRevenue / totalSales : 0;
 
     // Group by period
@@ -956,21 +960,39 @@ export class ReportsService {
       },
       availableCapital: branch?.cashbackCapital || 0,
       summary: {
+        // Overall metrics (purchases only - the main business)
         totalSales,
         totalRevenue,
         totalProfit,
         averageOrderValue,
-        profitMargin: totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0,
-        // Separate purchase and cashback metrics
+        // Profit margin should be based on purchases only (product margin)
+        profitMargin:
+          purchaseTotalRevenue > 0
+            ? (purchaseTotalProfit / purchaseTotalRevenue) * 100
+            : 0,
+        // Detailed breakdown
         purchase: {
           totalSales: purchaseTotalSales,
           totalRevenue: purchaseTotalRevenue,
           totalProfit: purchaseTotalProfit,
+          profitMargin:
+            purchaseTotalRevenue > 0
+              ? (purchaseTotalProfit / purchaseTotalRevenue) * 100
+              : 0,
         },
         cashback: {
-          totalSales: cashbackTotalSales,
-          totalRevenue: cashbackTotalRevenue,
-          totalProfit: cashbackTotalProfit,
+          totalTransactions: cashbackTotalSales,
+          totalGiven: cashbackTotalRevenue,
+          serviceChargeEarned: cashbackTotalProfit,
+          serviceChargeRate:
+            cashbackTotalRevenue > 0
+              ? (cashbackTotalProfit / cashbackTotalRevenue) * 100
+              : 0,
+        },
+        // Combined metrics for reference
+        combined: {
+          totalProfit: purchaseTotalProfit + cashbackTotalProfit,
+          netCashFlow: purchaseTotalRevenue - cashbackTotalRevenue,
         },
       },
       breakdown,
@@ -1855,11 +1877,11 @@ export class ReportsService {
       ['Period', `${reportData.period.start} to ${reportData.period.end}`],
       [],
       ['Metric', 'Value'],
-      ['Total Transactions', reportData.summary.cashback.totalSales],
-      ['Total Amount Given', reportData.summary.cashback.totalRevenue],
+      ['Total Transactions', reportData.summary.cashback.totalTransactions],
+      ['Total Amount Given', reportData.summary.cashback.totalGiven],
       [
         'Total Service Charge (Profit)',
-        reportData.summary.cashback.totalProfit,
+        reportData.summary.cashback.serviceChargeEarned,
       ],
     ];
     const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
@@ -1920,14 +1942,17 @@ export class ReportsService {
 
     const summaryData = [
       ['Metric', 'Value'],
-      ['Total Transactions', reportData.summary.cashback.totalSales.toString()],
+      [
+        'Total Transactions',
+        reportData.summary.cashback.totalTransactions.toString(),
+      ],
       [
         'Total Amount Given',
-        `₦${reportData.summary.cashback.totalRevenue.toFixed(2)}`,
+        `₦${reportData.summary.cashback.totalGiven.toFixed(2)}`,
       ],
       [
         'Total Service Charge',
-        `₦${reportData.summary.cashback.totalProfit.toFixed(2)}`,
+        `₦${reportData.summary.cashback.serviceChargeEarned.toFixed(2)}`,
       ],
     ];
 

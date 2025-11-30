@@ -40,34 +40,38 @@ export const useLowStockItems = () => {
 
 export const useSalesReport = (params: SalesReportParams, enabled = true) => {
   return useQuery<SalesReport>({
-    queryKey: ['reports', 'sales', params],
+    queryKey: ["reports", "sales", params],
     queryFn: async () => {
       const res = await reportService.getSalesReport(params);
-      if (res.success && 'data' in res) {
+      if (res.success && "data" in res) {
         return res.data;
       }
-      throw new Error('Failed to fetch sales report');
+      throw new Error("Failed to fetch sales report");
     },
     enabled,
-    staleTime: 2 * 60 * 1000, // 2 minutes
+    staleTime: Infinity, // Data never stale unless explicitly invalidated
+    refetchOnMount: false, // Don't auto-refetch on mount
+    refetchOnWindowFocus: false, // Don't auto-refetch on focus
   });
 };
 
 export const useProfitLossReport = (
   params: ProfitLossReportParams,
-  enabled = true,
+  enabled = true
 ) => {
   return useQuery<ProfitLossReport>({
-    queryKey: ['reports', 'profit-loss', params],
+    queryKey: ["reports", "profit-loss", params],
     queryFn: async () => {
       const res = await reportService.getProfitLossReport(params);
-      if (res.success && 'data' in res) {
+      if (res.success && "data" in res) {
         return res.data;
       }
-      throw new Error('Failed to fetch profit & loss report');
+      throw new Error("Failed to fetch profit & loss report");
     },
     enabled,
-    staleTime: 2 * 60 * 1000, // 2 minutes
+    staleTime: Infinity, // Data never stale unless explicitly invalidated
+    refetchOnMount: false, // Don't auto-refetch on mount
+    refetchOnWindowFocus: false, // Don't auto-refetch on focus
   });
 };
 

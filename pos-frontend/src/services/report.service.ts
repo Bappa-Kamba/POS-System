@@ -88,11 +88,17 @@ export interface SalesReport {
       totalSales: number;
       totalRevenue: number;
       totalProfit: number;
+      profitMargin: number;
     };
     cashback: {
-      totalSales: number;
-      totalRevenue: number;
+      totalTransactions: number;
+      totalGiven: number;
+      serviceChargeEarned: number;
+      serviceChargeRate: number;
+    };
+    combined: {
       totalProfit: number;
+      netCashFlow: number;
     };
   };
   breakdown: Array<{

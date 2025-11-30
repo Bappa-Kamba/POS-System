@@ -55,7 +55,7 @@ export const CashbackReportView: React.FC<CashbackReportViewProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Total Transactions"
-          value={report.summary.cashback.totalSales.toString()}
+          value={report.summary.cashback.totalTransactions.toString()}
           icon={<ShoppingCart className="w-6 h-6 text-primary-600" />}
           subtitle={`${formatDate(report.period.start)} - ${formatDate(report.period.end)}`}
         />
@@ -73,13 +73,13 @@ export const CashbackReportView: React.FC<CashbackReportViewProps> = ({
         </div>
         <StatCard
           title="Total Amount Given"
-          value={formatCurrency(report.summary.cashback.totalRevenue)}
+          value={formatCurrency(report.summary.cashback.totalGiven)}
           icon={<DollarSign className="w-6 h-6 text-primary-600" />}
           subtitle="Cash given to customers"
         />
         <StatCard
           title="Total Service Charge (Profit)"
-          value={formatCurrency(report.summary.cashback.totalProfit)}
+          value={formatCurrency(report.summary.cashback.serviceChargeEarned)}
           icon={<TrendingUp className="w-6 h-6 text-primary-600" />}
           subtitle="Revenue from service charges"
         />
