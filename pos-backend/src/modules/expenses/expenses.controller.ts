@@ -12,7 +12,13 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { ExpensesService } from './expenses.service';
-import { CreateExpenseDto, UpdateExpenseDto, FindAllExpensesDto } from './dto';
+import {
+  CreateExpenseDto,
+  UpdateExpenseDto,
+  FindAllExpensesDto,
+  CreateExpenseCategoryDto,
+  UpdateExpenseCategoryDto,
+} from './dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -32,7 +38,7 @@ export class ExpensesController {
   async create(
     @Body() createExpenseDto: CreateExpenseDto,
     @CurrentUser() user: AuthenticatedRequestUser,
-  ) {
+  ): Promise<{ success: boolean; data: unknown; message: string }> {
     const expense = await this.expensesService.create(
       createExpenseDto,
       user.id,
@@ -49,7 +55,7 @@ export class ExpensesController {
   async findAll(
     @Query() findAllExpensesDto: FindAllExpensesDto,
     @CurrentUser() user: AuthenticatedRequestUser,
-  ) {
+  ): Promise<{ success: boolean; data: unknown; meta: unknown }> {
     // If no branchId specified, filter by current user's branch
     const params = {
       ...findAllExpensesDto,
@@ -65,7 +71,9 @@ export class ExpensesController {
 
   @Get('categories')
   @Roles(UserRole.ADMIN, UserRole.CASHIER)
-  async getCategories(@CurrentUser() user: AuthenticatedRequestUser) {
+  async getCategories(
+    @CurrentUser() user: AuthenticatedRequestUser,
+  ): Promise<{ success: boolean; data: string[] }> {
     const categories = await this.expensesService.getCategories(user.branchId);
     return {
       success: true,
@@ -75,7 +83,9 @@ export class ExpensesController {
 
   @Get(':id')
   @Roles(UserRole.ADMIN, UserRole.CASHIER)
-  async findOne(@Param('id') id: string) {
+  async findOne(
+    @Param('id') id: string,
+  ): Promise<{ success: boolean; data: unknown }> {
     const expense = await this.expensesService.findOne(id);
     return {
       success: true,
@@ -89,7 +99,7 @@ export class ExpensesController {
     @Param('id') id: string,
     @Body() updateExpenseDto: UpdateExpenseDto,
     @CurrentUser() user: AuthenticatedRequestUser,
-  ) {
+  ): Promise<{ success: boolean; data: unknown; message: string }> {
     const expense = await this.expensesService.update(
       id,
       updateExpenseDto,
@@ -108,11 +118,97 @@ export class ExpensesController {
   async remove(
     @Param('id') id: string,
     @CurrentUser() user: AuthenticatedRequestUser,
-  ) {
+  ): Promise<{ success: boolean; message: string }> {
     await this.expensesService.remove(id, user.id);
     return {
       success: true,
       message: 'Expense deleted successfully',
+    };
+  }
+
+  // ============================================
+  // EXPENSE CATEGORY ENDPOINTS
+  // ============================================
+
+  @Post('categories')
+  @Roles(UserRole.ADMIN)
+  @HttpCode(HttpStatus.CREATED)
+  async createCategory(
+    @Body() createCategoryDto: CreateExpenseCategoryDto,
+    @CurrentUser() user: AuthenticatedRequestUser,
+  ): Promise<{ success: boolean; data: unknown; message: string }> {
+    const category = await this.expensesService.createCategory(
+      createCategoryDto,
+      user.branchId,
+      user.id,
+    );
+    return {
+      success: true,
+      data: category,
+      message: 'Expense category created successfully',
+    };
+  }
+
+  @Get('categories/all')
+  @Roles(UserRole.ADMIN, UserRole.CASHIER)
+  async getAllCategories(
+    @CurrentUser() user: AuthenticatedRequestUser,
+  ): Promise<{ success: boolean; data: unknown }> {
+    const categories = await this.expensesService
+      .getAllCategories(user.branchId)
+      .catch((error) => {
+        throw error;
+      });
+    return {
+      success: true,
+      data: categories,
+    };
+  }
+
+  @Get('categories/:id')
+  @Roles(UserRole.ADMIN)
+  async getCategory(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedRequestUser,
+  ): Promise<{ success: boolean; data: unknown }> {
+    const category = await this.expensesService.getCategory(id, user.branchId);
+    return {
+      success: true,
+      data: category,
+    };
+  }
+
+  @Put('categories/:id')
+  @Roles(UserRole.ADMIN)
+  async updateCategory(
+    @Param('id') id: string,
+    @Body() updateCategoryDto: UpdateExpenseCategoryDto,
+    @CurrentUser() user: AuthenticatedRequestUser,
+  ): Promise<{ success: boolean; data: unknown; message: string }> {
+    const category = await this.expensesService.updateCategory(
+      id,
+      updateCategoryDto,
+      user.branchId,
+      user.id,
+    );
+    return {
+      success: true,
+      data: category,
+      message: 'Expense category updated successfully',
+    };
+  }
+
+  @Delete('categories/:id')
+  @Roles(UserRole.ADMIN)
+  @HttpCode(HttpStatus.OK)
+  async removeCategory(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedRequestUser,
+  ): Promise<{ success: boolean; message: string }> {
+    await this.expensesService.deleteCategory(id, user.branchId, user.id);
+    return {
+      success: true,
+      message: 'Expense category deleted successfully',
     };
   }
 }

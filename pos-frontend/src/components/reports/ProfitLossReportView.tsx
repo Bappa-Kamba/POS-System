@@ -1,5 +1,5 @@
 import React from 'react';
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { useProfitLossReport } from '../../hooks/useReports';
 import { StatCard } from '../dashboard/StatCard';
 import { formatCurrency, formatPercentage } from '../../utils/formatters';
@@ -199,7 +199,8 @@ export const ProfitLossReportView: React.FC<ProfitLossReportViewProps> = ({
                   cx="50%"
                   cy="50%"
                   outerRadius={100}
-                  label={(entry: any) => `${entry.category}: ${formatCurrency(entry.amount)}`}
+                  labelLine={false}
+                  label={({ percent }: any) => `${(percent * 100).toFixed(0)}%`}
                 >
                   {report.expenseBreakdown.map((_entry, index) => (
                     <Cell
@@ -209,6 +210,7 @@ export const ProfitLossReportView: React.FC<ProfitLossReportViewProps> = ({
                   ))}
                 </Pie>
                 <Tooltip formatter={(value: unknown) => formatCurrency(value as number)} />
+                <Legend layout="vertical" align="right" verticalAlign="bottom" />
               </PieChart>
             </ResponsiveContainer>
           </div>

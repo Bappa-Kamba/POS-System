@@ -10,6 +10,8 @@ interface ProductTableProps {
   onEdit: (product: Product) => void;
   onDelete: (product: Product) => void;
   isLoading?: boolean;
+  selectedProducts?: Set<string>;
+  onSelectionChange?: (selected: Set<string>) => void;
 }
 
 export const ProductTable: React.FC<ProductTableProps> = ({
@@ -17,9 +19,34 @@ export const ProductTable: React.FC<ProductTableProps> = ({
   onEdit,
   onDelete,
   isLoading = false,
+  selectedProducts = new Set(),
+  onSelectionChange,
 }) => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+
+  const handleSelectAll = (checked: boolean) => {
+    if (!onSelectionChange) return;
+    if (checked) {
+      onSelectionChange(new Set(products.map(p => p.id)));
+    } else {
+      onSelectionChange(new Set());
+    }
+  };
+
+  const handleSelectOne = (id: string, checked: boolean) => {
+    if (!onSelectionChange) return;
+    const newSelection = new Set(selectedProducts);
+    if (checked) {
+      newSelection.add(id);
+    } else {
+      newSelection.delete(id);
+    }
+    onSelectionChange(newSelection);
+  };
+
+  const allSelected = products.length > 0 && products.every(p => selectedProducts.has(p.id));
+  const someSelected = products.some(p => selectedProducts.has(p.id)) && !allSelected;
 
   const formatCurrency = (amount?: number) => {
     if (amount == null) return 'N/A';
@@ -82,6 +109,19 @@ export const ProductTable: React.FC<ProductTableProps> = ({
       <table className="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
         <thead className="bg-neutral-50 dark:bg-neutral-900">
           <tr>
+            {onSelectionChange && (
+              <th className="px-6 py-3 text-left">
+                <input
+                  type="checkbox"
+                  checked={allSelected}
+                  ref={input => {
+                    if (input) input.indeterminate = someSelected;
+                  }}
+                  onChange={(e) => handleSelectAll(e.target.checked)}
+                  className="w-4 h-4 text-primary-600 bg-neutral-100 border-neutral-300 rounded focus:ring-primary-500 focus:ring-2"
+                />
+              </th>
+            )}
             <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
               Name
             </th>
@@ -118,6 +158,16 @@ export const ProductTable: React.FC<ProductTableProps> = ({
                 setIsViewModalOpen(true);
               }}
             >
+              {onSelectionChange && (
+                <td className="px-6 py-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                  <input
+                    type="checkbox"
+                    checked={selectedProducts.has(product.id)}
+                    onChange={(e) => handleSelectOne(product.id, e.target.checked)}
+                    className="w-4 h-4 text-primary-600 bg-neutral-100 border-neutral-300 rounded focus:ring-primary-500 focus:ring-2"
+                  />
+                </td>
+              )}
               <td className="px-6 py-4 whitespace-nowrap">
                 <div className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
                   {product.name}

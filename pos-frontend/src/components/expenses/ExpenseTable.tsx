@@ -9,6 +9,8 @@ interface ExpenseTableProps {
   onEdit: (expense: Expense) => void;
   onDelete: (expense: Expense) => void;
   isLoading?: boolean;
+  selectedExpenses?: Set<string>;
+  onSelectionChange?: (selected: Set<string>) => void;
 }
 
 export const ExpenseTable: React.FC<ExpenseTableProps> = ({
@@ -16,7 +18,31 @@ export const ExpenseTable: React.FC<ExpenseTableProps> = ({
   onEdit,
   onDelete,
   isLoading,
+  selectedExpenses = new Set(),
+  onSelectionChange,
 }) => {
+  const handleSelectAll = (checked: boolean) => {
+    if (!onSelectionChange) return;
+    if (checked) {
+      onSelectionChange(new Set(expenses.map(e => e.id)));
+    } else {
+      onSelectionChange(new Set());
+    }
+  };
+
+  const handleSelectOne = (id: string, checked: boolean) => {
+    if (!onSelectionChange) return;
+    const newSelection = new Set(selectedExpenses);
+    if (checked) {
+      newSelection.add(id);
+    } else {
+      newSelection.delete(id);
+    }
+    onSelectionChange(newSelection);
+  };
+
+  const allSelected = expenses.length > 0 && expenses.every(e => selectedExpenses.has(e.id));
+  const someSelected = expenses.some(e => selectedExpenses.has(e.id)) && !allSelected;
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -41,6 +67,19 @@ export const ExpenseTable: React.FC<ExpenseTableProps> = ({
       <table className="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
         <thead className="bg-neutral-50 dark:bg-neutral-900">
           <tr>
+            {onSelectionChange && (
+              <th className="px-6 py-3 text-left">
+                <input
+                  type="checkbox"
+                  checked={allSelected}
+                  ref={input => {
+                    if (input) input.indeterminate = someSelected;
+                  }}
+                  onChange={(e) => handleSelectAll(e.target.checked)}
+                  className="w-4 h-4 text-primary-600 bg-neutral-100 border-neutral-300 rounded focus:ring-primary-500 focus:ring-2"
+                />
+              </th>
+            )}
             <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
               Title
             </th>
@@ -67,6 +106,16 @@ export const ExpenseTable: React.FC<ExpenseTableProps> = ({
         <tbody className="bg-white dark:bg-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-700">
           {expenses.map((expense) => (
             <tr key={expense.id} className="hover:bg-neutral-50 dark:hover:bg-neutral-700">
+              {onSelectionChange && (
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <input
+                    type="checkbox"
+                    checked={selectedExpenses.has(expense.id)}
+                    onChange={(e) => handleSelectOne(expense.id, e.target.checked)}
+                    className="w-4 h-4 text-primary-600 bg-neutral-100 border-neutral-300 rounded focus:ring-primary-500 focus:ring-2"
+                  />
+                </td>
+              )}
               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900 dark:text-neutral-100">
                 {expense.title}
               </td>

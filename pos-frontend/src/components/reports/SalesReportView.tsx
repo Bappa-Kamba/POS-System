@@ -1,15 +1,13 @@
 import React, { useState } from 'react';
 import {
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
+  // LineChart,
+  // Line,
   PieChart,
   Pie,
   Cell,
-  XAxis,
-  YAxis,
-  CartesianGrid,
+  // XAxis,
+  // YAxis,
+  // CartesianGrid,
   Tooltip,
   Legend,
   ResponsiveContainer,
@@ -26,11 +24,29 @@ interface SalesReportViewProps {
 
 const COLORS = ['#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
+// const CustomTooltip = ({ active, payload, label }: any) => {
+//   if (active && payload && payload.length) {
+//     return (
+//       <div className="bg-white dark:bg-neutral-700 p-3 border border-neutral-300 dark:border-neutral-600 rounded-lg shadow-lg">
+//         <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 mb-1">
+//           {label ? formatDate(label, 'full-date') : 'Data Point'}
+//         </p>
+//         {payload.map((item: any) => (
+//           <p key={item.dataKey} className="text-xs" style={{ color: item.stroke || item.fill }}>
+//             {`${item.name}: ${formatCurrency(item.value)}`}
+//           </p>
+//         ))}
+//       </div>
+//     );
+//   }
+//   return null;
+// };
+
 export const SalesReportView: React.FC<SalesReportViewProps> = ({
   startDate,
   endDate,
 }) => {
-  const [groupBy, setGroupBy] = useState<'day' | 'week' | 'month'>('day');
+  const [groupBy] = useState<'day' | 'week' | 'month'>('day');
   const { data: report, isLoading, error } = useSalesReport(
     { startDate, endDate, groupBy },
     !!startDate && !!endDate,
@@ -87,7 +103,7 @@ export const SalesReportView: React.FC<SalesReportViewProps> = ({
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Revenue Trend */}
-        <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-md border border-neutral-200 dark:border-neutral-700 p-6">
+        {/* <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-md border border-neutral-200 dark:border-neutral-700 p-6">
           <h3 className="text-lg font-semibold mb-4 text-neutral-900 dark:text-neutral-100">
             Revenue Trend
           </h3>
@@ -104,32 +120,32 @@ export const SalesReportView: React.FC<SalesReportViewProps> = ({
             </select>
           </div>
           <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={report.breakdown}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" />
-              <YAxis />
-              <Tooltip
-                formatter={(value: unknown) => formatCurrency(value as number)}
-                labelFormatter={(label) => `Date: ${label}`}
-              />
+            <LineChart data={report.breakdown} margin={{ top: 20, right: 30, left: 30, bottom: 5 }} >
+              <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+              <XAxis dataKey="date"
+                interval="preserveStartEnd"
+                tickFormatter={(label) => formatDate(label, groupBy === 'month' ? 'month-year' : 'month-day')}
+               />
+              <YAxis tickFormatter={(value) => formatCurrency(value)} />
+              <Tooltip content={<CustomTooltip />}/>
               <Legend />
               <Line
                 type="monotone"
                 dataKey="revenue"
                 stroke="#0ea5e9"
                 name="Revenue"
-                strokeWidth={2}
+                strokeWidth={1}
               />
               <Line
                 type="monotone"
                 dataKey="profit"
                 stroke="#10b981"
                 name="Profit"
-                strokeWidth={2}
+                strokeWidth={1}
               />
             </LineChart>
           </ResponsiveContainer>
-        </div>
+        </div> */}
 
         {/* Category Breakdown */}
         <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-md border border-neutral-200 dark:border-neutral-700 p-6">
@@ -145,54 +161,58 @@ export const SalesReportView: React.FC<SalesReportViewProps> = ({
                 cx="50%"
                 cy="50%"
                 outerRadius={100}
-                label={(entry: any) => `${entry.category}: ${formatCurrency(entry.revenue)}`}
+                labelLine={false}
+                label={({ percent }: any) => `${(percent * 100).toFixed(0)}%`}
               >
                 {report.categoryBreakdown.map((_entry, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
               <Tooltip formatter={(value: number) => formatCurrency(value)} />
+              <Legend layout="vertical" align="right" verticalAlign="bottom" />
             </PieChart>
           </ResponsiveContainer>
         </div>
       </div>
 
       {/* Additional Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Payment Method Breakdown */}
-        <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-md border border-neutral-200 dark:border-neutral-700 p-6">
-          <h3 className="text-lg font-semibold mb-4 text-neutral-900 dark:text-neutral-100">
-            Payment Methods
-          </h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={report.paymentBreakdown}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="method" />
-              <YAxis />
-              <Tooltip formatter={(value: number) => formatCurrency(value)} />
-              <Legend />
-              <Bar dataKey="amount" fill="#0ea5e9" name="Amount" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+      {
+      // <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      //   {/* Payment Method Breakdown */}
+      //   <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-md border border-neutral-200 dark:border-neutral-700 p-6">
+      //     <h3 className="text-lg font-semibold mb-4 text-neutral-900 dark:text-neutral-100">
+      //       Payment Methods
+      //     </h3>
+      //     <ResponsiveContainer width="80%" height={300} className="mx-auto" >
+      //       <BarChart data={report.paymentBreakdown} width="80%" margin={{ top: 20, right: 30, left: 30, bottom: 5 }} >
+      //         <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+      //         <XAxis dataKey="method"/>
+      //         <YAxis tickFormatter={(value: number) => formatCurrency(value)} />
+      //         <Tooltip formatter={(value: number) => formatCurrency(value)} />
+      //         <Legend />
+      //         <Bar dataKey="amount" fill="#0ea5e9" name="Amount" radius={[4, 4, 0, 0]} maxBarSize={40} />
+      //       </BarChart>
+      //     </ResponsiveContainer>
+      //   </div>
 
-        {/* Sales by Cashier */}
-        <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-md border border-neutral-200 dark:border-neutral-700 p-6">
-          <h3 className="text-lg font-semibold mb-4 text-neutral-900 dark:text-neutral-100">
-            Sales by Cashier
-          </h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={report.salesByCashier}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip formatter={(value: number) => formatCurrency(value)} />
-              <Legend />
-              <Bar dataKey="revenue" fill="#10b981" name="Revenue" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
+      //   {/* Sales by Cashier */}
+      //   <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-md border border-neutral-200 dark:border-neutral-700 p-6">
+      //     <h3 className="text-lg font-semibold mb-4 text-neutral-900 dark:text-neutral-100">
+      //       Sales by Cashier
+      //     </h3>
+      //     <ResponsiveContainer width="80%" height={300} className="mx-auto">
+      //       <BarChart data={report.salesByCashier} margin={{ top: 20, right: 30, left: 50, bottom: 5 }} >
+      //         <CartesianGrid strokeDasharray="3 3" />
+      //         <XAxis dataKey="name"/>
+      //         <YAxis />
+      //         <Tooltip formatter={(value: number) => formatCurrency(value)} />
+      //         <Legend />
+      //         <Bar dataKey="revenue" fill="#10b981" name="Revenue"  maxBarSize={40}/>
+      //       </BarChart>
+      //     </ResponsiveContainer>
+      //   </div>
+      // </div>
+      }
 
       {/* Top Products */}
       <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-md border border-neutral-200 dark:border-neutral-700 p-6">

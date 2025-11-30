@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, Trash2 } from 'lucide-react';
 import { Button } from '../../components/common/Button';
 import { Modal } from '../../components/common/Modal';
 import { ProductTable } from '../../components/products/ProductTable';
@@ -24,6 +24,7 @@ export const ProductsPage: React.FC = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
 
   const limit = 20;
   const skip = (page - 1) * limit;
@@ -118,7 +119,7 @@ export const ProductsPage: React.FC = () => {
   return (
     <div className="p-6">
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-center mb-6 max-w-7xl">
         <div>
           <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
             Products
@@ -127,10 +128,33 @@ export const ProductsPage: React.FC = () => {
             Manage your product inventory
           </p>
         </div>
-        <Button onClick={() => setIsCreateModalOpen(true)}>
-          <Plus className="w-5 h-5 mr-2" />
-          Add Product
-        </Button>
+        <div className="flex items-center gap-3">
+          {selectedProducts.size > 0 && (
+            <Button
+              variant="danger"
+              onClick={async () => {
+                if (
+                  window.confirm(
+                    `Are you sure you want to delete ${selectedProducts.size} product(s)?`,
+                  )
+                ) {
+                  for (const id of selectedProducts) {
+                    await deleteProduct.mutateAsync(id);
+                  }
+                  setSelectedProducts(new Set());
+                  refetch();
+                }
+              }}
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Delete {selectedProducts.size} Selected
+            </Button>
+          )}
+          <Button onClick={() => setIsCreateModalOpen(true)}>
+            <Plus className="w-5 h-5 mr-2" />
+            Add Product
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -205,6 +229,8 @@ export const ProductsPage: React.FC = () => {
             onEdit={handleEdit}
             onDelete={handleDelete}
             isLoading={isLoading}
+            selectedProducts={selectedProducts}
+            onSelectionChange={setSelectedProducts}
           />
 
         {/* Pagination */}

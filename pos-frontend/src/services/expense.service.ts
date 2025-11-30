@@ -52,37 +52,61 @@ export interface FindAllExpensesParams {
   branchId?: string;
 }
 
+export interface ExpenseCategory {
+  id: string;
+  name: string;
+  description?: string;
+  isActive: boolean;
+  branchId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateExpenseCategoryData {
+  name: string;
+  description?: string;
+}
+
+export interface UpdateExpenseCategoryData {
+  name?: string;
+  description?: string;
+  isActive?: boolean;
+}
+
 export const expenseService = {
   async getAll(
-    params?: FindAllExpensesParams,
+    params?: FindAllExpensesParams
   ): Promise<PaginatedApiResponse<Expense>> {
     const queryParams = new URLSearchParams();
     if (params?.page)
-      queryParams.append('skip', String((params.page - 1) * (params.limit || 20)));
-    if (params?.limit) queryParams.append('take', String(params.limit));
-    if (params?.search) queryParams.append('search', params.search);
-    if (params?.category) queryParams.append('category', params.category);
-    if (params?.startDate) queryParams.append('startDate', params.startDate);
-    if (params?.endDate) queryParams.append('endDate', params.endDate);
-    if (params?.branchId) queryParams.append('branchId', params.branchId);
+      queryParams.append(
+        "skip",
+        String((params.page - 1) * (params.limit || 20))
+      );
+    if (params?.limit) queryParams.append("take", String(params.limit));
+    if (params?.search) queryParams.append("search", params.search);
+    if (params?.category) queryParams.append("category", params.category);
+    if (params?.startDate) queryParams.append("startDate", params.startDate);
+    if (params?.endDate) queryParams.append("endDate", params.endDate);
+    if (params?.branchId) queryParams.append("branchId", params.branchId);
 
     const response = await api.get<PaginatedApiResponse<Expense>>(
-      `/expenses?${queryParams.toString()}`,
+      `/expenses?${queryParams.toString()}`
     );
     return response.data;
   },
 
   async getOne(id: string): Promise<Expense> {
     const response = await api.get<{ success: boolean; data: Expense }>(
-      `/expenses/${id}`,
+      `/expenses/${id}`
     );
     return response.data.data;
   },
 
   async create(data: CreateExpenseData): Promise<Expense> {
     const response = await api.post<{ success: boolean; data: Expense }>(
-      '/expenses',
-      data,
+      "/expenses",
+      data
     );
     return response.data.data;
   },
@@ -90,7 +114,7 @@ export const expenseService = {
   async update(id: string, data: UpdateExpenseData): Promise<Expense> {
     const response = await api.put<{ success: boolean; data: Expense }>(
       `/expenses/${id}`,
-      data,
+      data
     );
     return response.data.data;
   },
@@ -101,9 +125,50 @@ export const expenseService = {
 
   async getCategories(): Promise<string[]> {
     const response = await api.get<{ success: boolean; data: string[] }>(
-      '/expenses/categories',
+      "/expenses/categories"
     );
     return response.data.data;
+  },
+
+  // Category Management
+  async getAllCategories(): Promise<ExpenseCategory[]> {
+    const response = await api.get<{
+      success: boolean;
+      data: ExpenseCategory[];
+    }>("/expenses/categories/all");
+    return response.data.data;
+  },
+
+  async getCategory(id: string): Promise<ExpenseCategory> {
+    const response = await api.get<{ success: boolean; data: ExpenseCategory }>(
+      `/expenses/categories/${id}`
+    );
+    return response.data.data;
+  },
+
+  async createCategory(
+    data: CreateExpenseCategoryData
+  ): Promise<ExpenseCategory> {
+    const response = await api.post<{
+      success: boolean;
+      data: ExpenseCategory;
+    }>("/expenses/categories", data);
+    return response.data.data;
+  },
+
+  async updateCategory(
+    id: string,
+    data: UpdateExpenseCategoryData
+  ): Promise<ExpenseCategory> {
+    const response = await api.put<{ success: boolean; data: ExpenseCategory }>(
+      `/expenses/categories/${id}`,
+      data
+    );
+    return response.data.data;
+  },
+
+  async deleteCategory(id: string): Promise<void> {
+    await api.delete(`/expenses/categories/${id}`);
   },
 };
 

@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from 'recharts';
+// import {
+//   LineChart,
+//   Line,
+//   XAxis,
+//   YAxis,
+//   CartesianGrid,
+//   Tooltip,
+//   Legend,
+//   ResponsiveContainer,
+// } from 'recharts';
 import { useSalesReport } from '../../hooks/useReports';
 import { StatCard } from '../dashboard/StatCard';
 import { formatCurrency, formatDate } from '../../utils/formatters';
@@ -25,7 +25,7 @@ export const CashbackReportView: React.FC<CashbackReportViewProps> = ({
   endDate,
 }) => {
   const navigate = useNavigate();
-  const [groupBy, setGroupBy] = useState<'day' | 'week' | 'month'>('day');
+  const [groupBy] = useState<'day' | 'week' | 'month'>('day');
   const { data: report, isLoading, error } = useSalesReport(
     { startDate, endDate, groupBy, transactionType: 'CASHBACK' as any },
     !!startDate && !!endDate,
@@ -86,9 +86,9 @@ export const CashbackReportView: React.FC<CashbackReportViewProps> = ({
       </div>
 
       {/* Charts Row */}
-      <div className="grid grid-cols-1 gap-6">
+      {/* <div className="grid grid-cols-1 gap-6"> */}
         {/* Service Charge Trend */}
-        <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-md border border-neutral-200 dark:border-neutral-700 p-6">
+        {/* <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-md border border-neutral-200 dark:border-neutral-700 p-6">
           <h3 className="text-lg font-semibold mb-4 text-neutral-900 dark:text-neutral-100">
             Service Charge Trend
           </h3>
@@ -124,7 +124,7 @@ export const CashbackReportView: React.FC<CashbackReportViewProps> = ({
             </LineChart>
           </ResponsiveContainer>
         </div>
-      </div>
+      </div> */}
 
       {/* Transactions Table */}
       <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-md border border-neutral-200 dark:border-neutral-700 p-6">

@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Plus, Search, Filter, X } from 'lucide-react';
+import { Plus, Search, Filter, X, Settings, Trash2 } from 'lucide-react';
 import { Button } from '../../components/common/Button';
 import { Modal } from '../../components/common/Modal';
 import { ExpenseTable } from '../../components/expenses/ExpenseTable';
 import { ExpenseForm } from '../../components/expenses/ExpenseForm';
+import { ExpenseCategoryManager } from '../../components/expenses/ExpenseCategoryManager';
 import {
   useExpenses,
   useCreateExpense,
@@ -30,8 +31,10 @@ export const ExpensesPage: React.FC = () => {
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isCategoryManagerOpen, setIsCategoryManagerOpen] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [selectedExpenses, setSelectedExpenses] = useState<Set<string>>(new Set());
 
   const limit = 20;
 
@@ -107,7 +110,7 @@ export const ExpensesPage: React.FC = () => {
   const totalAmount = data?.data.reduce((sum, exp) => sum + exp.amount, 0) || 0;
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
@@ -117,10 +120,39 @@ export const ExpensesPage: React.FC = () => {
             Manage and track business expenses
           </p>
         </div>
-        <Button onClick={handleCreate}>
-          <Plus className="w-4 h-4 mr-2" />
-          Add Expense
-        </Button>
+        <div className="flex items-center gap-3">
+          {selectedExpenses.size > 0 && (
+            <Button
+              variant="danger"
+              onClick={async () => {
+                if (
+                  window.confirm(
+                    `Are you sure you want to delete ${selectedExpenses.size} expense(s)?`,
+                  )
+                ) {
+                  for (const id of selectedExpenses) {
+                    await deleteExpense.mutateAsync(id);
+                  }
+                  setSelectedExpenses(new Set());
+                }
+              }}
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Delete {selectedExpenses.size} Selected
+            </Button>
+          )}
+          <Button
+            variant="secondary"
+            onClick={() => setIsCategoryManagerOpen(true)}
+          >
+            <Settings className="w-4 h-4 mr-2" />
+            Manage Categories
+          </Button>
+          <Button onClick={handleCreate}>
+            <Plus className="w-4 h-4 mr-2" />
+            Add Expense
+          </Button>
+        </div>
       </div>
 
       {/* Summary Card */}
@@ -237,6 +269,8 @@ export const ExpensesPage: React.FC = () => {
         onEdit={handleEdit}
         onDelete={handleDelete}
         isLoading={isLoading}
+        selectedExpenses={selectedExpenses}
+        onSelectionChange={setSelectedExpenses}
       />
 
       {/* Pagination */}
@@ -305,6 +339,16 @@ export const ExpensesPage: React.FC = () => {
             categories={categories}
           />
         )}
+      </Modal>
+
+      {/* Category Manager Modal */}
+      <Modal
+        isOpen={isCategoryManagerOpen}
+        onClose={() => setIsCategoryManagerOpen(false)}
+        title="Manage Expense Categories"
+        size="lg"
+      >
+        <ExpenseCategoryManager />
       </Modal>
     </div>
   );

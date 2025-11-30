@@ -12,9 +12,10 @@ export enum ReportType {
 export enum ExportFormat {
   PDF = 'pdf',
   EXCEL = 'excel',
+  CSV = 'csv',
 }
 
-import { SalesReportDto, ReportFrequency } from './sales-report.dto';
+import { ReportFrequency } from './sales-report.dto';
 
 export class ExportReportDto {
   @IsEnum(ReportType)

@@ -86,7 +86,10 @@ export const useExportReport = () => {
       a.href = url;
       
       // Determine file extension
-      const extension = params.format === 'excel' ? '.csv' : '.json';
+      let extension = ".pdf";
+      if (params.format === "excel") extension = ".xlsx";
+      else if (params.format === "csv") extension = ".csv";
+      
       a.download = `${params.reportType}-${params.startDate}-${params.endDate}${extension}`;
       
       document.body.appendChild(a);

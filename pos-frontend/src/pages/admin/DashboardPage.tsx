@@ -1,7 +1,7 @@
 import { useAuth } from '../../hooks/useAuth';
 import { useDashboardStats, useLowStockItems } from '../../hooks/useReports';
 import { StatCard } from '../../components/dashboard/StatCard';
-import { SalesChart } from '../../components/dashboard/SalesChart';
+// import { SalesChart } from '../../components/dashboard/SalesChart';
 import { RecentSales } from '../../components/dashboard/RecentSales';
 import { LowStockAlert } from '../../components/dashboard/LowStockAlert';
 import { formatCurrency, formatPercentage } from '../../utils/formatters';
@@ -112,7 +112,7 @@ export const DashboardPage = () => {
       </div>
 
       {/* Sales Chart */}
-      <SalesChart data={stats.chartData} />
+      {/* <SalesChart data={stats.chartData} /> */}
 
       {/* Bottom Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

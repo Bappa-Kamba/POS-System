@@ -13,31 +13,42 @@ export const formatCurrency = (amount: number, currency = 'NGN'): string => {
  */
 export const formatDate = (
   date: Date | string,
-  formatType: 'short' | 'medium' | 'long' | 'time' | 'datetime' = 'medium'
+  formatType:
+    | "short"
+    | "medium"
+    | "long"
+    | "time"
+    | "datetime"
+    | "month-year"
+    | "month-day"
+    | "full-date" = "medium"
 ): string => {
-  const dateObj = typeof date === 'string' ? new Date(date) : date;
-  
+  const dateObj = typeof date === "string" ? new Date(date) : date;
+
   const optionsMap: Record<string, Intl.DateTimeFormatOptions> = {
-    short: { year: '2-digit', month: 'numeric', day: 'numeric' },
-    medium: { year: 'numeric', month: 'short', day: 'numeric' },
+    short: { year: "2-digit", month: "numeric", day: "numeric" },
+    medium: { year: "numeric", month: "short", day: "numeric" },
     long: {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      weekday: 'short',
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      weekday: "short",
     },
-    time: { hour: '2-digit', minute: '2-digit' },
+    time: { hour: "2-digit", minute: "2-digit" },
     datetime: {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     },
+    "month-year": { month: "short", year: "2-digit" },
+    "month-day": { month: "short", day: "numeric" },
+    "full-date": { year: "numeric", month: "short", day: "numeric" },
   };
 
   const options = optionsMap[formatType] || optionsMap.medium;
-  return new Intl.DateTimeFormat('en-US', options).format(dateObj);
+  return new Intl.DateTimeFormat("en-US", options).format(dateObj);
 };
 
 /**

@@ -3,10 +3,17 @@ import {
   NotFoundException,
   Logger,
   BadRequestException,
+  ConflictException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
-import { CreateExpenseDto, UpdateExpenseDto, FindAllExpensesDto } from './dto';
+import {
+  CreateExpenseDto,
+  UpdateExpenseDto,
+  FindAllExpensesDto,
+  CreateExpenseCategoryDto,
+  UpdateExpenseCategoryDto,
+} from './dto';
 import { startOfDay, endOfDay } from 'date-fns';
 
 @Injectable()
@@ -19,8 +26,21 @@ export class ExpensesService {
    * Create a new expense
    */
   async create(data: CreateExpenseDto, userId: string) {
-    // Validate date
-    const expenseDate = new Date(data.date);
+    // Validate and parse date
+    // If only date is provided (YYYY-MM-DD), use current time
+    // If full datetime is provided, use it as-is
+    let expenseDate: Date;
+
+    if (data.date.includes('T') || data.date.includes(':')) {
+      // Full datetime provided
+      expenseDate = new Date(data.date);
+    } else {
+      // Only date provided (YYYY-MM-DD), use current time for proper sorting
+      const datePart = data.date;
+      const now = new Date();
+      expenseDate = new Date(`${datePart}T${now.toTimeString().split(' ')[0]}`);
+    }
+
     if (isNaN(expenseDate.getTime())) {
       throw new BadRequestException('Invalid date format');
     }
@@ -131,7 +151,7 @@ export class ExpensesService {
             },
           },
         },
-        orderBy: { date: 'desc' },
+        orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
       }),
       this.prisma.expense.count({ where }),
     ]);
@@ -186,10 +206,21 @@ export class ExpensesService {
     // Store old values for audit
     const oldValues = JSON.stringify(expense);
 
-    // Validate date if provided
+    // Validate and parse date if provided
     let expenseDate: Date | undefined;
     if (data.date) {
-      expenseDate = new Date(data.date);
+      if (data.date.includes('T') || data.date.includes(':')) {
+        // Full datetime provided
+        expenseDate = new Date(data.date);
+      } else {
+        // Only date provided (YYYY-MM-DD), preserve existing time or use current
+        const datePart = data.date;
+        const existingTime = expense.date
+          ? new Date(expense.date).toTimeString().split(' ')[0]
+          : new Date().toTimeString().split(' ')[0];
+        expenseDate = new Date(`${datePart}T${existingTime}`);
+      }
+
       if (isNaN(expenseDate.getTime())) {
         throw new BadRequestException('Invalid date format');
       }
@@ -264,17 +295,184 @@ export class ExpensesService {
   }
 
   /**
-   * Get expense categories
+   * Get expense categories (from ExpenseCategory table + existing expenses)
    */
   async getCategories(branchId: string): Promise<string[]> {
-    const expenses = await this.prisma.expense.findMany({
+    // Get categories from ExpenseCategory table
+    const categories = await this.prisma.expenseCategory.findMany({
+      where: { branchId, isActive: true },
+      select: { name: true },
+      orderBy: { name: 'asc' },
+    });
+
+    // Also get unique categories from existing expenses (for backward compatibility)
+    const expenseCategories = await this.prisma.expense.findMany({
       where: { branchId },
       select: { category: true },
       distinct: ['category'],
       orderBy: { category: 'asc' },
     });
 
-    return expenses.map((e) => e.category);
+    // Merge and deduplicate
+    const categoryNames = new Set([
+      ...categories.map((c) => c.name),
+      ...expenseCategories.map((e) => e.category),
+    ]);
+
+    return Array.from(categoryNames).sort();
+  }
+
+  /**
+   * Create expense category
+   */
+  async createCategory(
+    data: CreateExpenseCategoryDto,
+    branchId: string,
+    userId: string,
+  ) {
+    // Check if category already exists
+    const existing = await this.prisma.expenseCategory.findUnique({
+      where: {
+        name_branchId: {
+          name: data.name,
+          branchId,
+        },
+      },
+    });
+
+    if (existing) {
+      throw new ConflictException(
+        `Category "${data.name}" already exists for this branch`,
+      );
+    }
+
+    const category = await this.prisma.expenseCategory.create({
+      data: {
+        name: data.name,
+        description: data.description,
+        branchId,
+      },
+    });
+
+    // Log audit trail
+    await this.logAudit({
+      userId,
+      action: 'CREATE',
+      entity: 'ExpenseCategory',
+      entityId: category.id,
+      newValues: JSON.stringify(category),
+    });
+
+    return category;
+  }
+
+  /**
+   * Get all expense categories
+   */
+  async getAllCategories(branchId: string) {
+    return this.prisma.expenseCategory.findMany({
+      where: { branchId },
+      orderBy: { name: 'asc' },
+    });
+  }
+
+  /**
+   * Get single expense category
+   */
+  async getCategory(id: string, branchId: string) {
+    const category = await this.prisma.expenseCategory.findFirst({
+      where: { id, branchId },
+    });
+
+    if (!category) {
+      throw new NotFoundException('Expense category not found');
+    }
+
+    return category;
+  }
+
+  /**
+   * Update expense category
+   */
+  async updateCategory(
+    id: string,
+    data: UpdateExpenseCategoryDto,
+    branchId: string,
+    userId: string,
+  ) {
+    const category = await this.getCategory(id, branchId);
+
+    // Check for name conflict if name is being changed
+    if (data.name && data.name !== category.name) {
+      const existing = await this.prisma.expenseCategory.findUnique({
+        where: {
+          name_branchId: {
+            name: data.name,
+            branchId,
+          },
+        },
+      });
+
+      if (existing) {
+        throw new ConflictException(
+          `Category "${data.name}" already exists for this branch`,
+        );
+      }
+    }
+
+    const oldValues = JSON.stringify(category);
+
+    const updated = await this.prisma.expenseCategory.update({
+      where: { id },
+      data,
+    });
+
+    // Log audit trail
+    await this.logAudit({
+      userId,
+      action: 'UPDATE',
+      entity: 'ExpenseCategory',
+      entityId: id,
+      oldValues,
+      newValues: JSON.stringify(updated),
+    });
+
+    return updated;
+  }
+
+  /**
+   * Delete expense category
+   */
+  async deleteCategory(id: string, branchId: string, userId: string) {
+    const category = await this.getCategory(id, branchId);
+
+    // Check if category is being used by any expenses
+    const expenseCount = await this.prisma.expense.count({
+      where: { category: category.name, branchId },
+    });
+
+    if (expenseCount > 0) {
+      throw new BadRequestException(
+        `Cannot delete category "${category.name}" as it is being used by ${expenseCount} expense(s)`,
+      );
+    }
+
+    const oldValues = JSON.stringify(category);
+
+    await this.prisma.expenseCategory.delete({
+      where: { id },
+    });
+
+    // Log audit trail
+    await this.logAudit({
+      userId,
+      action: 'DELETE',
+      entity: 'ExpenseCategory',
+      entityId: id,
+      oldValues,
+    });
+
+    return category;
   }
 
   /**

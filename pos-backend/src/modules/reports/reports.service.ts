@@ -1167,6 +1167,13 @@ export class ReportsService {
           params.reportType,
           filename,
         );
+      } else if (params.format === ExportFormat.CSV) {
+        const csvContent = this.generateSalesReportCSV(reportData);
+        return {
+          data: Buffer.from(csvContent, 'utf-8'),
+          filename: `${filename}.csv`,
+          mimeType: 'text/csv',
+        };
       } else {
         return this.generatePDFReport(reportData, params.reportType, filename);
       }
@@ -1184,6 +1191,13 @@ export class ReportsService {
           params.reportType,
           filename,
         );
+      } else if (params.format === ExportFormat.CSV) {
+        const csvContent = this.generateProfitLossReportCSV(reportData);
+        return {
+          data: Buffer.from(csvContent, 'utf-8'),
+          filename: `${filename}.csv`,
+          mimeType: 'text/csv',
+        };
       } else {
         return this.generatePDFReport(reportData, params.reportType, filename);
       }
@@ -1202,6 +1216,13 @@ export class ReportsService {
           params.reportType,
           filename,
         );
+      } else if (params.format === ExportFormat.CSV) {
+        const csvContent = this.generateSalesReportCSV(reportData);
+        return {
+          data: Buffer.from(csvContent, 'utf-8'),
+          filename: `${filename}.csv`,
+          mimeType: 'text/csv',
+        };
       } else {
         return this.generatePDFReport(reportData, params.reportType, filename);
       }
@@ -1580,6 +1601,38 @@ export class ReportsService {
     const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
     XLSX.utils.book_append_sheet(workbook, summarySheet, 'Summary');
 
+    // Purchase Details sheet
+    const purchaseData = [
+      ['Purchase Transactions'],
+      [],
+      ['Metric', 'Value'],
+      ['Total Sales', reportData.summary.purchase.totalSales],
+      ['Total Revenue', reportData.summary.purchase.totalRevenue],
+      ['Total Profit', reportData.summary.purchase.totalProfit],
+      ['Profit Margin (%)', reportData.summary.purchase.profitMargin],
+    ];
+    const purchaseSheet = XLSX.utils.aoa_to_sheet(purchaseData);
+    XLSX.utils.book_append_sheet(workbook, purchaseSheet, 'Purchase Details');
+
+    // Cashback Details sheet
+    const cashbackData = [
+      ['Cashback Service'],
+      [],
+      ['Metric', 'Value'],
+      ['Total Transactions', reportData.summary.cashback.totalTransactions],
+      ['Total Given', reportData.summary.cashback.totalGiven],
+      [
+        'Service Charge Earned',
+        reportData.summary.cashback.serviceChargeEarned,
+      ],
+      [
+        'Service Charge Rate (%)',
+        reportData.summary.cashback.serviceChargeRate,
+      ],
+    ];
+    const cashbackSheet = XLSX.utils.aoa_to_sheet(cashbackData);
+    XLSX.utils.book_append_sheet(workbook, cashbackSheet, 'Cashback Details');
+
     // Breakdown sheet
     const breakdownData = [
       ['Date', 'Sales', 'Revenue', 'Profit'],
@@ -1703,11 +1756,11 @@ export class ReportsService {
     const summaryData = [
       ['Metric', 'Value'],
       ['Total Sales', reportData.summary.totalSales.toString()],
-      ['Total Revenue', `₦${reportData.summary.totalRevenue.toFixed(2)}`],
-      ['Total Profit', `₦${reportData.summary.totalProfit.toFixed(2)}`],
+      ['Total Revenue', `N${reportData.summary.totalRevenue.toFixed(2)}`],
+      ['Total Profit', `N${reportData.summary.totalProfit.toFixed(2)}`],
       [
         'Average Order Value',
-        `₦${reportData.summary.averageOrderValue.toFixed(2)}`,
+        `N${reportData.summary.averageOrderValue.toFixed(2)}`,
       ],
       ['Profit Margin', `${reportData.summary.profitMargin.toFixed(2)}%`],
     ];
@@ -1722,6 +1775,70 @@ export class ReportsService {
 
     yPos = (doc.lastAutoTable?.finalY ?? yPos) + 15;
 
+    // Purchase Details
+    doc.setFontSize(14);
+    doc.text('Purchase Transactions', 14, yPos);
+    yPos += 10;
+
+    const purchaseData = [
+      ['Metric', 'Value'],
+      ['Total Sales', reportData.summary.purchase.totalSales.toString()],
+      [
+        'Total Revenue',
+        `N${reportData.summary.purchase.totalRevenue.toFixed(2)}`,
+      ],
+      [
+        'Total Profit',
+        `N${reportData.summary.purchase.totalProfit.toFixed(2)}`,
+      ],
+      [
+        'Profit Margin',
+        `${reportData.summary.purchase.profitMargin.toFixed(2)}%`,
+      ],
+    ];
+
+    autoTable(doc, {
+      startY: yPos,
+      head: [purchaseData[0]],
+      body: purchaseData.slice(1),
+      theme: 'grid',
+      headStyles: { fillColor: [40, 167, 69] },
+    });
+
+    yPos = (doc.lastAutoTable?.finalY ?? yPos) + 15;
+
+    // Cashback Details
+    doc.setFontSize(14);
+    doc.text('Cashback Service', 14, yPos);
+    yPos += 10;
+
+    const cashbackData = [
+      ['Metric', 'Value'],
+      [
+        'Total Transactions',
+        reportData.summary.cashback.totalTransactions.toString(),
+      ],
+      ['Total Given', `N${reportData.summary.cashback.totalGiven.toFixed(2)}`],
+      [
+        'Service Charge Earned',
+        `N${reportData.summary.cashback.serviceChargeEarned.toFixed(2)}`,
+      ],
+      [
+        'Service Charge Rate',
+        `${reportData.summary.cashback.serviceChargeRate.toFixed(2)}%`,
+      ],
+    ];
+
+    autoTable(doc, {
+      startY: yPos,
+      head: [cashbackData[0]],
+      body: cashbackData.slice(1),
+      theme: 'grid',
+      headStyles: { fillColor: [249, 115, 22] },
+    });
+
+    yPos = (doc.lastAutoTable?.finalY ?? yPos) + 15;
+
     // Breakdown table
     doc.setFontSize(14);
     doc.text('Daily Breakdown', 14, yPos);
@@ -1730,8 +1847,8 @@ export class ReportsService {
     const breakdownData = reportData.breakdown.map((item) => [
       item.date,
       item.sales.toString(),
-      `₦${item.revenue.toFixed(2)}`,
-      `₦${item.profit.toFixed(2)}`,
+      `N${item.revenue.toFixed(2)}`,
+      `N${item.profit.toFixed(2)}`,
     ]);
 
     autoTable(doc, {
@@ -1752,7 +1869,7 @@ export class ReportsService {
     const topProductsData = reportData.topProducts.map((product) => [
       product.name,
       product.quantity.toString(),
-      `₦${product.revenue.toFixed(2)}`,
+      `N${product.revenue.toFixed(2)}`,
     ]);
 
     autoTable(doc, {
@@ -1791,8 +1908,8 @@ export class ReportsService {
     yPos += 10;
 
     const revenueData = [
-      ['Sales', `₦${reportData.revenue.sales.toFixed(2)}`],
-      ['Total Revenue', `₦${reportData.revenue.total.toFixed(2)}`],
+      ['Sales', `N${reportData.revenue.sales.toFixed(2)}`],
+      ['Total Revenue', `N${reportData.revenue.total.toFixed(2)}`],
     ];
 
     autoTable(doc, {
@@ -1810,9 +1927,9 @@ export class ReportsService {
     yPos += 10;
 
     const costsData = [
-      ['Cost of Goods Sold', `₦${reportData.costs.costOfGoodsSold.toFixed(2)}`],
-      ['Operating Expenses', `₦${reportData.costs.expenses.toFixed(2)}`],
-      ['Total Costs', `₦${reportData.costs.total.toFixed(2)}`],
+      ['Cost of Goods Sold', `N${reportData.costs.costOfGoodsSold.toFixed(2)}`],
+      ['Operating Expenses', `N${reportData.costs.expenses.toFixed(2)}`],
+      ['Total Costs', `N${reportData.costs.total.toFixed(2)}`],
     ];
 
     autoTable(doc, {
@@ -1830,9 +1947,9 @@ export class ReportsService {
     yPos += 10;
 
     const profitData = [
-      ['Gross Profit', `₦${reportData.profit.gross.toFixed(2)}`],
+      ['Gross Profit', `N${reportData.profit.gross.toFixed(2)}`],
       ['Gross Margin', `${reportData.profit.grossMargin.toFixed(2)}%`],
-      ['Net Profit', `₦${reportData.profit.net.toFixed(2)}`],
+      ['Net Profit', `N${reportData.profit.net.toFixed(2)}`],
       ['Net Margin', `${reportData.profit.netMargin.toFixed(2)}%`],
     ];
 
@@ -1852,7 +1969,7 @@ export class ReportsService {
 
     const expenseData = reportData.expenseBreakdown.map((expense) => [
       expense.category,
-      `₦${expense.amount.toFixed(2)}`,
+      `N${expense.amount.toFixed(2)}`,
     ]);
 
     autoTable(doc, {
@@ -1948,11 +2065,11 @@ export class ReportsService {
       ],
       [
         'Total Amount Given',
-        `₦${reportData.summary.cashback.totalGiven.toFixed(2)}`,
+        `N${reportData.summary.cashback.totalGiven.toFixed(2)}`,
       ],
       [
         'Total Service Charge',
-        `₦${reportData.summary.cashback.serviceChargeEarned.toFixed(2)}`,
+        `N${reportData.summary.cashback.serviceChargeEarned.toFixed(2)}`,
       ],
     ];
 
@@ -1975,7 +2092,7 @@ export class ReportsService {
       tx.receiptNumber,
       format(new Date(tx.date), 'yyyy-MM-dd HH:mm'),
       tx.cashier,
-      `₦${tx.totalAmount.toFixed(2)}`,
+      `N${tx.totalAmount.toFixed(2)}`,
       // We need service charge here too
       '-',
       '-',

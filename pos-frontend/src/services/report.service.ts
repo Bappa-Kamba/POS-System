@@ -171,8 +171,8 @@ export interface ProfitLossReport {
 }
 
 export interface ExportReportParams {
-  reportType: 'sales' | 'profit-loss' | 'inventory' | 'expenses' | 'cashback';
-  format: 'pdf' | 'excel';
+  reportType: "sales" | "profit-loss" | "inventory" | "expenses" | "cashback";
+  format: "pdf" | "excel" | "csv";
   startDate: string;
   endDate: string;
   filters?: Record<string, any>;
