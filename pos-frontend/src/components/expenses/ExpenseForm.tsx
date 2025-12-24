@@ -144,7 +144,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
         >
           Cancel
         </Button>
-        <Button type="submit" disabled={isLoading} className="flex-1">
+        <Button type="submit" disabled={isLoading} className="flex-1" respectLicense>
           {isLoading ? 'Saving...' : expense ? 'Update' : 'Create'}
         </Button>
       </div>

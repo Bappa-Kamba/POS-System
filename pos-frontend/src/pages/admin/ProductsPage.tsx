@@ -150,7 +150,7 @@ export const ProductsPage: React.FC = () => {
               Delete {selectedProducts.size} Selected
             </Button>
           )}
-          <Button onClick={() => setIsCreateModalOpen(true)}>
+          <Button onClick={() => setIsCreateModalOpen(true)} respectLicense>
             <Plus className="w-5 h-5 mr-2" />
             Add Product
           </Button>

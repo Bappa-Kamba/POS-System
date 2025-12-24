@@ -115,6 +115,7 @@ export const Cart: React.FC<CartProps> = ({ onCheckout }) => {
           className="w-full"
           size="lg"
           disabled={items.length === 0}
+          respectLicense
         >
           <CreditCard className="w-5 h-5 mr-2" />
           Proceed to Payment

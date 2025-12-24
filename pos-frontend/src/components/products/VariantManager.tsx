@@ -103,7 +103,7 @@ export const VariantManager: React.FC<VariantManagerProps> = ({
             Manage variants for {productName}
           </p>
         </div>
-        <Button onClick={() => setIsCreateModalOpen(true)}>
+        <Button onClick={() => setIsCreateModalOpen(true)} respectLicense>
           <Plus className="w-4 h-4 mr-2" />
           Add Variant
         </Button>
@@ -119,7 +119,7 @@ export const VariantManager: React.FC<VariantManagerProps> = ({
           <p className="text-sm text-neutral-500 mb-4">
             Add variants like sizes, colors, or other options
           </p>
-          <Button onClick={() => setIsCreateModalOpen(true)}>
+          <Button onClick={() => setIsCreateModalOpen(true)} respectLicense>
             <Plus className="w-4 h-4 mr-2" />
             Add First Variant
           </Button>

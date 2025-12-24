@@ -103,7 +103,7 @@ export const SessionControls: React.FC = () => {
             required
           />
 
-          <Button type="submit" disabled={isSubmitting} className="w-full">
+          <Button type="submit" disabled={isSubmitting} className="w-full" respectLicense>
             {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Play className="w-4 h-4 mr-2" />}
             Start Session
           </Button>
@@ -141,7 +141,7 @@ export const SessionControls: React.FC = () => {
           required
           className="bg-white"
         />
-        <Button variant="danger" type="submit" disabled={isSubmitting} className="w-full mt-3">
+        <Button variant="danger" type="submit" disabled={isSubmitting} className="w-full mt-3" respectLicense>
           {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Square className="w-4 h-4 mr-2" />}
           End Session
         </Button>

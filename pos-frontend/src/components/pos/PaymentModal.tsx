@@ -208,6 +208,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
             onClick={handleCompleteSale}
             disabled={!isAmountValid || (activeMethod !== 'CASH' && !reference.trim())}
             className="flex-1"
+            respectLicense
           >
             Complete Sale
           </Button>

@@ -209,6 +209,7 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
             className="flex-1"
             isLoading={adjustStockMutation.isPending}
             disabled={!quantityChange || parseFloat(quantityChange) === 0}
+            respectLicense
           >
             Adjust Stock
           </Button>

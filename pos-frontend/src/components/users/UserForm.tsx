@@ -544,7 +544,7 @@ export const UserForm: React.FC<UserFormProps> = ({
         >
           Cancel
         </Button>
-        <Button type="submit" disabled={isLoading} className="flex-1">
+        <Button type="submit" disabled={isLoading} className="flex-1" respectLicense>
           {isLoading ? 'Saving...' : isEditMode ? 'Update User' : 'Create User'}
         </Button>
       </div>

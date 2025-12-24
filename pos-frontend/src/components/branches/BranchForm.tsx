@@ -252,7 +252,7 @@ export const BranchForm: React.FC<BranchFormProps> = ({
         >
           Cancel
         </Button>
-        <Button type="submit" disabled={isLoading} className="flex-1">
+        <Button type="submit" disabled={isLoading} className="flex-1" respectLicense>
           {isLoading ? 'Saving...' : isEditMode ? 'Update Branch' : 'Create Branch'}
         </Button>
       </div>

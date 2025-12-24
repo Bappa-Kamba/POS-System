@@ -1,9 +1,15 @@
 import React from 'react';
+import { useLicense } from '../../hooks/useLicense';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'danger' | 'ghost';
   size?: 'sm' | 'md' | 'lg';
   isLoading?: boolean;
+  /**
+   * When true, the button will be automatically disabled if the license is expired.
+   * Use this for buttons that perform write operations (create, update, delete).
+   */
+  respectLicense?: boolean;
   children: React.ReactNode;
 }
 
@@ -11,11 +17,18 @@ export const Button: React.FC<ButtonProps> = ({
   variant = 'primary',
   size = 'md',
   isLoading = false,
+  respectLicense = false,
   children,
   className = '',
   disabled,
+  title,
   ...props
 }) => {
+  const { isReadOnly, readOnlyMessage } = useLicense();
+  
+  const isLicenseDisabled = respectLicense && isReadOnly;
+  const isButtonDisabled = disabled || isLoading || isLicenseDisabled;
+  
   const baseClasses = 'font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
   
   const variantClasses = {
@@ -34,7 +47,8 @@ export const Button: React.FC<ButtonProps> = ({
   return (
     <button
       className={`${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
-      disabled={disabled || isLoading}
+      disabled={isButtonDisabled}
+      title={isLicenseDisabled ? readOnlyMessage : title}
       {...props}
     >
       {isLoading ? (
@@ -63,3 +77,4 @@ export const Button: React.FC<ButtonProps> = ({
     </button>
   );
 };
+

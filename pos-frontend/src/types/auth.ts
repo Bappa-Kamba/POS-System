@@ -1,3 +1,4 @@
+import type { LicenseStatus } from '../services/license.service';
 import type { AuthUser, UserRole } from './user';
 
 export interface AuthTokens {
@@ -8,6 +9,7 @@ export interface AuthTokens {
 export interface LoginPayload {
   user: AuthUser;
   tokens: AuthTokens;
+  license: LicenseStatus;
 }
 
 export interface MeResponse {

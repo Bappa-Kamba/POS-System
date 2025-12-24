@@ -20,16 +20,19 @@ import {
   FolderTree,
   UserCog,
   ClipboardList,
+  KeyRound,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
+import { useLicense } from '../../hooks/useLicense';
 
 import { useThemeStore } from '../../store/themeStore';
 import { useSafeLogout } from '../../hooks/useSafeLogout';
 import { SessionEndModal } from '../session/SessionEndModal';
 import { RefreshControl } from '../common/RefreshControl';
+import { LicenseBanner } from './LicenseBanner';
 
 export const Navbar = () => {
-  const { user } = useAuth();
+  const { user, license } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const { isDarkMode, toggleTheme } = useThemeStore();
@@ -39,6 +42,18 @@ export const Navbar = () => {
   const catalogDropdownRef = useRef<HTMLDivElement>(null);
   const managementDropdownRef = useRef<HTMLDivElement>(null);
   const reportsDropdownRef = useRef<HTMLDivElement>(null);
+
+  // License state for disabling navigation
+  const { isReadOnly, readOnlyMessage } = useLicense();
+
+  // Routes that should remain accessible even when license is expired (read-only routes)
+  const allowedExpiredRoutes = ['/dashboard', '/reports', '/audit-logs', '/settings', '/unlock'];
+  
+  const isRouteBlocked = (path: string) => {
+    if (!isReadOnly) return false;
+    return !allowedExpiredRoutes.some(allowed => path.startsWith(allowed));
+  };
+
 
   const {
     handleSafeLogout,
@@ -120,6 +135,8 @@ export const Navbar = () => {
   ];
 
   return (
+    <>
+    <LicenseBanner /> 
     <nav className="bg-white dark:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-700 shadow-sm sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
@@ -174,6 +191,22 @@ export const Navbar = () => {
                       <div className="absolute left-0 mt-2 w-48 bg-white dark:bg-neutral-800 rounded-lg shadow-lg border border-neutral-200 dark:border-neutral-700 py-1 z-50">
                         {catalogItems.map((item) => {
                           const Icon = item.icon;
+                          const blocked = isRouteBlocked(item.path);
+                          
+                          if (blocked) {
+                            return (
+                              <span
+                                key={item.path}
+                                title={readOnlyMessage}
+                                className="flex items-center gap-2 px-4 py-2 text-sm text-neutral-400 dark:text-neutral-500 cursor-not-allowed"
+                              >
+                                <Icon className="w-4 h-4" />
+                                {item.label}
+                                <span className="ml-auto text-xs">🔒</span>
+                              </span>
+                            );
+                          }
+                          
                           return (
                             <Link
                               key={item.path}
@@ -214,6 +247,22 @@ export const Navbar = () => {
                       <div className="absolute left-0 mt-2 w-48 bg-white dark:bg-neutral-800 rounded-lg shadow-lg border border-neutral-200 dark:border-neutral-700 py-1 z-50">
                         {managementItems.map((item) => {
                           const Icon = item.icon;
+                          const blocked = isRouteBlocked(item.path);
+                          
+                          if (blocked) {
+                            return (
+                              <span
+                                key={item.path}
+                                title={readOnlyMessage}
+                                className="flex items-center gap-2 px-4 py-2 text-sm text-neutral-400 dark:text-neutral-500 cursor-not-allowed"
+                              >
+                                <Icon className="w-4 h-4" />
+                                {item.label}
+                                <span className="ml-auto text-xs">🔒</span>
+                              </span>
+                            );
+                          }
+                          
                           return (
                             <Link
                               key={item.path}
@@ -277,17 +326,28 @@ export const Navbar = () => {
               )}
 
               {/* POS Link (always visible) */}
-              <Link
-                to="/pos"
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  isActive('/pos')
-                    ? 'bg-primary-100 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
-                    : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-700 hover:text-neutral-900 dark:hover:text-neutral-100'
-                }`}
-              >
-                <ShoppingCart className="w-4 h-4" />
-                POS
-              </Link>
+              {isRouteBlocked('/pos') ? (
+                <span
+                  title={readOnlyMessage}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-neutral-400 dark:text-neutral-500 cursor-not-allowed"
+                >
+                  <ShoppingCart className="w-4 h-4" />
+                  POS
+                  <span className="text-xs">🔒</span>
+                </span>
+              ) : (
+                <Link
+                  to="/pos"
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    isActive('/pos')
+                      ? 'bg-primary-100 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
+                      : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-700 hover:text-neutral-900 dark:hover:text-neutral-100'
+                  }`}
+                >
+                  <ShoppingCart className="w-4 h-4" />
+                  POS
+                </Link>
+              )}
             </div>
           </div>
 
@@ -349,6 +409,13 @@ export const Navbar = () => {
                     </Link>
                   )}
                   <button
+                    onClick={() => navigate('/unlock')}
+                    className="w-full flex items-center gap-2 px-4 py-2 text-sm text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors"
+                  >
+                    <KeyRound className="w-4 h-4" />
+                    {license?.status === 'ACTIVE' ? 'License Details' : 'Activate License'}
+                  </button>
+                  <button
                     onClick={() => {
                       setIsProfileOpen(false);
                       handleLogout();
@@ -383,6 +450,21 @@ export const Navbar = () => {
               </Link>
               {catalogItems.map((item) => {
                 const Icon = item.icon;
+                const blocked = isRouteBlocked(item.path);
+
+                if (blocked) {
+                  return (
+                    <span
+                      key={item.path}
+                      className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap text-neutral-400 dark:text-neutral-500 cursor-not-allowed"
+                    >
+                      <Icon className="w-4 h-4" />
+                      {item.label}
+                      <span className="text-xs">🔒</span>
+                    </span>
+                  );
+                }
+
                 return (
                   <Link
                     key={item.path}
@@ -400,6 +482,21 @@ export const Navbar = () => {
               })}
               {managementItems.map((item) => {
                 const Icon = item.icon;
+                const blocked = isRouteBlocked(item.path);
+
+                if (blocked) {
+                  return (
+                    <span
+                      key={item.path}
+                      className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap text-neutral-400 dark:text-neutral-500 cursor-not-allowed"
+                    >
+                      <Icon className="w-4 h-4" />
+                      {item.label}
+                      <span className="text-xs">🔒</span>
+                    </span>
+                  );
+                }
+
                 return (
                   <Link
                     key={item.path}
@@ -434,17 +531,27 @@ export const Navbar = () => {
               })}
             </>
           )}
-          <Link
-            to="/pos"
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-              isActive('/pos')
-                ? 'bg-primary-100 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
-                : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-700'
-            }`}
-          >
-            <ShoppingCart className="w-4 h-4" />
-            POS
-          </Link>
+          {isRouteBlocked('/pos') ? (
+            <span
+              className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap text-neutral-400 dark:text-neutral-500 cursor-not-allowed"
+            >
+              <ShoppingCart className="w-4 h-4" />
+              POS
+              <span className="text-xs">🔒</span>
+            </span>
+          ) : (
+            <Link
+              to="/pos"
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+                isActive('/pos')
+                  ? 'bg-primary-100 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
+                  : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-700'
+              }`}
+            >
+              <ShoppingCart className="w-4 h-4" />
+              POS
+            </Link>
+          )}
         </div>
       </div>
 
@@ -454,6 +561,7 @@ export const Navbar = () => {
         onSessionEnded={handleSessionEndComplete}
       />
     </nav>
+    </>
   );
 };
 

@@ -19,6 +19,7 @@ import { RequireRole } from './router/RequireRole';
 import { HomeRedirect } from './router/HomeRedirect';
 import { MainLayout } from './components/layout/MainLayout';
 import { useAuthStore } from './store/authStore';
+import { UnlockPage } from './pages/UnlockPage';
 
 export default function App() {
   const checkAuthStatus = useAuthStore((state) => state.checkAuthStatus);
@@ -135,6 +136,14 @@ export default function App() {
             element={
               <RequireRole role={['ADMIN', 'CASHIER']}>
                 <PosPage />
+              </RequireRole>
+            }
+          />
+          <Route
+            path="/unlock"
+            element={
+              <RequireRole role="ADMIN">
+                <UnlockPage />
               </RequireRole>
             }
           />

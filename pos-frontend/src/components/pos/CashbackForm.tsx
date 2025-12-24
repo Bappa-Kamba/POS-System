@@ -245,6 +245,7 @@ export const CashbackForm: React.FC<CashbackFormProps> = ({
           className="w-full"
           size="lg"
           disabled={!isValid}
+          respectLicense
         >
           <DollarSign className="w-5 h-5 mr-2" />
           Complete Cashback Transaction

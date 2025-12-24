@@ -3,6 +3,8 @@ import { persist } from "zustand/middleware";
 import { authService } from "../services/auth.service";
 import type { AuthTokens, LoginPayload } from "../types/auth";
 import type { AuthUser } from "../types/user";
+import type { LicenseStatus } from "../services/license.service";
+import { licenseService } from "../services/license.service";
 
 interface AuthState {
   user: AuthUser | null;
@@ -10,6 +12,7 @@ interface AuthState {
   refreshToken: string | null;
   isAuthenticated: boolean;
   isAuthLoading: boolean;
+  license: LicenseStatus | null;
   checkAuthStatus: () => Promise<void>;
   setSession: (payload: LoginPayload) => void;
   clearSession: () => void;
@@ -23,14 +26,16 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
       user: null,
+      license: null,
       accessToken: null,
       refreshToken: null,
       isAuthenticated: false,
       isAuthLoading: true,
 
-      setSession: ({ user, tokens }: LoginPayload) => {
+      setSession: ({ user, tokens, license }: LoginPayload) => {
         set({
           user,
+          license,
           accessToken: tokens.accessToken,
           refreshToken: tokens.refreshToken,
           isAuthenticated: true,
@@ -40,7 +45,6 @@ export const useAuthStore = create<AuthState>()(
       checkAuthStatus: async () => {
         console.log("Checking auth status");
         const { refreshToken, accessToken, clearSession } = get();
-        console.log("refresh token", refreshToken);
 
         if (!refreshToken) {
           set({ isAuthLoading: false });
@@ -50,8 +54,11 @@ export const useAuthStore = create<AuthState>()(
         // If we have an access token, try to validate it first by fetching user data
         if (accessToken) {
           try {
-            const user = await authService.me();
-            set({ user, isAuthenticated: true, isAuthLoading: false });
+            const [user, license] = await Promise.all([
+              authService.me(),
+              licenseService.getStatus()
+            ]);
+            set({ user, license, isAuthenticated: true, isAuthLoading: false });
             return; // Access token is still valid
           } catch (error) {
             console.log("Access token invalid, attempting refresh...");
@@ -65,8 +72,11 @@ export const useAuthStore = create<AuthState>()(
           if (tokens) {
             // If refresh succeeds, also fetch user data to ensure it's up to date
             try {
-              const user = await authService.me();
-              set({ user, isAuthenticated: true });
+              const [user, license] = await Promise.all([
+              authService.me(),
+              licenseService.getStatus()
+            ]);
+              set({ user, license, isAuthenticated: true });
             } catch (error) {
               console.error("Failed to fetch user data:", error);
               // Continue anyway, user data might be in state
@@ -84,6 +94,7 @@ export const useAuthStore = create<AuthState>()(
         refreshPromise = null;
         set({
           user: null,
+          license: null,
           accessToken: null,
           refreshToken: null,
           isAuthenticated: false,
@@ -137,6 +148,7 @@ export const useAuthStore = create<AuthState>()(
       partialize: (state) => ({
         accessToken: state.accessToken,
         refreshToken: state.refreshToken,
+        license: state.license,
         user: state.user,
         isAuthenticated: state.isAuthenticated,
       }),

@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AppController } from './app.controller';
@@ -20,6 +20,8 @@ import { AuditInterceptor } from './common/interceptors/audit.interceptor';
 import { SessionsModule } from './modules/sessions/sessions.module';
 import { SubdivisionsModule } from './modules/subdivisions/subdivisions.module';
 import { CategoriesModule } from './modules/categories/categories.module';
+import { LicenseGuard } from './modules/license/guards/license.guard';
+import { LicenseModule } from './modules/license/license.module';
 
 @Module({
   imports: [
@@ -46,6 +48,7 @@ import { CategoriesModule } from './modules/categories/categories.module';
     SessionsModule,
     SubdivisionsModule,
     CategoriesModule,
+    LicenseModule,
   ],
   controllers: [AppController],
   providers: [
@@ -54,6 +57,10 @@ import { CategoriesModule } from './modules/categories/categories.module';
       provide: APP_INTERCEPTOR,
       useClass: AuditInterceptor,
     },
+    {
+      provide: APP_GUARD,
+      useClass: LicenseGuard,
+    }
   ],
 })
 export class AppModule {}

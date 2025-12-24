@@ -84,7 +84,7 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
         <Button type="button" variant="secondary" onClick={onCancel}>
           Cancel
         </Button>
-        <Button type="submit" isLoading={isLoading}>
+        <Button type="submit" isLoading={isLoading} respectLicense>
           {category ? 'Update Category' : 'Create Category'}
         </Button>
       </div>

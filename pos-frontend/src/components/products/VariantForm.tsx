@@ -306,7 +306,7 @@ export const VariantForm: React.FC<VariantFormProps> = ({
         <Button type="button" variant="secondary" onClick={onCancel}>
           Cancel
         </Button>
-        <Button type="submit" isLoading={isLoading}>
+        <Button type="submit" isLoading={isLoading} respectLicense>
           {variant ? 'Update Variant' : 'Create Variant'}
         </Button>
       </div>

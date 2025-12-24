@@ -148,7 +148,7 @@ export const ExpensesPage: React.FC = () => {
             <Settings className="w-4 h-4 mr-2" />
             Manage Categories
           </Button>
-          <Button onClick={handleCreate}>
+          <Button onClick={handleCreate} respectLicense>
             <Plus className="w-4 h-4 mr-2" />
             Add Expense
           </Button>

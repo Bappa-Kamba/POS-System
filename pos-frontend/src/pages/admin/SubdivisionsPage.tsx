@@ -88,6 +88,7 @@ export const SubdivisionsPage: React.FC = () => {
         <Button
           onClick={() => setIsCreateModalOpen(true)}
           className="flex items-center gap-2"
+          respectLicense
         >
           <Plus className="w-4 h-4" />
           Add Subdivision

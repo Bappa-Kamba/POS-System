@@ -362,7 +362,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
         <Button type="button" variant="secondary" onClick={onCancel}>
           Cancel
         </Button>
-        <Button type="submit" isLoading={isLoading}>
+        <Button type="submit" isLoading={isLoading} respectLicense>
           {product ? 'Update Product' : 'Create Product'}
         </Button>
       </div>

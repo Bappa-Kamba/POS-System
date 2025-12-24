@@ -93,7 +93,7 @@ export const SubdivisionForm: React.FC<SubdivisionFormProps> = ({
         <Button type="button" variant="secondary" onClick={onCancel}>
           Cancel
         </Button>
-        <Button type="submit" isLoading={isLoading}>
+        <Button type="submit" isLoading={isLoading} respectLicense>
           {subdivision ? 'Update Subdivision' : 'Create Subdivision'}
         </Button>
       </div>

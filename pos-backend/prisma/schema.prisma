@@ -582,3 +582,28 @@ enum SessionStatus {
   OPEN
   CLOSED
 }
+
+// ============================================
+// LICENSE MANAGEMENT
+// ============================================
+
+enum LicenseStatus {
+  TRIAL
+  ACTIVE
+  EXPIRED
+}
+
+model AppLicense {
+  id              String        @id @default("SYSTEM_LICENSE")
+  shopCode        String        @unique
+  licenseStatus   LicenseStatus @default(TRIAL)
+  trialExpiresAt  DateTime
+  activatedAt     DateTime?
+  unlockCodeHash  String        // The pre-computed hash of the vendor code
+  lastCheckedAt   DateTime      @default(now())
+  
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@map("app_licenses")
+}

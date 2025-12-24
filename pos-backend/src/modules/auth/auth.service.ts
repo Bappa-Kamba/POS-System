@@ -1,7 +1,7 @@
 import { Injectable, UnauthorizedException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { User, AuditAction } from '@prisma/client';
+import { User, AuditAction, LicenseStatus } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { UsersService } from '../users/users.service';
 import { LoginDto } from './dto/login.dto';
@@ -23,10 +23,23 @@ export class AuthService {
     dto: LoginDto,
     ipAddress?: string,
     userAgent?: string,
-  ): Promise<{ user: User; tokens: AuthTokens }> {
+  ): Promise<{
+    user: User;
+    tokens: AuthTokens;
+    license: {
+      licenseStatus: LicenseStatus;
+      trialExpiresAt: Date | null;
+      isReadOnly: boolean
+    }
+  }> {
     const { username, password } = dto;
 
     const user = await this.usersService.findByUsername(username);
+    const license = await this.prisma.appLicense.findFirst({
+      where: {
+        id: 'SYSTEM_LICENSE'
+      },
+    });
 
     if (!user || !user.isActive) {
       // Log failed login attempt
@@ -70,7 +83,15 @@ export class AuthService {
       userAgent,
     });
 
-    return { user, tokens };
+    return {
+      user,
+      tokens,
+      license: {
+        licenseStatus: license?.licenseStatus ?? LicenseStatus.EXPIRED,
+        trialExpiresAt: license?.trialExpiresAt ?? null,
+        isReadOnly: license?.licenseStatus === LicenseStatus.EXPIRED,
+      },
+    };
   }
 
   async refreshTokens(dto: RefreshTokenDto): Promise<AuthTokens> {
