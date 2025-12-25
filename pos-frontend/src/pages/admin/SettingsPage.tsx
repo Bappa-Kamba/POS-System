@@ -5,7 +5,6 @@ import * as z from 'zod';
 import {
   Building2,
   Receipt,
-  DollarSign,
   Settings as SettingsIcon,
   Moon,
   Sun,
@@ -26,11 +25,6 @@ const branchInfoSchema = z.object({
   phone: z.string().optional(),
   email: z.string().email('Invalid email').optional().or(z.literal('')),
   address: z.string().optional(),
-});
-
-const taxSettingsSchema = z.object({
-  taxRate: z.number().min(0).max(1, 'Tax rate must be between 0 and 1'),
-  currency: z.string().min(1, 'Currency is required'),
 });
 
 const receiptSettingsSchema = z.object({
@@ -73,20 +67,6 @@ export const SettingsPage = () => {
           phone: branch.phone || '',
           email: branch.email || '',
           address: branch.address || '',
-        }
-      : undefined,
-  });
-
-  const taxForm = useForm({
-    resolver: zodResolver(taxSettingsSchema),
-    defaultValues: {
-      taxRate: branch?.taxRate || 0.075,
-      currency: branch?.currency || 'NGN',
-    },
-    values: branch
-      ? {
-          taxRate: branch.taxRate,
-          currency: branch.currency,
         }
       : undefined,
   });
@@ -134,17 +114,6 @@ export const SettingsPage = () => {
     }
   };
 
-  const handleTaxSubmit = async (data: z.infer<typeof taxSettingsSchema>) => {
-    try {
-      await updateBranch.mutateAsync(data);
-      taxForm.reset(data);
-      alert('Tax settings updated successfully');
-    } catch (error) {
-      console.error('Failed to update tax settings:', error);
-      alert('Failed to update tax settings');
-    }
-  };
-
   const handleReceiptSubmit = async (
     data: z.infer<typeof receiptSettingsSchema>,
   ) => {
@@ -160,7 +129,6 @@ export const SettingsPage = () => {
 
   const tabs = [
     { id: 'branch' as TabType, label: 'Branch Information', icon: Building2 },
-    { id: 'tax' as TabType, label: 'Tax Settings', icon: DollarSign },
     { id: 'receipt' as TabType, label: 'Receipt Settings', icon: Receipt },
     { id: 'cashback' as TabType, label: 'Cashback Settings', icon: ArrowLeftRight },
     { id: 'system' as TabType, label: 'System Settings', icon: SettingsIcon },
@@ -251,45 +219,6 @@ export const SettingsPage = () => {
                   type="submit"
                   isLoading={updateBranch.isPending}
                   disabled={!branchForm.formState.isDirty}
-                >
-                  Save Changes
-                </Button>
-              </div>
-            </form>
-          )}
-
-          {/* Tax Settings Tab */}
-          {activeTab === 'tax' && (
-            <form
-              onSubmit={taxForm.handleSubmit(handleTaxSubmit)}
-              className="space-y-4"
-            >
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Input
-                    label="Tax Rate"
-                    type="number"
-                    step="0.001"
-                    min="0"
-                    max="1"
-                    {...taxForm.register('taxRate', { valueAsNumber: true })}
-                    error={taxForm.formState.errors.taxRate?.message}
-                  />
-                  <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-                    Enter as decimal (e.g., 0.075 for 7.5%)
-                  </p>
-                </div>
-                <Input
-                  label="Currency"
-                  {...taxForm.register('currency')}
-                  error={taxForm.formState.errors.currency?.message}
-                />
-              </div>
-              <div className="flex justify-end">
-                <Button
-                  type="submit"
-                  isLoading={updateBranch.isPending}
-                  disabled={!taxForm.formState.isDirty}
                 >
                   Save Changes
                 </Button>

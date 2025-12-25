@@ -82,10 +82,12 @@ export const BranchForm: React.FC<BranchFormProps> = ({
     <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
       {/* Basic Information */}
       <div>
-        <h3 className="text-lg font-medium mb-4">Basic Information</h3>
+        <h3 className="text-lg font-medium mb-4 text-neutral-700 dark:text-neutral-300">
+          Basic Information
+        </h3>
         <div className="space-y-4">
           <Input
-            label="Branch Name *"
+            label="Branch Name"
             {...register('name')}
             error={errors.name?.message}
             placeholder="e.g., Main Branch"
@@ -126,37 +128,10 @@ export const BranchForm: React.FC<BranchFormProps> = ({
 
       {/* Business Settings */}
       <div>
-        <h3 className="text-lg font-medium mb-4">Business Settings</h3>
+        <h3 className="text-lg font-medium mb-4 text-neutral-700 dark:text-neutral-300">
+          Business Settings
+        </h3>
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                Tax Rate (%)
-              </label>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                max="100"
-                {...register('taxRate', {
-                  setValueAs: (v) => (v === '' ? undefined : parseFloat(v) / 100),
-                })}
-                defaultValue={branch ? branch.taxRate * 100 : 7.5}
-                className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
-              />
-              {errors.taxRate && (
-                <p className="mt-1 text-sm text-red-600">{errors.taxRate.message}</p>
-              )}
-            </div>
-
-            <Input
-              label="Currency"
-              {...register('currency')}
-              error={errors.currency?.message}
-              placeholder="e.g., NGN"
-            />
-          </div>
-
           <Input
             label="Business Name"
             {...register('businessName')}
@@ -197,7 +172,9 @@ export const BranchForm: React.FC<BranchFormProps> = ({
 
       {/* Cashback Settings */}
       <div>
-        <h3 className="text-lg font-medium mb-4">Cashback Settings</h3>
+        <h3 className="text-lg font-medium mb-4 text-neutral-700 dark:text-neutral-300">
+          Cashback Settings
+        </h3>
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">

@@ -150,7 +150,9 @@ export const ProductForm: React.FC<ProductFormProps> = ({
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       {/* Basic Information */}
       <div>
-        <h3 className="text-lg font-medium mb-4">Basic Information</h3>
+        <h3 className="text-lg font-medium mb-4 text-neutral-700 dark:text-neutral-300">
+          Basic Information
+        </h3>
         <div className="space-y-4">
           <Input
             label="Product Name *"
@@ -188,7 +190,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-1">
+              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
                 Barcode
               </label>
               <div className="flex gap-2">
@@ -269,18 +271,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
               )}
             </div>
 
-            <div className="flex items-center pt-6">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  {...register('hasVariants')}
-                  className="w-4 h-4 text-primary-600 border-neutral-300 dark:border-neutral-600 rounded focus:ring-primary-500"
-                />
-                <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                  Has Variants
-                </span>
-              </label>
-            </div>
+
           </div>
         </div>
       </div>
@@ -288,7 +279,9 @@ export const ProductForm: React.FC<ProductFormProps> = ({
       {/* Pricing - Only show if no variants */}
       {!hasVariants && (
         <div>
-          <h3 className="text-lg font-medium mb-4">Pricing</h3>
+          <h3 className="text-lg font-medium mb-4 text-neutral-700 dark:text-neutral-300">
+            Pricing
+          </h3>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <Input
@@ -316,16 +309,18 @@ export const ProductForm: React.FC<ProductFormProps> = ({
       {/* Inventory - Only show if no variants */}
       {!hasVariants && (
         <div>
-          <h3 className="text-lg font-medium mb-4">Inventory</h3>
+          <h3 className="text-lg font-medium mb-4 text-neutral-700 dark:text-neutral-300">
+            Inventory
+          </h3>
           <div className="space-y-4">
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-1">
+                <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
                   Unit Type
                 </label>
                 <select
                   {...register('unitType')}
-                  className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 >
                   <option value="PIECE">Piece</option>
                   <option value="WEIGHT">Weight (kg)</option>
@@ -356,6 +351,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
 
       {/* Hidden field for branchId */}
       <input type="hidden" {...register('branchId')} />
+      <input type="hidden" {...register('hasVariants')} />
 
       {/* Actions */}
       <div className="flex justify-end gap-3 pt-4 border-t border-neutral-200">
