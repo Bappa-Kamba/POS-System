@@ -4,7 +4,7 @@ const bcrypt = require('bcrypt');
 const prisma = new PrismaClient();
 
 const MAIN_BRANCH_ID = 'MAIN_BRANCH';
-const ADMIN_USERNAME = 'mamman';
+const ADMIN_USERNAME = 'admin';
 
 async function main() {
   // Ensure main branch exists
@@ -26,12 +26,12 @@ async function main() {
     update: {},
     create: {
       username: ADMIN_USERNAME,
-      email: 'mamman@pos.com',
+      email: 'admin@pos.local',
       passwordHash,
       role: UserRole.ADMIN,
       branchId: branch.id,
-      firstName: 'Mamman',
-      lastName: '',
+      firstName: 'System',
+      lastName: 'Admin',
     },
   });
 
