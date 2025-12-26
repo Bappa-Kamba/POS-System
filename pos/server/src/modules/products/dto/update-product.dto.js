@@ -17,7 +17,7 @@ class UpdateProductDto {
     description;
     sku;
     barcode;
-    category;
+    categoryId;
     hasVariants;
     costPrice;
     sellingPrice;
@@ -51,7 +51,7 @@ __decorate([
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
-], UpdateProductDto.prototype, "category", void 0);
+], UpdateProductDto.prototype, "categoryId", void 0);
 __decorate([
     (0, class_validator_1.IsBoolean)(),
     (0, class_validator_1.IsOptional)(),

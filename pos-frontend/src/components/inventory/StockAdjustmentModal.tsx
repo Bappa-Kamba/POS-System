@@ -112,11 +112,10 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
             Quantity Change *
           </label>
           <Input
-            type="number"
+            type="text"
             value={quantityChange}
             onChange={(e) => setQuantityChange(e.target.value)}
             placeholder="Enter positive or negative number"
-            step={item.unitType === 'WEIGHT' ? '0.1' : '1'}
             required
             autoFocus
           />
@@ -124,7 +123,7 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
             Use positive numbers to add stock, negative to reduce
           </p>
           {quantityChange && !isNaN(parseFloat(quantityChange)) && (
-            <p className="text-sm mt-2">
+            <p className="text-sm mt-2 text-neutral-600 dark:text-neutral-400">
               New Stock:{' '}
               <span
                 className={`font-semibold ${
@@ -150,7 +149,7 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
           <select
             value={changeType}
             onChange={(e) => setChangeType(e.target.value as InventoryChangeType)}
-            className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-neutral-800"
+            className="w-full px-3 py-2 text-neutral-900 dark:text-neutral-100 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-neutral-800"
             required
           >
             {changeTypeOptions.map((option) => (
@@ -169,7 +168,7 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
           <select
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-neutral-800"
+            className="w-full px-3 py-2 text-neutral-900 dark:text-neutral-100 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-neutral-800"
           >
             <option value="">Select a reason (optional)</option>
             {reasonOptions.map((option) => (

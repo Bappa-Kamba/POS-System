@@ -17,7 +17,7 @@ class CreateProductDto {
     description;
     sku;
     barcode;
-    category;
+    categoryId;
     hasVariants = false;
     costPrice;
     sellingPrice;
@@ -51,7 +51,7 @@ __decorate([
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
-], CreateProductDto.prototype, "category", void 0);
+], CreateProductDto.prototype, "categoryId", void 0);
 __decorate([
     (0, class_validator_1.IsBoolean)(),
     (0, class_validator_1.IsOptional)(),

@@ -13,23 +13,23 @@ export declare class ProductsService {
             id: string;
         };
     } & {
-        branchId: string;
-        isActive: boolean;
         name: string;
-        id: string;
-        createdAt: Date;
-        updatedAt: Date;
         description: string | null;
         sku: string;
         barcode: string | null;
+        categoryId: string | null;
         hasVariants: boolean;
         costPrice: number | null;
         sellingPrice: number | null;
         quantityInStock: number | null;
         unitType: import("@prisma/client").$Enums.UnitType;
         lowStockThreshold: number | null;
-        categoryId: string | null;
+        branchId: string;
+        id: string;
         trackInventory: boolean;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
     }>;
     findAll(params: FindAllProductsDto, user?: AuthenticatedRequestUser): Promise<{
         data: ({
@@ -42,39 +42,39 @@ export declare class ProductsService {
                 id: string;
             } | null;
             variants: {
-                isActive: boolean;
                 name: string;
-                id: string;
-                createdAt: Date;
-                updatedAt: Date;
                 sku: string;
                 barcode: string | null;
                 costPrice: number;
                 sellingPrice: number;
                 quantityInStock: number;
                 lowStockThreshold: number;
+                id: string;
+                isActive: boolean;
+                createdAt: Date;
+                updatedAt: Date;
                 productId: string;
                 attributes: string | null;
                 expiryDate: Date | null;
             }[];
         } & {
-            branchId: string;
-            isActive: boolean;
             name: string;
-            id: string;
-            createdAt: Date;
-            updatedAt: Date;
             description: string | null;
             sku: string;
             barcode: string | null;
+            categoryId: string | null;
             hasVariants: boolean;
             costPrice: number | null;
             sellingPrice: number | null;
             quantityInStock: number | null;
             unitType: import("@prisma/client").$Enums.UnitType;
             lowStockThreshold: number | null;
-            categoryId: string | null;
+            branchId: string;
+            id: string;
             trackInventory: boolean;
+            isActive: boolean;
+            createdAt: Date;
+            updatedAt: Date;
         })[];
         meta: {
             total: number;
@@ -83,26 +83,26 @@ export declare class ProductsService {
         };
         variants?: ({
             product: {
+                name: string;
+                branchId: string;
+                id: string;
                 category: {
                     name: string;
                     id: string;
                 } | null;
-                branchId: string;
-                name: string;
-                id: string;
             };
         } & {
-            isActive: boolean;
             name: string;
-            id: string;
-            createdAt: Date;
-            updatedAt: Date;
             sku: string;
             barcode: string | null;
             costPrice: number;
             sellingPrice: number;
             quantityInStock: number;
             lowStockThreshold: number;
+            id: string;
+            isActive: boolean;
+            createdAt: Date;
+            updatedAt: Date;
             productId: string;
             attributes: string | null;
             expiryDate: Date | null;
@@ -118,39 +118,39 @@ export declare class ProductsService {
             id: string;
         } | null;
         variants: {
-            isActive: boolean;
             name: string;
-            id: string;
-            createdAt: Date;
-            updatedAt: Date;
             sku: string;
             barcode: string | null;
             costPrice: number;
             sellingPrice: number;
             quantityInStock: number;
             lowStockThreshold: number;
+            id: string;
+            isActive: boolean;
+            createdAt: Date;
+            updatedAt: Date;
             productId: string;
             attributes: string | null;
             expiryDate: Date | null;
         }[];
     } & {
-        branchId: string;
-        isActive: boolean;
         name: string;
-        id: string;
-        createdAt: Date;
-        updatedAt: Date;
         description: string | null;
         sku: string;
         barcode: string | null;
+        categoryId: string | null;
         hasVariants: boolean;
         costPrice: number | null;
         sellingPrice: number | null;
         quantityInStock: number | null;
         unitType: import("@prisma/client").$Enums.UnitType;
         lowStockThreshold: number | null;
-        categoryId: string | null;
+        branchId: string;
+        id: string;
         trackInventory: boolean;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
     }>;
     update(id: string, data: UpdateProductDto, userId: string, user?: AuthenticatedRequestUser): Promise<{
         branch: {
@@ -158,23 +158,23 @@ export declare class ProductsService {
             id: string;
         };
     } & {
-        branchId: string;
-        isActive: boolean;
         name: string;
-        id: string;
-        createdAt: Date;
-        updatedAt: Date;
         description: string | null;
         sku: string;
         barcode: string | null;
+        categoryId: string | null;
         hasVariants: boolean;
         costPrice: number | null;
         sellingPrice: number | null;
         quantityInStock: number | null;
         unitType: import("@prisma/client").$Enums.UnitType;
         lowStockThreshold: number | null;
-        categoryId: string | null;
+        branchId: string;
+        id: string;
         trackInventory: boolean;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
     }>;
     remove(id: string, userId: string, user?: AuthenticatedRequestUser): Promise<{
         branch: {
@@ -182,23 +182,23 @@ export declare class ProductsService {
             id: string;
         };
     } & {
-        branchId: string;
-        isActive: boolean;
         name: string;
-        id: string;
-        createdAt: Date;
-        updatedAt: Date;
         description: string | null;
         sku: string;
         barcode: string | null;
+        categoryId: string | null;
         hasVariants: boolean;
         costPrice: number | null;
         sellingPrice: number | null;
         quantityInStock: number | null;
         unitType: import("@prisma/client").$Enums.UnitType;
         lowStockThreshold: number | null;
-        categoryId: string | null;
+        branchId: string;
+        id: string;
         trackInventory: boolean;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
     }>;
     checkStock(productId: string, quantity?: number): Promise<boolean>;
     generateBarcode(): Promise<string>;
@@ -210,39 +210,39 @@ export declare class ProductsService {
                 id: string;
             };
             variants: {
-                isActive: boolean;
                 name: string;
-                id: string;
-                createdAt: Date;
-                updatedAt: Date;
                 sku: string;
                 barcode: string | null;
                 costPrice: number;
                 sellingPrice: number;
                 quantityInStock: number;
                 lowStockThreshold: number;
+                id: string;
+                isActive: boolean;
+                createdAt: Date;
+                updatedAt: Date;
                 productId: string;
                 attributes: string | null;
                 expiryDate: Date | null;
             }[];
         } & {
-            branchId: string;
-            isActive: boolean;
             name: string;
-            id: string;
-            createdAt: Date;
-            updatedAt: Date;
             description: string | null;
             sku: string;
             barcode: string | null;
+            categoryId: string | null;
             hasVariants: boolean;
             costPrice: number | null;
             sellingPrice: number | null;
             quantityInStock: number | null;
             unitType: import("@prisma/client").$Enums.UnitType;
             lowStockThreshold: number | null;
-            categoryId: string | null;
+            branchId: string;
+            id: string;
             trackInventory: boolean;
+            isActive: boolean;
+            createdAt: Date;
+            updatedAt: Date;
         };
     } | {
         type: "variant";
@@ -253,36 +253,36 @@ export declare class ProductsService {
                     id: string;
                 };
             } & {
-                branchId: string;
-                isActive: boolean;
                 name: string;
-                id: string;
-                createdAt: Date;
-                updatedAt: Date;
                 description: string | null;
                 sku: string;
                 barcode: string | null;
+                categoryId: string | null;
                 hasVariants: boolean;
                 costPrice: number | null;
                 sellingPrice: number | null;
                 quantityInStock: number | null;
                 unitType: import("@prisma/client").$Enums.UnitType;
                 lowStockThreshold: number | null;
-                categoryId: string | null;
+                branchId: string;
+                id: string;
                 trackInventory: boolean;
+                isActive: boolean;
+                createdAt: Date;
+                updatedAt: Date;
             };
         } & {
-            isActive: boolean;
             name: string;
-            id: string;
-            createdAt: Date;
-            updatedAt: Date;
             sku: string;
             barcode: string | null;
             costPrice: number;
             sellingPrice: number;
             quantityInStock: number;
             lowStockThreshold: number;
+            id: string;
+            isActive: boolean;
+            createdAt: Date;
+            updatedAt: Date;
             productId: string;
             attributes: string | null;
             expiryDate: Date | null;
@@ -290,12 +290,12 @@ export declare class ProductsService {
     } | null>;
     search(query: string, limit?: number): Promise<{
         name: string;
-        id: string;
         sku: string;
         barcode: string | null;
         sellingPrice: number | null;
         quantityInStock: number | null;
         unitType: import("@prisma/client").$Enums.UnitType;
+        id: string;
     }[]>;
     private logAudit;
 }

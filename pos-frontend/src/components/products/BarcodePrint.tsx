@@ -63,13 +63,13 @@ export const BarcodePrint: React.FC<BarcodePrintProps> = ({
           {productName && (
             <div className="text-center">
               <div
-                className="font-semibold"
+                className="font-semibold text-primary-900 dark:text-primary-100"
                 style={{ fontSize: '14px', marginBottom: '5px' }}
               >
                 {productName}
               </div>
               {sku && (
-                <div style={{ fontSize: '11px', color: '#666' }}>
+                <div className="text-primary-900 dark:text-primary-100">
                   SKU: {sku}
                 </div>
               )}
@@ -87,7 +87,7 @@ export const BarcodePrint: React.FC<BarcodePrintProps> = ({
             />
           </div>
           <div
-            className="font-mono"
+            className="font-mono text-primary-900 dark:text-primary-100"
             style={{ fontSize: '12px', marginTop: '5px' }}
           >
             {barcode}

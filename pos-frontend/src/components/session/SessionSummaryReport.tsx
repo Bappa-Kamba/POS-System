@@ -105,29 +105,30 @@ export const SessionSummaryReport: React.FC<SessionSummaryReportProps> = ({ sess
   return (
     <div className="space-y-6 max-h-[70vh] overflow-y-auto px-1">
       {/* Key Metrics */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border-blue-200">
-          <div className="text-sm text-blue-600 dark:text-blue-400 font-medium">Total Sales</div>
-          <div className="text-2xl font-bold text-blue-900 dark:text-blue-100 mt-1">{summary.totalSales}</div>
+      {/* Key Metrics */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+        <Card className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/40 dark:to-blue-800/40 border-blue-200 dark:border-blue-700">
+          <div className="text-sm text-blue-700 font-medium">Total Sales</div>
+          <div className="text-2xl font-bold text-blue-900 mt-1 break-words">{summary.totalSales}</div>
         </Card>
 
-        <Card className="p-4 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 border-green-200">
-          <div className="text-sm text-green-600 dark:text-green-400 font-medium">Revenue</div>
-          <div className="text-2xl font-bold text-green-900 dark:text-green-100 mt-1">
+        <Card className="p-4 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/40 dark:to-green-800/40 border-green-200 dark:border-green-700">
+          <div className="text-sm text-green-700 font-medium">Revenue</div>
+          <div className="text-2xl font-bold text-green-900 dark:text-green-100 mt-1 break-words leading-tight">
             {formatCurrency(summary.totalRevenue)}
           </div>
         </Card>
 
-        <Card className="p-4 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 border-purple-200">
-          <div className="text-sm text-purple-600 dark:text-purple-400 font-medium">Duration</div>
-          <div className="text-2xl font-bold text-purple-900 dark:text-purple-100 mt-1">
+        <Card className="p-4 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/40 dark:to-purple-800/40 border-purple-200 dark:border-purple-700">
+          <div className="text-sm text-purple-700 font-medium">Duration</div>
+          <div className="text-2xl font-bold text-purple-900 mt-1 break-words">
             {summary.durationMinutes ? `${summary.durationMinutes} min` : 'Active'}
           </div>
         </Card>
 
-        <Card className="p-4 bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 border-orange-200">
-          <div className="text-sm text-orange-600 dark:text-orange-400 font-medium">Expenses</div>
-          <div className="text-2xl font-bold text-orange-900 dark:text-orange-100 mt-1">
+        <Card className="p-4 bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/40 dark:to-orange-800/40 border-orange-200 dark:border-orange-700">
+          <div className="text-sm text-orange-700 font-medium">Expenses</div>
+          <div className="text-2xl font-bold text-orange-900 mt-1 break-words leading-tight">
             {formatCurrency(summary.expenses.totalAmount)}
           </div>
         </Card>
@@ -136,7 +137,7 @@ export const SessionSummaryReport: React.FC<SessionSummaryReportProps> = ({ sess
       {/* Cash Reconciliation */}
       <Card className="p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+          <h3 className="text-lg font-semibold text-primary-900">
             Cash Reconciliation
           </h3>
           {displayCashFlow?.isBalanced ? (
@@ -148,26 +149,26 @@ export const SessionSummaryReport: React.FC<SessionSummaryReportProps> = ({ sess
 
         <div className="space-y-3">
           <div className="flex justify-between text-sm">
-            <span className="text-gray-600 dark:text-gray-400">Opening Balance</span>
+            <span className="text-gray-600">Opening Balance</span>
             <span className="font-medium">{formatCurrency(displayCashFlow?.openingBalance || 0)}</span>
           </div>
 
           <div className="flex justify-between text-sm">
-            <span className="text-gray-600 dark:text-gray-400">+ Cash Sales</span>
+            <span className="text-gray-600">+ Cash Sales</span>
             <span className="font-medium text-green-600">
               +{formatCurrency(displayCashFlow?.cashSales || 0)}
             </span>
           </div>
 
           <div className="flex justify-between text-sm">
-            <span className="text-gray-600 dark:text-gray-400">- Cashback Paid</span>
+            <span className="text-gray-600">- Cashback Paid</span>
             <span className="font-medium text-red-600">
               -{formatCurrency(displayCashFlow?.cashbackPaid || 0)}
             </span>
           </div>
 
           <div className="flex justify-between text-sm">
-            <span className="text-gray-600 dark:text-gray-400">- Expenses Paid</span>
+            <span className="text-gray-600">- Expenses Paid</span>
             <span className="font-medium text-red-600">
               -{formatCurrency(displayCashFlow?.expensesPaid || 0)}
             </span>
@@ -181,7 +182,7 @@ export const SessionSummaryReport: React.FC<SessionSummaryReportProps> = ({ sess
           </div>
 
           <div className="flex justify-between text-sm">
-            <span className="text-gray-600 dark:text-gray-400">Actual Cash (Counted)</span>
+            <span className="text-gray-600">Actual Cash (Counted)</span>
             <span className="font-medium">{formatCurrency(displayCashFlow?.actualCash || 0)}</span>
           </div>
 
@@ -201,7 +202,7 @@ export const SessionSummaryReport: React.FC<SessionSummaryReportProps> = ({ sess
           {Math.abs(displayCashFlow?.variance || 0) > 100 && (
             <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg flex items-start gap-2">
               <AlertTriangle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
-              <div className="text-sm text-yellow-800 dark:text-yellow-200">
+              <div className="text-sm text-yellow-800">
                 <strong>Significant variance detected.</strong> Please verify cash count and review transactions.
               </div>
             </div>
@@ -211,7 +212,7 @@ export const SessionSummaryReport: React.FC<SessionSummaryReportProps> = ({ sess
 
       {/* Payment Methods */}
       <Card className="p-6">
-        <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-4">
+        <h3 className="text-lg font-semibold text-neutral-900 mb-4">
           Payment Methods
         </h3>
         <div className="grid grid-cols-2 gap-4">
@@ -284,17 +285,17 @@ export const SessionSummaryReport: React.FC<SessionSummaryReportProps> = ({ sess
       {/* Top Products */}
       {summary.topProducts.length > 0 && (
         <Card className="p-6">
-          <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-4">
+          <h3 className="text-lg font-semibold text-neutral-900 mb-4">
             Top Products
           </h3>
           <div className="space-y-2">
             {summary.topProducts.slice(0, 5).map((product, index) => (
-              <div key={index} className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-700 last:border-0">
+              <div key={index} className="flex justify-between items-center py-2 border-b border-gray-200 last:border-0">
                 <div className="flex-1">
-                  <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                  <div className="text-sm font-medium text-gray-900">
                     {product.name}
                   </div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                  <div className="text-xs text-gray-500">
                     Qty: {product.quantity}
                   </div>
                 </div>
@@ -310,14 +311,14 @@ export const SessionSummaryReport: React.FC<SessionSummaryReportProps> = ({ sess
       {/* Category Breakdown */}
       {summary.categoryBreakdown.length > 0 && (
         <Card className="p-6">
-          <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-4">
+          <h3 className="text-lg font-semibold text-neutral-900 mb-4">
             Sales by Category
           </h3>
           <div className="space-y-2">
             {summary.categoryBreakdown.map((cat, index) => (
               <div key={index} className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-700 last:border-0">
                 <div className="flex-1">
-                  <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                  <div className="text-sm font-medium text-gray-900">
                     {cat.categoryName}
                   </div>
                   <div className="text-xs text-gray-500 dark:text-gray-400">

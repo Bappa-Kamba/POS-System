@@ -103,7 +103,7 @@ let ProductsService = ProductsService_1 = class ProductsService {
                 unitType: data.unitType,
                 lowStockThreshold: data.lowStockThreshold,
                 branchId: data.branchId,
-                categoryId: data.category,
+                categoryId: data.categoryId,
                 isActive: true,
             },
             include: {
@@ -309,7 +309,7 @@ let ProductsService = ProductsService_1 = class ProductsService {
                 quantityInStock: data.quantityInStock,
                 unitType: data.unitType,
                 lowStockThreshold: data.lowStockThreshold,
-                categoryId: data.category,
+                categoryId: data.categoryId,
             },
             include: {
                 branch: {

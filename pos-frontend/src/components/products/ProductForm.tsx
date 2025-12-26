@@ -108,6 +108,21 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   const hasVariants = watch('hasVariants');
   const productName = watch('name');
   const categoryId = watch('categoryId');
+  const hasInitializedSubdivision = React.useRef(false);
+
+  // Auto-populate subdivision when editing
+  React.useEffect(() => {
+    if (product && categories.length > 0 && !hasInitializedSubdivision.current) {
+      const currentCategoryId = product.categoryId || product.category?.id;
+      if (currentCategoryId) {
+        const category = categories.find(c => c.id === currentCategoryId);
+        if (category?.subdivisionId) {
+          setSelectedSubdivision(category.subdivisionId);
+          hasInitializedSubdivision.current = true;
+        }
+      }
+    }
+  }, [product, categories]);
 
   // Auto-generate SKU from product name and category
   React.useEffect(() => {

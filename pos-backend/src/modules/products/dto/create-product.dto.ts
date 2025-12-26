@@ -28,7 +28,7 @@ export class CreateProductDto {
 
   @IsString()
   @IsNotEmpty()
-  category!: string;
+  categoryId!: string;
 
   @IsBoolean()
   @IsOptional()

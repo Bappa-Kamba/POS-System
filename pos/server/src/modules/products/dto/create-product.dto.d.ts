@@ -4,7 +4,7 @@ export declare class CreateProductDto {
     description?: string;
     sku: string;
     barcode?: string;
-    category: string;
+    categoryId: string;
     hasVariants?: boolean;
     costPrice?: number;
     sellingPrice?: number;

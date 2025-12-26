@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Copy, RefreshCw, Check } from 'lucide-react';
+import { Copy, RefreshCw, Check, Eye, EyeOff } from 'lucide-react';
 import { Input } from '../common/Input';
 import { Button } from '../common/Button';
 import type { User } from '../../services/user.service';
@@ -10,8 +10,7 @@ import { userService } from '../../services/user.service';
 import { useBranches } from '../../hooks/useBranches';
 import { useSubdivisions } from '../../hooks/useSubdivisions';
 
-// Strong password validation: min 8 chars, uppercase, lowercase, number, special char
-const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+
 
 const createUserSchema = z.object({
   username: z.string().min(1, 'Username is required'),
@@ -23,11 +22,7 @@ const createUserSchema = z.object({
     .transform((val) => (val === '' ? undefined : val)),
   password: z
     .string()
-    .min(8, 'Password must be at least 8 characters')
-    .regex(
-      passwordRegex,
-      'Password must contain uppercase, lowercase, number, and special character',
-    ),
+    .min(6, 'Password must be at least 6 characters'),
   firstName: z.string().optional(),
   lastName: z.string().optional(),
   role: z.enum(['ADMIN', 'CASHIER']),
@@ -46,11 +41,7 @@ const updateUserSchema = z.object({
     .transform((val) => (val === '' ? undefined : val)),
   password: z
     .string()
-    .min(8, 'Password must be at least 8 characters')
-    .regex(
-      passwordRegex,
-      'Password must contain uppercase, lowercase, number, and special character',
-    )
+    .min(6, 'Password must be at least 6 characters')
     .optional()
     .or(z.literal('')),
   firstName: z.string().optional(),
@@ -61,31 +52,14 @@ const updateUserSchema = z.object({
   assignedSubdivisionId: z.string().optional().nullable(),
 });
 
-// Generate a random strong password
+// Generate a random simple password
 const generatePassword = (): string => {
-  const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-  const lowercase = 'abcdefghijklmnopqrstuvwxyz';
-  const numbers = '0123456789';
-  const special = '@$!%*?&';
-  const all = uppercase + lowercase + numbers + special;
-
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789'; // Removed confusing chars like I, l, 1, O, 0
   let password = '';
-  // Ensure at least one of each type
-  password += uppercase[Math.floor(Math.random() * uppercase.length)];
-  password += lowercase[Math.floor(Math.random() * lowercase.length)];
-  password += numbers[Math.floor(Math.random() * numbers.length)];
-  password += special[Math.floor(Math.random() * special.length)];
-
-  // Fill the rest randomly
-  for (let i = password.length; i < 12; i++) {
-    password += all[Math.floor(Math.random() * all.length)];
+  for (let i = 0; i < 8; i++) {
+    password += chars.charAt(Math.floor(Math.random() * chars.length));
   }
-
-  // Shuffle the password
-  return password
-    .split('')
-    .sort(() => Math.random() - 0.5)
-    .join('');
+  return password;
 };
 
 // Generate username from first and last name
@@ -285,12 +259,35 @@ export const UserForm: React.FC<UserFormProps> = ({
     setCopied(false);
   };
 
+  const [showPassword, setShowPassword] = useState(false);
+
+  // ...
+
   const handleCopyPassword = async () => {
     if (password) {
       try {
-        await navigator.clipboard.writeText(password);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+        if (navigator?.clipboard?.writeText) {
+          await navigator.clipboard.writeText(password);
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+        } else {
+           // Fallback for non-secure contexts
+          const textArea = document.createElement("textarea");
+          textArea.value = password;
+          textArea.style.position = "fixed";
+          textArea.style.left = "-9999px";
+          document.body.appendChild(textArea);
+          textArea.focus();
+          textArea.select();
+          try {
+            document.execCommand('copy');
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+          } catch (err) {
+            console.error('Fallback: Oops, unable to copy', err);
+          }
+          document.body.removeChild(textArea);
+        }
       } catch (error) {
         console.error('Failed to copy password:', error);
       }
@@ -410,6 +407,21 @@ export const UserForm: React.FC<UserFormProps> = ({
                     type="button"
                     variant="secondary"
                     size="sm"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="px-2 py-1 text-xs"
+                    title={showPassword ? 'Hide Password' : 'Show Password'}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="w-3 h-3 mr-1" />
+                    ) : (
+                      <Eye className="w-3 h-3 mr-1" />
+                    )}
+                    {showPassword ? 'Hide' : 'Show'}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
                     onClick={handleGeneratePassword}
                     className="px-2 py-1 text-xs"
                   >
@@ -441,20 +453,19 @@ export const UserForm: React.FC<UserFormProps> = ({
               )}
             </div>
             <Input
-              type="password"
+              type={showPassword ? "text" : "password"}
               {...register('password')}
               error={errors.password?.message}
               placeholder={
                 isEditMode
-                  ? 'Enter new password (min 8 chars, uppercase, lowercase, number, special char)'
-                  : 'Enter password (min 8 chars, uppercase, lowercase, number, special char)'
+                  ? 'Enter new password (min 6 chars)'
+                  : 'Enter password (min 6 chars)'
               }
               autoComplete="new-password"
             />
             {!isEditMode && (
               <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-                Password must be at least 8 characters with uppercase, lowercase, number, and special
-                character
+                Password must be at least 6 characters.
               </p>
             )}
           </div>

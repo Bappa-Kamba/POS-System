@@ -8,7 +8,11 @@ import { Play, Square, Loader2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { formatCurrency } from '../../utils/formatters';
 
-export const SessionControls: React.FC = () => {
+interface SessionControlsProps {
+  onSuccess?: () => void;
+}
+
+export const SessionControls: React.FC<SessionControlsProps> = ({ onSuccess }) => {
   const { activeSession, refreshSession, isLoading } = useSession();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [openingBalance, setOpeningBalance] = useState('');
@@ -25,6 +29,7 @@ export const SessionControls: React.FC = () => {
       });
       toast.success('Session started successfully');
       await refreshSession();
+      if (onSuccess) onSuccess();
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to start session');
     } finally {

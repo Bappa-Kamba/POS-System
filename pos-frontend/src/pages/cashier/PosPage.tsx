@@ -270,12 +270,13 @@ export const PosPage: React.FC = () => {
   };
 
 
-  // Check for active session
+  // Check for active session (Required for Cashiers, Optional for Admins)
   if (isSessionLoading) {
     return <div className="flex h-screen items-center justify-center">Loading session...</div>;
   }
 
-  if (!activeSession) {
+  // Only block access if user is NOT admin and has NO active session
+  if (!activeSession && user?.role !== 'ADMIN') {
     return (
       <div className="h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
         <div className="max-w-md w-full">
@@ -313,10 +314,16 @@ export const PosPage: React.FC = () => {
               <Receipt className="w-4 h-4 mr-2" />
               Expense
             </Button>
-            <Button variant="danger" size="sm" onClick={() => setIsSessionModalOpen(true)}>
-              <LogOut className="w-4 h-4 mr-2" />
-              End Session
-            </Button>
+            {(!activeSession && user?.role === 'ADMIN') ? (
+              <Button variant="primary" size="sm" onClick={() => setIsSessionModalOpen(true)}>
+                Start Session
+              </Button>
+            ) : (
+              <Button variant="danger" size="sm" onClick={() => setIsSessionModalOpen(true)}>
+                <LogOut className="w-4 h-4 mr-2" />
+                End Session
+              </Button>
+            )}
           </div>
         </div>
       </div>
@@ -387,11 +394,28 @@ export const PosPage: React.FC = () => {
         }
       />
 
-      {/* Session End Modal */}
-      <SessionEndModal
-        isOpen={isSessionModalOpen}
-        onClose={() => setIsSessionModalOpen(false)}
-      />
+      {/* Session Modal (Start or End) */}
+      {!activeSession && user?.role === 'ADMIN' ? (
+        isSessionModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+            <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-2xl w-full max-w-md p-6 relative">
+              <button 
+                onClick={() => setIsSessionModalOpen(false)}
+                className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              >
+                ✕
+              </button>
+              <h2 className="text-2xl font-bold mb-6 text-neutral-900 dark:text-neutral-100 text-center">Start Admin Session</h2>
+              <SessionControls onSuccess={() => setIsSessionModalOpen(false)} />
+            </div>
+          </div>
+        )
+      ) : (
+        <SessionEndModal
+          isOpen={isSessionModalOpen}
+          onClose={() => setIsSessionModalOpen(false)}
+        />
+      )}
 
       {/* Expense Form Modal */}
       {isExpenseFormOpen && (

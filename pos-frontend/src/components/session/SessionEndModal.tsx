@@ -85,25 +85,23 @@ export const SessionEndModal: React.FC<SessionEndModalProps> = ({ isOpen, onClos
             {/* Right: Cash Count Form (1/3 width) */}
             <div className="lg:col-span-1">
               <div className="sticky top-6">
-                <Card className="p-6 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border-2 border-blue-300 dark:border-blue-700">
-                  <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-2">
+                <Card className="p-6 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/40 dark:to-blue-800/40 border-2 border-blue-300 dark:border-blue-700">
+                  <h3 className="text-lg font-semibold text-neutral-600 mb-2">
                     Count Cash & Close Session
                   </h3>
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-6">
+                  <p className="text-sm text-neutral-600 mb-6">
                     Review the summary on the left, then count all cash in the drawer and enter the amount below.
                   </p>
 
-                  <form onSubmit={handleEndSession} className="space-y-4">
+                  <form onSubmit={handleEndSession} className="space-y-4 text-neutral-600">
                     <Input
                       label="Closing Balance (Counted Cash)"
-                      type="number"
+                      type="text"
                       value={closingBalance}
                       onChange={(e) => setClosingBalance(e.target.value)}
                       placeholder="0.00"
-                      min="0"
-                      step="0.01"
                       required
-                      className="text-lg font-semibold"
+                      className="text-lg font-semibold text-neutral-600"
                     />
 
                     <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
