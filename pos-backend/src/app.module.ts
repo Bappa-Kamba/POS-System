@@ -22,9 +22,14 @@ import { SubdivisionsModule } from './modules/subdivisions/subdivisions.module';
 import { CategoriesModule } from './modules/categories/categories.module';
 import { LicenseGuard } from './modules/license/guards/license.guard';
 import { LicenseModule } from './modules/license/license.module';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 
 @Module({
   imports: [
+    ServeStaticModule.forRoot({
+      rootPath: join(process.cwd(), 'client'),
+    }),
     ConfigModule.forRoot({ isGlobal: true }),
     JwtModule.registerAsync({
       imports: [ConfigModule],

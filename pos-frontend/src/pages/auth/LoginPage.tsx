@@ -100,10 +100,6 @@ export const LoginPage = () => {
             {isSubmitting ? 'Signing in…' : 'Sign in'}
           </button>
         </form>
-
-        <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-6">
-          Tip: Use the seeded credentials `admin/admin123` or `cashier/cashier123` to explore the demo environment.
-        </p>
       </div>
     </div>
   );

@@ -7,4 +7,8 @@ export default defineConfig({
     host: true,
     allowedHosts: ['pos-server.local'],
   },
+  build: {
+    outDir: '../pos/client',
+    emptyOutDir: true,
+  },
 })

@@ -1,0 +1,609 @@
+// schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// USER MANAGEMENT
+// ============================================
+
+model User {
+  id           String   @id @default(uuid())
+  username     String   @unique
+  email        String?  @unique
+  passwordHash String
+  refreshTokenHash String?
+  firstName    String?
+  lastName     String?
+  role         UserRole @default(CASHIER)
+  isActive     Boolean  @default(true)
+  branchId     String
+  branch       Branch   @relation(fields: [branchId], references: [id])
+
+  // Subdivision assignment for CASHIER users (null for ADMIN)
+  assignedSubdivisionId String?
+
+  sales     Sale[]
+  expenses  Expense[]
+  auditLogs AuditLog[]
+  openedSessions Session[] @relation("OpenedSessions")
+  closedSessions Session[] @relation("ClosedSessions")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([username])
+  @@index([branchId])
+  @@index([assignedSubdivisionId])
+  @@map("users")
+}
+
+enum UserRole {
+  ADMIN
+  CASHIER
+}
+
+// ============================================
+// BRANCH MANAGEMENT
+// ============================================
+
+model Branch {
+  id       String  @id @default(uuid())
+  name     String
+  location String?
+  phone    String?
+  email    String?
+  address  String?
+  taxRate  Float   @default(0.075)
+  currency String  @default("NGN")
+
+  // Business Info for Receipts
+  businessName    String?
+  businessAddress String?
+  businessPhone   String?
+  receiptFooter   String?
+
+  // Cashback Service Settings
+  cashbackCapital           Float   @default(0) // Starting capital for cashback service
+  cashbackServiceChargeRate Float   @default(0.02) // Service charge rate (e.g., 0.02 = 2%)
+  cashbackSubdivisionId     String? // Subdivision assigned to handle cashback transactions
+
+  // Relations
+  users              User[]
+  products           Product[]
+  sales              Sale[]
+  expenses           Expense[]
+  expenseCategories  ExpenseCategory[]
+  sessions           Session[]
+  branchSubdivisions BranchSubdivision[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("branches")
+}
+
+// ============================================
+// SUBDIVISION MANAGEMENT
+// ============================================
+
+model Subdivision {
+  id          String            @id @default(uuid())
+  name        String            @unique
+  displayName String
+  description String?
+  status      SubdivisionStatus @default(ACTIVE)
+  color       String?           // Hex color for UI
+  icon        String?           // Icon name for UI
+
+  // Relations
+  categories         Category[]
+  branchSubdivisions BranchSubdivision[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("subdivisions")
+}
+
+model BranchSubdivision {
+  id            String  @id @default(uuid())
+  branchId      String
+  subdivisionId String
+  isActive      Boolean @default(true)
+
+  // Relations
+  branch      Branch      @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  subdivision Subdivision @relation(fields: [subdivisionId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([branchId, subdivisionId])
+  @@index([branchId])
+  @@index([subdivisionId])
+  @@map("branch_subdivisions")
+}
+
+model Category {
+  id           String  @id @default(uuid())
+  name         String
+  subdivisionId String
+  description  String?
+  displayOrder Int     @default(0)
+  isActive     Boolean @default(true)
+
+  // Relations
+  subdivision Subdivision @relation(fields: [subdivisionId], references: [id], onDelete: Cascade)
+  products    Product[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([name, subdivisionId])
+  @@index([subdivisionId])
+  @@map("categories")
+}
+
+enum SubdivisionStatus {
+  ACTIVE
+  INACTIVE
+  ARCHIVED
+}
+
+// ============================================
+// PRODUCT & INVENTORY MANAGEMENT
+// ============================================
+
+model Product {
+  id          String          @id @default(uuid())
+  name        String
+  description String?
+  sku         String          @unique
+  barcode     String?         @unique
+  hasVariants Boolean         @default(false)
+
+  // Category (subdivision inherited from category)
+  categoryId String?
+
+  // Pricing (for products without variants)
+  costPrice    Float?
+  sellingPrice Float?
+
+  // Inventory (for products without variants)
+  quantityInStock   Float?
+  unitType          UnitType @default(PIECE)
+  lowStockThreshold Float?
+
+  // Tracking
+  trackInventory Boolean @default(true)
+  isActive       Boolean @default(true)
+
+  branchId String
+  branch   Branch @relation(fields: [branchId], references: [id])
+
+  category Category? @relation(fields: [categoryId], references: [id])
+
+  // Relations
+  variants      ProductVariant[]
+  saleItems     SaleItem[]
+  inventoryLogs InventoryLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([sku])
+  @@index([barcode])
+  @@index([categoryId])
+  @@index([branchId])
+  @@map("products")
+}
+
+model ProductVariant {
+  id        String  @id @default(uuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  name    String
+  sku     String  @unique
+  barcode String? @unique
+
+  // Pricing
+  costPrice    Float
+  sellingPrice Float
+
+  // Inventory
+  quantityInStock   Float @default(0)
+  lowStockThreshold Float @default(10)
+
+  // Attributes (JSON for flexibility)
+  attributes String?
+
+  isActive   Boolean   @default(true)
+  expiryDate DateTime?
+
+  // Relations
+  saleItems     SaleItem[]
+  inventoryLogs InventoryLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([sku])
+  @@index([barcode])
+  @@index([productId])
+  @@map("product_variants")
+}
+
+enum ProductCategory {
+  FROZEN
+  DRINKS
+  ACCESSORIES
+  OTHER
+}
+
+enum UnitType {
+  PIECE
+  WEIGHT
+  VOLUME
+}
+
+model InventoryLog {
+  id String @id @default(uuid())
+
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+
+  variantId String?
+  variant   ProductVariant? @relation(fields: [variantId], references: [id])
+
+  changeType       InventoryChangeType
+  quantityChange   Float
+  previousQuantity Float
+  newQuantity      Float
+
+  reason String?
+  notes  String?
+
+  saleId String?
+  sale   Sale?   @relation(fields: [saleId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([productId])
+  @@index([variantId])
+  @@index([changeType])
+  @@index([createdAt])
+  @@map("inventory_logs")
+}
+
+enum InventoryChangeType {
+  RESTOCK
+  SALE
+  ADJUSTMENT
+  EXPIRY
+  DAMAGE
+  RETURN
+}
+
+// ============================================
+// SALES & TRANSACTIONS
+// ============================================
+
+model Sale {
+  id            String @id @default(uuid())
+  receiptNumber String @unique
+
+  cashierId String
+  cashier   User   @relation(fields: [cashierId], references: [id])
+
+  branchId String
+  branch   Branch @relation(fields: [branchId], references: [id])
+
+  // Transaction Type
+  transactionType TransactionType @default(PURCHASE)
+
+  // Amounts
+  subtotal       Float
+  taxAmount      Float
+  discountAmount Float @default(0)
+  totalAmount    Float
+
+  // Payment
+  paymentStatus PaymentStatus @default(PENDING)
+  amountPaid    Float         @default(0)
+  amountDue     Float
+  changeGiven   Float         @default(0)
+
+  // Additional Info
+  notes         String?
+  customerName  String?
+  customerPhone String?
+
+  // Session
+  sessionId String?
+  session   Session? @relation(fields: [sessionId], references: [id])
+
+  // Relations
+  items         SaleItem[]
+  payments      Payment[]
+  inventoryLogs InventoryLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([receiptNumber])
+  @@index([cashierId])
+  @@index([branchId])
+  @@index([createdAt])
+  @@index([paymentStatus])
+  @@index([transactionType])
+  @@map("sales")
+}
+
+model SaleItem {
+  id     String @id @default(uuid())
+  saleId String
+  sale   Sale   @relation(fields: [saleId], references: [id], onDelete: Cascade)
+
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+
+  variantId String?
+  variant   ProductVariant? @relation(fields: [variantId], references: [id])
+
+  // Item Details (snapshot at time of sale)
+  itemName String
+  itemSku  String
+
+  quantity  Float
+  unitPrice Float
+  costPrice Float
+  taxRate   Float
+  taxAmount Float
+  subtotal  Float
+  total     Float
+
+  createdAt DateTime @default(now())
+
+  @@index([saleId])
+  @@index([productId])
+  @@map("sale_items")
+}
+
+enum PaymentStatus {
+  PENDING
+  PARTIAL
+  PAID
+  CANCELLED
+}
+
+enum TransactionType {
+  PURCHASE
+  CASHBACK
+}
+
+model Payment {
+  id     String @id @default(uuid())
+  saleId String
+  sale   Sale   @relation(fields: [saleId], references: [id], onDelete: Cascade)
+
+  method    PaymentMethod
+  amount    Float
+  reference String?
+  notes     String?
+
+  createdAt DateTime @default(now())
+
+  @@index([saleId])
+  @@index([method])
+  @@map("payments")
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  TRANSFER
+}
+
+// ============================================
+// EXPENSES
+// ============================================
+
+model ExpenseCategory {
+  id          String  @id @default(uuid())
+  name        String
+  description String?
+  isActive    Boolean @default(true)
+
+  branchId String
+  branch   Branch @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([name, branchId])
+  @@index([branchId])
+  @@index([name])
+  @@map("expense_categories")
+}
+
+model Expense {
+  id          String   @id @default(uuid())
+  title       String
+  category    String
+  amount      Float
+  description String?
+  date        DateTime
+
+  branchId String
+  branch   Branch @relation(fields: [branchId], references: [id])
+
+  sessionId String?
+  session   Session? @relation(fields: [sessionId], references: [id])
+
+  createdById String?
+  createdBy   User?   @relation(fields: [createdById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([branchId])
+  @@index([sessionId])
+  @@index([createdById])
+  @@index([date])
+  @@index([category])
+  @@map("expenses")
+}
+
+// ============================================
+// AUDIT & SECURITY
+// ============================================
+
+model AuditLog {
+  id String @id @default(uuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  action   AuditAction
+  entity   String
+  entityId String?
+
+  oldValues String?
+  newValues String?
+  ipAddress String?
+  userAgent String?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([entity])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+  LOGIN_FAILED
+  EXPORT
+  BACKUP
+  RESTORE
+}
+
+// ============================================
+// SYSTEM SETTINGS & BACKUPS
+// ============================================
+
+model SystemSetting {
+  id          String  @id @default(uuid())
+  key         String  @unique
+  value       String
+  description String?
+
+  updatedAt DateTime @updatedAt
+
+  @@map("system_settings")
+}
+
+model Backup {
+  id       String       @id @default(uuid())
+  filename String
+  filepath String
+  size     Int
+  type     BackupType   @default(AUTOMATIC)
+  status   BackupStatus @default(COMPLETED)
+
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@map("backups")
+}
+
+enum BackupType {
+  AUTOMATIC
+  MANUAL
+}
+
+enum BackupStatus {
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+}
+
+// ============================================
+// SESSION MANAGEMENT
+// ============================================
+
+model Session {
+  id String @id @default(uuid())
+
+  branchId String
+  branch   Branch @relation(fields: [branchId], references: [id])
+
+  name String // "Morning", "Evening", etc.
+
+  startTime DateTime  @default(now())
+  endTime   DateTime?
+
+  status SessionStatus @default(OPEN)
+
+  openingBalance Float  @default(0)
+  closingBalance Float?
+
+  openedById String
+  openedBy   User   @relation("OpenedSessions", fields: [openedById], references: [id])
+
+  closedById String?
+  closedBy   User?   @relation("ClosedSessions", fields: [closedById], references: [id])
+
+  sales    Sale[]
+  expenses Expense[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([branchId])
+  @@index([status])
+  @@map("sessions")
+}
+
+enum SessionStatus {
+  OPEN
+  CLOSED
+}
+
+// ============================================
+// LICENSE MANAGEMENT
+// ============================================
+
+enum LicenseStatus {
+  TRIAL
+  ACTIVE
+  EXPIRED
+}
+
+model AppLicense {
+  id              String        @id @default("SYSTEM_LICENSE")
+  shopCode        String        @unique
+  licenseStatus   LicenseStatus @default(TRIAL)
+  trialExpiresAt  DateTime
+  activatedAt     DateTime?
+  unlockCodeHash  String        // The pre-computed hash of the vendor code
+  lastCheckedAt   DateTime      @default(now())
+  
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@map("app_licenses")
+}

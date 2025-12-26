@@ -1,0 +1,184 @@
+import { PrismaService } from '../../prisma/prisma.service';
+import { CreateVariantDto, UpdateVariantDto } from './dto';
+export declare class VariantsService {
+    private prisma;
+    constructor(prisma: PrismaService);
+    create(productId: string, data: CreateVariantDto): Promise<{
+        product: {
+            category: {
+                name: string;
+                id: string;
+            } | null;
+            name: string;
+            id: string;
+        };
+    } & {
+        isActive: boolean;
+        name: string;
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        sku: string;
+        barcode: string | null;
+        costPrice: number;
+        sellingPrice: number;
+        quantityInStock: number;
+        lowStockThreshold: number;
+        productId: string;
+        attributes: string | null;
+        expiryDate: Date | null;
+    }>;
+    findAllByProduct(productId: string): Promise<{
+        isActive: boolean;
+        name: string;
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        sku: string;
+        barcode: string | null;
+        costPrice: number;
+        sellingPrice: number;
+        quantityInStock: number;
+        lowStockThreshold: number;
+        productId: string;
+        attributes: string | null;
+        expiryDate: Date | null;
+    }[]>;
+    findOne(id: string): Promise<{
+        product: {
+            category: {
+                name: string;
+                id: string;
+            } | null;
+            name: string;
+            id: string;
+        };
+    } & {
+        isActive: boolean;
+        name: string;
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        sku: string;
+        barcode: string | null;
+        costPrice: number;
+        sellingPrice: number;
+        quantityInStock: number;
+        lowStockThreshold: number;
+        productId: string;
+        attributes: string | null;
+        expiryDate: Date | null;
+    }>;
+    update(id: string, data: UpdateVariantDto): Promise<{
+        product: {
+            category: {
+                name: string;
+                id: string;
+            } | null;
+            name: string;
+            id: string;
+        };
+    } & {
+        isActive: boolean;
+        name: string;
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        sku: string;
+        barcode: string | null;
+        costPrice: number;
+        sellingPrice: number;
+        quantityInStock: number;
+        lowStockThreshold: number;
+        productId: string;
+        attributes: string | null;
+        expiryDate: Date | null;
+    }>;
+    remove(id: string): Promise<{
+        isActive: boolean;
+        name: string;
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        sku: string;
+        barcode: string | null;
+        costPrice: number;
+        sellingPrice: number;
+        quantityInStock: number;
+        lowStockThreshold: number;
+        productId: string;
+        attributes: string | null;
+        expiryDate: Date | null;
+    }>;
+    checkStock(id: string, quantity: number): Promise<boolean>;
+    adjustStock(params: {
+        id: string;
+        quantityChange: number;
+        changeType: string;
+        reason?: string;
+        notes?: string;
+        userId: string;
+    }): Promise<{
+        isActive: boolean;
+        name: string;
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        sku: string;
+        barcode: string | null;
+        costPrice: number;
+        sellingPrice: number;
+        quantityInStock: number;
+        lowStockThreshold: number;
+        productId: string;
+        attributes: string | null;
+        expiryDate: Date | null;
+    }>;
+    getLowStock(branchId?: string): Promise<({
+        product: {
+            branchId: string;
+            name: string;
+            id: string;
+        };
+    } & {
+        isActive: boolean;
+        name: string;
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        sku: string;
+        barcode: string | null;
+        costPrice: number;
+        sellingPrice: number;
+        quantityInStock: number;
+        lowStockThreshold: number;
+        productId: string;
+        attributes: string | null;
+        expiryDate: Date | null;
+    })[]>;
+    getExpiring(days?: number, branchId?: string): Promise<({
+        product: {
+            category: {
+                name: string;
+                id: string;
+            } | null;
+            name: string;
+            id: string;
+        };
+    } & {
+        isActive: boolean;
+        name: string;
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        sku: string;
+        barcode: string | null;
+        costPrice: number;
+        sellingPrice: number;
+        quantityInStock: number;
+        lowStockThreshold: number;
+        productId: string;
+        attributes: string | null;
+        expiryDate: Date | null;
+    })[]>;
+}
