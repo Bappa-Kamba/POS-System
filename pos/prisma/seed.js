@@ -1,29 +1,31 @@
 const { PrismaClient, UserRole } = require('@prisma/client');
 const bcrypt = require('bcrypt');
-const uuid = require('uuid');
 
 const prisma = new PrismaClient();
 
+const MAIN_BRANCH_ID = 'MAIN_BRANCH';
+const ADMIN_USERNAME = 'mamman';
+
 async function main() {
-  // Create a branch first
+  // Ensure main branch exists
   const branch = await prisma.branch.upsert({
-    where: { id: 'main' },
+    where: { id: MAIN_BRANCH_ID },
     update: {},
     create: {
-      id: uuid.v4(),
+      id: MAIN_BRANCH_ID,
       name: 'Main Branch',
       location: 'Main Location',
     },
   });
 
-  // Create a test user
+  // Ensure admin user exists
   const passwordHash = await bcrypt.hash('admin123', 10);
 
-  const testUser = await prisma.user.upsert({
-    where: { username: 'mamman' },
+  const adminUser = await prisma.user.upsert({
+    where: { username: ADMIN_USERNAME },
     update: {},
     create: {
-      username: 'mamman',
+      username: ADMIN_USERNAME,
       email: 'mamman@pos.com',
       passwordHash,
       role: UserRole.ADMIN,
@@ -33,7 +35,11 @@ async function main() {
     },
   });
 
-  console.log('Seeded user:', testUser);
+  console.log('Seed complete');
+  console.log({
+    branchId: branch.id,
+    adminUser: adminUser.username,
+  });
 }
 
 main()
