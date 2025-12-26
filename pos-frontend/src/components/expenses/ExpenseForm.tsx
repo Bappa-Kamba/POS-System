@@ -77,7 +77,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
       />
 
       <div>
-        <label className="block text-sm font-medium text-neutral-700 mb-1">
+        <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
           Category
         </label>
         <select
@@ -100,9 +100,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
 
       <Input
         label="Amount"
-        type="number"
-        step="0.01"
-        min="0"
+        type="text"
         {...register('amount', { valueAsNumber: true })}
         error={errors.amount?.message}
         placeholder="0.00"
@@ -116,7 +114,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
       />
 
       <div>
-        <label className="block text-sm font-medium text-neutral-700 mb-1">
+        <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
           Description
         </label>
         <textarea

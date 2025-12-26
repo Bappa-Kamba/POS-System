@@ -316,11 +316,12 @@ export const UserForm: React.FC<UserFormProps> = ({
     <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
       {/* Basic Information */}
       <div>
-        <h3 className="text-lg font-medium mb-4">Basic Information</h3>
+        <h3 className="text-lg font-medium mb-4 text-neutral-700 dark:text-neutral-300">Basic Information</h3>
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <Input
               label="First Name"
+              className="text-neutral-700 dark:text-neutral-300"
               {...register('firstName')}
               error={errors.firstName?.message}
               placeholder="John"
@@ -396,7 +397,7 @@ export const UserForm: React.FC<UserFormProps> = ({
 
       {/* Security & Access */}
       <div>
-        <h3 className="text-lg font-medium mb-4">Security & Access</h3>
+        <h3 className="text-lg font-medium mb-4 text-neutral-700 dark:text-neutral-300">Security & Access</h3>
         <div className="space-y-4">
           <div>
             <div className="flex items-center gap-2 mb-1">

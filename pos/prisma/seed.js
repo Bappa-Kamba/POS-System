@@ -21,19 +21,30 @@ async function main() {
   // Ensure admin user exists
   const passwordHash = await bcrypt.hash('admin123', 10);
 
-  const adminUser = await prisma.user.upsert({
+  let adminUser = await prisma.user.findUnique({
     where: { username: ADMIN_USERNAME },
-    update: {},
-    create: {
-      username: ADMIN_USERNAME,
-      email: 'admin@pos.local',
-      passwordHash,
-      role: UserRole.ADMIN,
-      branchId: branch.id,
-      firstName: 'System',
-      lastName: 'Admin',
-    },
   });
+
+  if (adminUser && !adminUser.isActive) {
+    await prisma.user.update({
+      where: { username: ADMIN_USERNAME },
+      data: { isActive: true },
+    });
+  }
+
+  if (!adminUser) {
+    adminUser = await prisma.user.create({
+      data: {
+        username: ADMIN_USERNAME,
+        email: 'admin@pos.local',
+        passwordHash,
+        role: UserRole.ADMIN,
+        branchId: branch.id,
+        firstName: 'System',
+        lastName: 'Admin',
+      },
+    });
+  }
 
   console.log('Seed complete');
   console.log({

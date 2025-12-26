@@ -6,7 +6,7 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "start": "prisma migrate deploy && prisma db seed && node server/src/main.js",
+    "start": "node server/src/main.js",
     "db:setup": "prisma migrate deploy && prisma db seed"
   },
   "dependencies": {
