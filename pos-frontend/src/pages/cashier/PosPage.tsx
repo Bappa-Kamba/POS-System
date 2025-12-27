@@ -36,6 +36,7 @@ export const PosPage: React.FC = () => {
   });
 
   const handleBarcodeScan = (barcode: string) => {
+    setSearchQuery('');
     if (!barcode) return;
     const normalizedBarcode = barcode.trim();
     
@@ -87,7 +88,7 @@ export const PosPage: React.FC = () => {
     }
 
     // 3. Fallback
-    setSearchQuery(normalizedBarcode);
+    setSearchQuery('');
     toast.error(`Product not found with barcode: ${normalizedBarcode}`);
   };
   const { activeSession, isLoading: isSessionLoading } = useSession();
