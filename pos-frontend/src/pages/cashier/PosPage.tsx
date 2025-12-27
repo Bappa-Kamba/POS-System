@@ -24,8 +24,72 @@ import { useCreateExpense, useExpenseCategories } from '../../hooks/useExpenses'
 import { useSubdivisionCategories } from '../../hooks/useCategories';
 import toast from 'react-hot-toast';
 
+import { useBarcodeScanner } from '../../hooks/useBarcodeScanner';
+
 export const PosPage: React.FC = () => {
   const { user } = useAuth();
+  /* ... hooks ... */
+  
+  // Handle global barcode scanner input
+  useBarcodeScanner({
+    onScan: (barcode) => handleBarcodeScan(barcode),
+  });
+
+  const handleBarcodeScan = (barcode: string) => {
+    if (!barcode) return;
+    const normalizedBarcode = barcode.trim();
+    
+    // 1. Search in cached products
+    const productMatch = (data?.data || []).find((p: Product) => 
+      p.barcode === normalizedBarcode || p.sku === normalizedBarcode
+    );
+
+    if (productMatch) {
+       if (productMatch.hasVariants) {
+         const variants = (data as any)?.variants || [];
+         const variantMatch = variants.find((v: Variant) => v.barcode === normalizedBarcode || v.sku === normalizedBarcode);
+         
+         if (variantMatch) {
+            handleAddToCart(productMatch, variantMatch);
+            toast.success(`Added ${variantMatch.sku} to cart`);
+            return;
+         }
+         
+         setSearchQuery(normalizedBarcode); 
+         toast('Product found but requires variant selection', { icon: '🔍' });
+         return;
+       } else {
+         handleAddToCart(productMatch);
+         toast.success(`Added ${productMatch.name} to cart`);
+         return;
+       }
+    }
+
+    // 2. Search in cached variants
+    const allVariants = (data as any)?.variants || [];
+    const variantMatch = allVariants.find((v: Variant) => v.barcode === normalizedBarcode || v.sku === normalizedBarcode);
+
+    if (variantMatch && variantMatch.product) {
+        const parentProduct: Product = {
+            id: variantMatch.product.id,
+            name: variantMatch.product.name,
+            category: variantMatch.product.category,
+            hasVariants: true,
+            sku: variantMatch.product.id,
+            isActive: true,
+            branchId: user?.branchId || '',
+            createdAt: '',
+            updatedAt: '',
+        };
+        handleAddToCart(parentProduct, variantMatch);
+        toast.success(`Added ${variantMatch.sku} to cart`);
+        return;
+    }
+
+    // 3. Fallback
+    setSearchQuery(normalizedBarcode);
+    toast.error(`Product not found with barcode: ${normalizedBarcode}`);
+  };
   const { activeSession, isLoading: isSessionLoading } = useSession();
   const [isSessionModalOpen, setIsSessionModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -249,6 +313,11 @@ export const PosPage: React.FC = () => {
     setIsCashbackModalOpen(true);
   };
 
+
+
+
+  /* ... handleBarcodeScan ... */
+
   const handleExpenseSubmit = async (data: { title: string; category: string; amount: number; description?: string }) => {
     if (!user?.branchId) {
       toast.error('Branch information not found');
@@ -268,7 +337,6 @@ export const PosPage: React.FC = () => {
       console.error(error);
     }
   };
-
 
   // Check for active session (Required for Cashiers, Optional for Admins)
   if (isSessionLoading) {

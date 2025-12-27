@@ -51,25 +51,36 @@ export const generateReceiptHTML = (data: ReceiptData): string => {
         body {
           font-family: 'Courier New', monospace;
           font-size: 12px;
-          line-height: 1.4;
-          max-width: 300px;
-          margin: 0 auto;
-          padding: 10px;
+          line-height: 1.2;
+          width: 80mm;
+          max-width: 80mm;
+          margin: 0;
+          padding: 5px;
+          color: black;
+          background: white;
         }
         .center { text-align: center; }
         .bold { font-weight: bold; }
-        .large { font-size: 14px; }
+        .large { font-size: 16px; }
         .divider {
           border-top: 1px dashed #000;
-          margin: 10px 0;
+          margin: 8px 0;
         }
         table { width: 100%; border-collapse: collapse; }
-        td { padding: 2px 0; }
+        td { padding: 2px 0; vertical-align: top; }
         .right { text-align: right; }
-        .item-row td:first-child { width: 60%; }
-        .item-row td:last-child { text-align: right; }
+        /* Optimize column widths for 80mm */
+        .item-row td:first-child { width: 45%; padding-right: 5px; } /* Item Name */
+        .item-row td.qty { width: 15%; text-align: center; }
+        .item-row td.price-calc { width: 20%; text-align: right; font-size: 10px; }
+        .item-row td:last-child { width: 20%; text-align: right; }
+        
+        @page {
+            size: 80mm;
+            margin: 0;
+        }
         @media print {
-          body { margin: 0; padding: 5mm; }
+          body { width: 80mm; margin: 0; padding: 0; }
           .no-print { display: none; }
         }
       </style>
@@ -114,14 +125,16 @@ export const generateReceiptHTML = (data: ReceiptData): string => {
           .map(
             (item) => `
           <tr class="item-row">
-            <td colspan="2" style="text-align: left;">${item.name}</td>
+            <td colspan="4" style="text-align: left; font-weight: bold; padding-bottom: 2px;">${item.name}</td>
           </tr>
-          <tr class="item-row">
-            <td>${item.quantity} x ${formatCurrency(
+          <tr class="item-row" style="border-bottom: 0px solid #eee; margin-bottom: 5px;">
+             <td></td> 
+             <td class="qty">${item.quantity} x</td>
+             <td class="price-calc">@ ${formatCurrency(
               item.unitPrice,
               data.currency
             )}</td>
-            <td class="right">${formatCurrency(item.total, data.currency)}</td>
+            <td class="right bold">${formatCurrency(item.total, data.currency)}</td>
           </tr>
         `
           )

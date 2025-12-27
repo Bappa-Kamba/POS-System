@@ -22,13 +22,32 @@ export const BarcodePrint: React.FC<BarcodePrintProps> = ({
 }) => {
   const printRef = useRef<HTMLDivElement>(null);
 
+  /* ... inside BarcodePrint ... */
+  const [printMode, setPrintMode] = React.useState<'label' | 'receipt'>('label');
+
   const handlePrint = useReactToPrint({
     contentRef: printRef,
     documentTitle: `Barcode - ${productName || sku || barcode}`,
-    pageStyle: `
+    pageStyle: printMode === 'receipt' 
+    ? `
+      @page {
+        size: 80mm auto;
+        margin: 0;
+      }
+      @media print {
+        body {
+          margin: 0;
+          padding: 5px;
+        }
+        .no-print {
+          display: none !important;
+        }
+      }
+    `
+    : `
       @page {
         size: 3in 2in;
-        margin: 0.25in;
+        margin: 0.1in;
       }
       @media print {
         body {
@@ -49,61 +68,76 @@ export const BarcodePrint: React.FC<BarcodePrintProps> = ({
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Print Barcode" size="md">
       <div className="space-y-6">
+        {/* Mode Selector */}
+        <div className="flex gap-2 justify-center bg-gray-100 p-1 rounded-lg no-print">
+            <button 
+                onClick={() => setPrintMode('label')}
+                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${printMode === 'label' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}
+            >
+                Label (3" x 2")
+            </button>
+            <button 
+                onClick={() => setPrintMode('receipt')}
+                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${printMode === 'receipt' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}
+            >
+                Receipt (80mm)
+            </button>
+        </div>
+
         {/* Printable Content - Used for printing */}
         <div
           ref={printRef}
-          className="flex flex-col items-center justify-center gap-4 p-6"
+          className="flex flex-col items-center justify-center p-4 border border-dashed border-gray-200 rounded-md bg-white mx-auto"
           style={{
-            minHeight: '2in',
-            width: '3in',
+            minHeight: printMode === 'label' ? '2in' : 'auto',
+            width: printMode === 'label' ? '3in' : '80mm',
             fontFamily: 'Arial, sans-serif',
-            margin: '0 auto',
+            // Interactive preview styles (not print)
+            transform: 'scale(1)',
+            transformOrigin: 'top center',
           }}
         >
           {productName && (
-            <div className="text-center">
+            <div className="text-center w-full">
               <div
-                className="font-semibold text-primary-900 dark:text-primary-100"
-                style={{ fontSize: '14px', marginBottom: '5px' }}
+                className="font-bold text-black"
+                style={{ fontSize: printMode === 'receipt' ? '12px' : '10px', marginBottom: '2px', lineHeight: '1.2' }}
               >
-                {productName}
+                {productName.substring(0, 30)}
               </div>
               {sku && (
-                <div className="text-primary-900 dark:text-primary-100">
+                <div className="text-black mb-1" style={{ fontSize: printMode === 'receipt' ? '12px' : '10px' }}>
                   SKU: {sku}
                 </div>
               )}
             </div>
           )}
-          <div className="bg-white p-4 rounded">
+          <div className="bg-white p-1">
             <Barcode
               value={barcode}
               format="EAN13"
-              width={2}
-              height={80}
+              width={printMode === 'receipt' ? 2.5 : 2}
+              height={printMode === 'receipt' ? 60 : 50}
               displayValue={true}
-              fontSize={14}
-              margin={10}
+              fontSize={printMode === 'receipt' ? 16 : 12} // Larger font for receipts
+              margin={5}
             />
-          </div>
-          <div
-            className="font-mono text-primary-900 dark:text-primary-100"
-            style={{ fontSize: '12px', marginTop: '5px' }}
-          >
-            {barcode}
           </div>
         </div>
 
         {/* Info */}
-        <div className="bg-primary-50 dark:bg-primary-900/20 rounded-lg p-4">
+        <div className="bg-primary-50 dark:bg-primary-900/20 rounded-lg p-4 no-print">
           <p className="text-sm text-primary-900 dark:text-primary-100">
             <strong>Print Instructions:</strong>
           </p>
           <ul className="text-xs text-primary-800 dark:text-primary-200 mt-2 space-y-1 list-disc list-inside">
             <li>Click "Print Barcode" to open print dialog</li>
-            <li>Select your label printer or regular printer</li>
-            <li>Recommended label size: 3" x 2" (76mm x 51mm)</li>
-            <li>Ensure barcode is clear and scannable</li>
+            {printMode === 'label' ? (
+                 <li>Printer settings: <strong>3" x 2" Label</strong></li>
+            ) : (
+                 <li>Printer settings: <strong>80mm Receipt (No Margins)</strong></li>
+            )}
+            <li>Scale: 100% (Do not fit to page)</li>
           </ul>
         </div>
 
@@ -115,7 +149,7 @@ export const BarcodePrint: React.FC<BarcodePrintProps> = ({
           </Button>
           <Button onClick={handlePrint}>
             <Printer className="w-4 h-4 mr-2" />
-            Print Barcode
+            Print {printMode === 'label' ? 'Label' : 'Receipt'}
           </Button>
         </div>
       </div>
