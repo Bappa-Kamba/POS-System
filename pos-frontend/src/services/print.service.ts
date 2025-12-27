@@ -47,17 +47,27 @@ export const generateReceiptHTML = (data: ReceiptData): string => {
     <head>
       <meta charset="UTF-8">
       <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+          image-rendering: crisp-edges;
+          image-rendering: pixelated;
+        }
         body {
           font-family: 'Courier New', monospace;
           font-size: 12px;
           line-height: 1.2;
-          width: 80mm;
+          width: 72mm;
           max-width: 80mm;
           margin: 0;
-          padding: 5px;
+          padding: 0;
           color: black;
           background: white;
+          font-smooth: never;
+          -webkit-font-smoothing: none;
         }
         .center { text-align: center; }
         .bold { font-weight: bold; }
@@ -70,10 +80,9 @@ export const generateReceiptHTML = (data: ReceiptData): string => {
         td { padding: 2px 0; vertical-align: top; }
         .right { text-align: right; }
         /* Optimize column widths for 80mm */
-        .item-row td:first-child { width: 45%; padding-right: 5px; } /* Item Name */
-        .item-row td.qty { width: 15%; text-align: center; }
-        .item-row td.price-calc { width: 20%; text-align: right; font-size: 10px; }
-        .item-row td:last-child { width: 20%; text-align: right; }
+        .item-row td:name { width: 32mm; padding-right: 5px; } /* Item Name */
+        .item-row td.qty { width: 10mm; text-align: left; }
+        .item-row td:total { width: 10mm; text-align: right; }
         
         @page {
             size: 80mm;
@@ -86,6 +95,7 @@ export const generateReceiptHTML = (data: ReceiptData): string => {
       </style>
     </head>
     <body>
+      <div style="height: 2mm;"></div>
       <div class="center bold large">${data.business.name}</div>
       <div class="center">${data.business.address}</div>
       <div class="center">${data.business.phone}</div>
@@ -125,16 +135,15 @@ export const generateReceiptHTML = (data: ReceiptData): string => {
           .map(
             (item) => `
           <tr class="item-row">
-            <td colspan="4" style="text-align: left; font-weight: bold; padding-bottom: 2px;">${item.name}</td>
+            <td class="name" colspan="4" style="text-align: left; font-weight: bold;">${item.name}</td>
           </tr>
           <tr class="item-row" style="border-bottom: 0px solid #eee; margin-bottom: 5px;">
-             <td></td> 
-             <td class="qty">${item.quantity} x</td>
-             <td class="price-calc">@ ${formatCurrency(
+             <td class="name"></td> 
+             <td class="qty">${item.quantity} x ${formatCurrency(
               item.unitPrice,
               data.currency
             )}</td>
-            <td class="right bold">${formatCurrency(item.total, data.currency)}</td>
+            <td class="total bold">${formatCurrency(item.total, data.currency)}</td>
           </tr>
         `
           )
