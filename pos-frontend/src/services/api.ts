@@ -2,15 +2,29 @@ import axios from 'axios';
 import type { AxiosError, AxiosRequestConfig } from 'axios';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../store/authStore';
+import { resolveBackend } from './backendResolver';
 
 interface RetriableAxiosRequestConfig extends AxiosRequestConfig {
   _retry?: boolean;
 }
 
-const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1',
+
+export let api = axios.create({
+  baseURL: '/api/v1',
   withCredentials: false,
 });
+
+export async function initApi() {
+  try {
+    const base = await resolveBackend();
+    api.defaults.baseURL = base;
+    localStorage.setItem('pos_backend', base);
+    toast.success(`POS backend resolved: ${base}`);
+  } catch (e) {
+    console.error(e);
+    toast.error('Unable to reach POS server on this network.');
+  }
+}
 
 api.interceptors.request.use((config) => {
   const state = useAuthStore.getState();
@@ -82,6 +96,4 @@ api.interceptors.response.use(
     return Promise.reject(error);
   },
 );
-
-export { api };
 

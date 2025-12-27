@@ -11,25 +11,36 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AppController = void 0;
 const common_1 = require("@nestjs/common");
-const app_service_1 = require("./app.service");
+const utils_1 = require("./common/utils");
 let AppController = class AppController {
-    appService;
-    constructor(appService) {
-        this.appService = appService;
+    constructor() { }
+    getEndpoint() {
+        return {
+            mdns: 'pos-server.local',
+            ip: (0, utils_1.getLanIp)(),
+            port: 3000,
+            apiBase: '/api/v1',
+        };
     }
-    getHello() {
-        return this.appService.getHello();
+    health() {
+        return { status: 'ok' };
     }
 };
 exports.AppController = AppController;
 __decorate([
-    (0, common_1.Get)(),
+    (0, common_1.Get)('endpoint'),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
-    __metadata("design:returntype", String)
-], AppController.prototype, "getHello", null);
+    __metadata("design:returntype", void 0)
+], AppController.prototype, "getEndpoint", null);
+__decorate([
+    (0, common_1.Get)('health'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], AppController.prototype, "health", null);
 exports.AppController = AppController = __decorate([
-    (0, common_1.Controller)('api/v1'),
-    __metadata("design:paramtypes", [app_service_1.AppService])
+    (0, common_1.Controller)(''),
+    __metadata("design:paramtypes", [])
 ], AppController);
 //# sourceMappingURL=app.controller.js.map

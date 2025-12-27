@@ -9,6 +9,7 @@ import { ErrorBoundary } from './router/ErrorBoundary';
 import { useThemeStore } from './store/themeStore';
 import { SessionProvider } from './contexts/SessionContext';
 import { RefreshProvider } from './contexts/RefreshContext';
+import { initApi } from './services/api';
 
 const queryClient = new QueryClient();
 
@@ -38,21 +39,26 @@ const ThemeInitializer = () => {
   return null;
 };
 
-ReactDOM.createRoot(document.getElementById('app') as HTMLElement).render(
-  <React.StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <RefreshProvider>
-          <SessionProvider>
-            <ErrorBoundary>
-              <ThemeInitializer />
-              <Toaster position="top-right" />
-              <App />
-            </ErrorBoundary>
-          </SessionProvider>
-        </RefreshProvider>
-      </BrowserRouter>
-    </QueryClientProvider>
-  </React.StrictMode>,
-);
+async function init() {
+  await initApi();
 
+  ReactDOM.createRoot(document.getElementById('app') as HTMLElement).render(
+    <React.StrictMode>
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          <RefreshProvider>
+            <SessionProvider>
+              <ErrorBoundary>
+                <ThemeInitializer />
+                <Toaster position="top-right" />
+                <App />
+              </ErrorBoundary>
+            </SessionProvider>
+          </RefreshProvider>
+        </BrowserRouter>
+      </QueryClientProvider>
+    </React.StrictMode>,
+  );
+}
+
+init()

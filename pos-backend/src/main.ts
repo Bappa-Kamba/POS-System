@@ -3,17 +3,14 @@ import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
 import { Logger } from '@nestjs/common';
+import { getLanIp } from './common/utils';
 import './mdns';
 
 async function bootstrap() {
-  const logger = new Logger('Main Application');
+  const logger = new Logger('POS-Server');
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
-
-  const apiPrefix = configService.get<string>('API_PREFIX', 'api/v1');
-  if (apiPrefix) {
-    app.setGlobalPrefix(apiPrefix, { exclude: [''] });
-  }
+  app.setGlobalPrefix('api/v1');
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -25,20 +22,20 @@ async function bootstrap() {
     }),
   );
 
-  const corsOrigin = configService.get<string>('CORS_ORIGIN');
   app.enableCors({
-    origin: [
-      'http://pos-server.local',
-      'http://pos-server.local:5173',
-      'http://localhost:5173'
-    ],
+    origin: true,
     credentials: true,
   });
 
   const port = configService.get<number>('PORT', 3000);
   await app.listen(port, '0.0.0.0');
 
-  logger.log(`Application is running on: ${await app.getUrl()}`);
+  const lanIp = getLanIp();
+
+  logger.log(`Server running on: ${await app.getUrl()}`);
+  if (lanIp) {
+    logger.warn(`LAN fallback: http://${lanIp}:${port}`);
+  }
 }
 
 bootstrap().catch((e) => console.log(`Error: ${JSON.stringify(e, null, 2)}`));

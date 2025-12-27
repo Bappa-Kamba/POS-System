@@ -1,12 +1,21 @@
 import { Controller, Get } from '@nestjs/common';
-import { AppService } from './app.service';
+import { getLanIp } from './common/utils';
 
-@Controller('api/v1')
+@Controller('')
 export class AppController {
-  constructor(private readonly appService: AppService) {}
+  constructor() {}
+  @Get('endpoint')
+  getEndpoint() {
+    return {
+      mdns: 'pos-server.local',
+      ip: getLanIp(),
+      port: 3000,
+      apiBase: '/api/v1',
+    };
+  }
 
-  @Get()
-  getHello(): string {
-    return this.appService.getHello();
+  @Get('health')
+  health() {
+    return { status: 'ok' };
   }
 }
