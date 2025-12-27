@@ -42,185 +42,426 @@ export interface ReceiptData {
  */
 export const generateReceiptHTML = (data: ReceiptData): string => {
   return `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset="UTF-8">
-      <style>
-        * {
-          margin: 0;
-          padding: 0;
-          box-sizing: border-box;
-          -webkit-print-color-adjust: exact;
-          print-color-adjust: exact;
-          image-rendering: crisp-edges;
-          image-rendering: pixelated;
-        }
-        body {
-          font-family: 'Courier New', monospace;
-          font-size: 12px;
-          line-height: 1.2;
-          width: 72mm;
-          max-width: 80mm;
-          margin: 0;
-          padding: 0;
-          color: black;
-          background: white;
-          font-smooth: never;
-          -webkit-font-smoothing: none;
-        }
-        .center { text-align: center; }
-        .bold { font-weight: bold; }
-        .large { font-size: 16px; }
-        .divider {
-          border-top: 1px dashed #000;
-          margin: 8px 0;
-        }
-        table { width: 100%; border-collapse: collapse; }
-        td { padding: 2px 0; vertical-align: top; }
-        .right { text-align: right; }
-        /* Optimize column widths for 80mm */
-        .item-row td:name { width: 32mm; padding-right: 5px; } /* Item Name */
-        .item-row td.qty { width: 10mm; text-align: left; }
-        .item-row td:total { width: 10mm; text-align: right; }
-        
-        @page {
-            size: 80mm;
-            margin: 0;
-        }
-        @media print {
-          body { width: 80mm; margin: 0; padding: 0; }
-          .no-print { display: none; }
-        }
-      </style>
-    </head>
-    <body>
-      <div style="height: 2mm;"></div>
-      <div class="center bold large">${data.business.name}</div>
-      <div class="center">${data.business.address}</div>
-      <div class="center">${data.business.phone}</div>
-      <div class="center">${data.branch}</div>
-      
-      <div class="divider"></div>
-      
-      <div class="center" style="margin: 8px 0;">
-        <span style="padding: 4px 12px; border-radius: 12px; font-weight: bold; font-size: 11px; ${
-          data.transactionType === 'CASHBACK'
-            ? 'background-color: #fed7aa; color: #9a3412;'
-            : 'background-color: #bbf7d0; color: #166534;'
-        }">
-          ${data.transactionType === 'CASHBACK' ? 'CASHBACK' : 'PURCHASE'}
-        </span>
-      </div>
-      
-      <table>
-        <tr>
-          <td>Receipt #:</td>
-          <td class="right bold">${data.receiptNumber}</td>
-        </tr>
-        <tr>
-          <td>Date:</td>
-          <td class="right">${formatDate(data.date, "datetime")}</td>
-        </tr>
-        <tr>
-          <td>Cashier:</td>
-          <td class="right">${data.cashier}</td>
-        </tr>
-      </table>
-      
-      <div class="divider"></div>
-      
-      <table>
-        ${data.items
-          .map(
-            (item) => `
-          <tr class="item-row">
-            <td class="name" colspan="4" style="text-align: left; font-weight: bold;">${item.name}</td>
-          </tr>
-          <tr class="item-row" style="border-bottom: 0px solid #eee; margin-bottom: 5px;">
-             <td class="name"></td> 
-             <td class="qty">${item.quantity} x ${formatCurrency(
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Receipt</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+      -webkit-font-smoothing: none;
+      image-rendering: crisp-edges;
+    }
+
+    @page {
+      size: 72mm auto;
+      margin: 0;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background: white;
+      color: black;
+      font-family: monospace;
+      font-size: 12px;
+      line-height: 1.15;
+    }
+
+    .receipt {
+      width: 72mm;
+      margin: 0 auto;
+    }
+
+    .center { text-align: center; }
+    .right { text-align: right; }
+    .bold { font-weight: bold; }
+    .large { font-size: 16px; }
+
+    .divider {
+      border-top: 1px dashed #000;
+      margin: 8px 0;
+    }
+
+    .meta {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      row-gap: 2px;
+      margin-top: 6px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 10px;
+      font-size: 11px;
+      font-weight: bold;
+      border-radius: 12px;
+      margin: 6px auto;
+    }
+
+    .items {
+      margin-top: 4px;
+    }
+
+    .item {
+      margin-bottom: 4px;
+    }
+
+    .item-name {
+      font-weight: bold;
+      margin-bottom: 1px;
+    }
+
+    .item-row {
+      display: grid;
+      grid-template-columns: 10mm 32mm 20mm;
+      font-size: 11px;
+    }
+
+    .totals {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      row-gap: 2px;
+      margin-top: 4px;
+    }
+
+    .payments {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      row-gap: 2px;
+      margin-top: 4px;
+    }
+
+    .footer {
+      margin-top: 6px;
+      text-align: center;
+      font-size: 10px;
+    }
+
+    .no-print {
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="receipt">
+
+    <!-- HEADER -->
+    <div class="center bold large">${data.business.name}</div>
+    <div class="center">${data.business.address}</div>
+    <div class="center">${data.business.phone}</div>
+    <div class="center">${data.branch}</div>
+
+    <div class="divider"></div>
+
+    <div class="center">
+      <span class="badge">
+        ${data.transactionType}
+      </span>
+    </div>
+
+    <!-- META -->
+    <div class="meta">
+      <div>Receipt #:</div>
+      <div class="right bold">${data.receiptNumber}</div>
+
+      <div>Date:</div>
+      <div class="right">${formatDate(data.date, "datetime")}</div>
+
+      <div>Cashier:</div>
+      <div class="right">${data.cashier}</div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- ITEMS -->
+    <div class="items">
+      ${data.items
+        .map(
+          (item) => `
+        <div class="item">
+          <div class="item-name">${item.name}</div>
+          <div class="item-row">
+            <div>${item.quantity}×</div>
+            <div class="right">@ ${formatCurrency(
               item.unitPrice,
               data.currency
-            )}</td>
-            <td class="total bold">${formatCurrency(item.total, data.currency)}</td>
-          </tr>
-        `
-          )
-          .join("")}
-      </table>
-      
-      <div class="divider"></div>
-      
-      <table>
-        <tr>
-          <td>Subtotal:</td>
-          <td class="right">${formatCurrency(data.subtotal, data.currency)}</td>
-        </tr>
-        ${
-          data.tax > 0
-            ? `
-        <tr>
-          <td>Tax:</td>
-          <td class="right">${formatCurrency(data.tax, data.currency)}</td>
-        </tr>
-        `
-            : ""
-        }
-        ${
-          data.discount > 0
-            ? `
-        <tr>
-          <td>Discount:</td>
-          <td class="right">-${formatCurrency(
-            data.discount,
-            data.currency
-          )}</td>
-        </tr>
-        `
-            : ""
-        }
-        <tr class="bold large">
-          <td>TOTAL:</td>
-          <td class="right">${formatCurrency(data.total, data.currency)}</td>
-        </tr>
-      </table>
-      
-      <div class="divider"></div>
-      
-      <table>
-        ${data.payments
-          .map(
-            (p) => `
-          <tr>
-            <td>${p.method}:</td>
-            <td class="right">${formatCurrency(p.amount, data.currency)}</td>
-          </tr>
-        `
-          )
-          .join("")}
-        ${
-          data.change > 0
-            ? `
-          <tr>
-            <td>Change:</td>
-            <td class="right">${formatCurrency(data.change, data.currency)}</td>
-          </tr>
-        `
-            : ""
-        }
-      </table>
-      
-      <div class="divider"></div>
-      
-      <div class="center">${data.footer}</div>
-      
-      <br>
-      <button class="no-print" onclick="window.print()">Print</button>
-    </body>
-    </html>
-  `;
+            )}</div>
+            <div class="right bold">${formatCurrency(
+              item.total,
+              data.currency
+            )}</div>
+          </div>
+        </div>
+      `
+        )
+        .join("")}
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- TOTALS -->
+    <div class="totals">
+      <div>Subtotal:</div>
+      <div class="right">${formatCurrency(
+        data.subtotal,
+        data.currency
+      )}</div>
+
+      ${
+        data.tax > 0
+          ? `<div>Tax:</div>
+             <div class="right">${formatCurrency(
+               data.tax,
+               data.currency
+             )}</div>`
+          : ""
+      }
+
+      ${
+        data.discount > 0
+          ? `<div>Discount:</div>
+             <div class="right">-${formatCurrency(
+               data.discount,
+               data.currency
+             )}</div>`
+          : ""
+      }
+
+      <div class="bold large">TOTAL:</div>
+      <div class="right bold large">${formatCurrency(
+        data.total,
+        data.currency
+      )}</div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- PAYMENTS -->
+    <div class="payments">
+      ${data.payments
+        .map(
+          (p) => `
+        <div>${p.method}:</div>
+        <div class="right">${formatCurrency(
+          p.amount,
+          data.currency
+        )}</div>
+      `
+        )
+        .join("")}
+
+      ${
+        data.change > 0
+          ? `<div class="bold">Change:</div>
+             <div class="right bold">${formatCurrency(
+               data.change,
+               data.currency
+             )}</div>`
+          : ""
+      }
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="footer">${data.footer}</div>
+
+  </div>
+
+  <br>
+  <button class="no-print" onclick="window.print()">Print</button>
+</body>
+</html>
+`;
 };
+
+
+
+// export const generateReceiptHTML = (data: ReceiptData): string => {
+//   return `
+//     <!DOCTYPE html>
+//     <html>
+//     <head>
+//       <meta charset="UTF-8">
+//       <style>
+//         * {
+//           margin: 0;
+//           padding: 0;
+//           box-sizing: border-box;
+//           -webkit-print-color-adjust: exact;
+//           print-color-adjust: exact;
+//           image-rendering: crisp-edges;
+//           image-rendering: pixelated;
+//         }
+//         body {
+//           font-family: 'Courier New', monospace;
+//           font-size: 12px;
+//           line-height: 1.2;
+//           width: 72mm;
+//           max-width: 80mm;
+//           margin: 0;
+//           padding: 0;
+//           color: black;
+//           background: white;
+//           font-smooth: never;
+//           -webkit-font-smoothing: none;
+//         }
+//         .center { text-align: center; }
+//         .bold { font-weight: bold; }
+//         .large { font-size: 16px; }
+//         .divider {
+//           border-top: 1px dashed #000;
+//           margin: 8px 0;
+//         }
+//         table { width: 100%; border-collapse: collapse; }
+//         td { padding: 2px 0; vertical-align: top; }
+//         .right { text-align: right; }
+//         /* Optimize column widths for 80mm */
+//         .item-row td:name { width: 10mm; padding-right: 5px; } /* Item Name */
+//         .item-row td.qty { width: 32mm; text-align: left; }
+//         .item-row td:total { width: 20mm; text-align: right; }
+        
+//         @page {
+//             size: 80mm;
+//             margin: 0;
+//         }
+//         @media print {
+//           body { width: 80mm; margin: 0; padding: 0; }
+//           .no-print { display: none; }
+//         }
+//       </style>
+//     </head>
+//     <body>
+//       <div style="height: 2mm;"></div>
+//       <div class="center bold large">${data.business.name}</div>
+//       <div class="center">${data.business.address}</div>
+//       <div class="center">${data.business.phone}</div>
+//       <div class="center">${data.branch}</div>
+      
+//       <div class="divider"></div>
+      
+//       <div class="center" style="margin: 8px 0;">
+//         <span style="padding: 4px 12px; border-radius: 12px; font-weight: bold; font-size: 11px; ${
+//           data.transactionType === 'CASHBACK'
+//             ? 'background-color: #fed7aa; color: #9a3412;'
+//             : 'background-color: #bbf7d0; color: #166534;'
+//         }">
+//           ${data.transactionType === 'CASHBACK' ? 'CASHBACK' : 'PURCHASE'}
+//         </span>
+//       </div>
+      
+//       <table>
+//         <tr>
+//           <td>Receipt #:</td>
+//           <td class="right bold">${data.receiptNumber}</td>
+//         </tr>
+//         <tr>
+//           <td>Date:</td>
+//           <td class="right">${formatDate(data.date, "datetime")}</td>
+//         </tr>
+//         <tr>
+//           <td>Cashier:</td>
+//           <td class="right">${data.cashier}</td>
+//         </tr>
+//       </table>
+      
+//       <div class="divider"></div>
+      
+//       <table>
+//         ${data.items
+//           .map(
+//             (item) => `
+//           <tr class="item-row">
+//             <td class="name" colspan="4" style="text-align: left; font-weight: bold;">${item.name}</td>
+//           </tr>
+//           <tr class="item-row" style="border-bottom: 0px solid #eee; margin-bottom: 5px;">
+//              <td class="name"></td> 
+//              <td class="qty">${item.quantity} x ${formatCurrency(
+//               item.unitPrice,
+//               data.currency
+//             )}</td>
+//             <td class="total bold" style="padding-right: 20px;">${formatCurrency(item.total, data.currency)}</td>
+//           </tr>
+//         `
+//           )
+//           .join("")}
+//       </table>
+      
+//       <div class="divider"></div>
+      
+//       <table>
+//         <tr>
+//           <td>Subtotal:</td>
+//           <td class="right">${formatCurrency(data.subtotal, data.currency)}</td>
+//         </tr>
+//         ${
+//           data.tax > 0
+//             ? `
+//         <tr>
+//           <td>Tax:</td>
+//           <td class="right">${formatCurrency(data.tax, data.currency)}</td>
+//         </tr>
+//         `
+//             : ""
+//         }
+//         ${
+//           data.discount > 0
+//             ? `
+//         <tr>
+//           <td>Discount:</td>
+//           <td class="right">-${formatCurrency(
+//             data.discount,
+//             data.currency
+//           )}</td>
+//         </tr>
+//         `
+//             : ""
+//         }
+//         <tr class="bold large">
+//           <td>TOTAL:</td>
+//           <td class="right">${formatCurrency(data.total, data.currency)}</td>
+//         </tr>
+//       </table>
+      
+//       <div class="divider"></div>
+      
+//       <table>
+//         ${data.payments
+//           .map(
+//             (p) => `
+//           <tr>
+//             <td>${p.method}:</td>
+//             <td class="right">${formatCurrency(p.amount, data.currency)}</td>
+//           </tr>
+//         `
+//           )
+//           .join("")}
+//         ${
+//           data.change > 0
+//             ? `
+//           <tr>
+//             <td>Change:</td>
+//             <td class="right">${formatCurrency(data.change, data.currency)}</td>
+//           </tr>
+//         `
+//             : ""
+//         }
+//       </table>
+      
+//       <div class="divider"></div>
+      
+//       <div class="center">${data.footer}</div>
+      
+//       <br>
+//       <button class="no-print" onclick="window.print()">Print</button>
+//     </body>
+//     </html>
+//   `;
+// };
 
 /**
  * Print receipt using browser print dialog
