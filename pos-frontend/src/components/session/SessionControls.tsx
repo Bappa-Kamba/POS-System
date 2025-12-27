@@ -15,13 +15,18 @@ interface SessionControlsProps {
 export const SessionControls: React.FC<SessionControlsProps> = ({ onSuccess }) => {
   const { activeSession, refreshSession, isLoading } = useSession();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isSubmittingRef = React.useRef(false);
   const [openingBalance, setOpeningBalance] = useState('');
   const [closingBalance, setClosingBalance] = useState('');
   const [sessionName, setSessionName] = useState<'Morning' | 'Evening'>('Morning');
 
   const handleStartSession = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmittingRef.current) return;
+
     setIsSubmitting(true);
+    isSubmittingRef.current = true;
+
     try {
       await api.post('/sessions/start', {
         name: sessionName,
@@ -32,20 +37,29 @@ export const SessionControls: React.FC<SessionControlsProps> = ({ onSuccess }) =
       if (onSuccess) onSuccess();
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to start session');
-    } finally {
       setIsSubmitting(false);
+      isSubmittingRef.current = false;
+    } 
+    // Success path might redirect/refresh, but safest to reset if component stays mounted
+    // We don't blindly reset in finally because success might unmount/change state
+    if (!onSuccess) { // If no callback, we might stay here
+       setIsSubmitting(false);
+       isSubmittingRef.current = false;
     }
   };
 
   const handleEndSession = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeSession) return;
+    if (isSubmittingRef.current) return;
     
     if (!window.confirm('Are you sure you want to end the current session?')) {
       return;
     }
 
     setIsSubmitting(true);
+    isSubmittingRef.current = true;
+
     try {
       await api.post(`/sessions/${activeSession.id}/end`, {
         closingBalance: parseFloat(closingBalance) || 0,
@@ -57,6 +71,7 @@ export const SessionControls: React.FC<SessionControlsProps> = ({ onSuccess }) =
       toast.error(error.response?.data?.message || 'Failed to end session');
     } finally {
       setIsSubmitting(false);
+      isSubmittingRef.current = false;
     }
   };
 

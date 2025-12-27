@@ -150,7 +150,34 @@ export const ProductForm: React.FC<ProductFormProps> = ({
     }
   }, [hasVariants, setValue]);
 
+  /* ... inside ProductForm ... */
+  // Add state and ref for submission tracking
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const isSubmittingRef = React.useRef(false);
+
+  // ... (previous state declarations)
+
+  const handleFormSubmit = async (data: ProductFormValues) => {
+    // Prevent race condition
+    if (isSubmittingRef.current) return;
+
+    setIsSubmitting(true);
+    isSubmittingRef.current = true;
+
+    try {
+      await onSubmit(data);
+    } catch (error) {
+      console.error('Submission failed', error);
+    } finally {
+      setIsSubmitting(false);
+      isSubmittingRef.current = false;
+    }
+  };
+
   const handleGenerateBarcode = async () => {
+    // Also protect barcode generation
+    if (generateBarcode.isPending) return;
+    
     try {
       const result = await generateBarcode.mutateAsync();
       if (result.success && result.data) {
@@ -162,7 +189,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
       {/* Basic Information */}
       <div>
         <h3 className="text-lg font-medium mb-4 text-neutral-700 dark:text-neutral-300">
@@ -373,7 +400,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
         <Button type="button" variant="secondary" onClick={onCancel}>
           Cancel
         </Button>
-        <Button type="submit" isLoading={isLoading} respectLicense>
+        <Button type="submit" isLoading={isLoading || isSubmitting} disabled={isLoading || isSubmitting} respectLicense>
           {product ? 'Update Product' : 'Create Product'}
         </Button>
       </div>

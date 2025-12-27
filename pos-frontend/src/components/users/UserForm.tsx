@@ -294,8 +294,14 @@ export const UserForm: React.FC<UserFormProps> = ({
     }
   };
 
+  const isSubmittingRef = React.useRef(false);
+
   // Handle form submission - remove empty email
-  const handleFormSubmit = (data: any) => {
+  const handleFormSubmit = async (data: any) => {
+    if (isSubmittingRef.current) return;
+    
+    isSubmittingRef.current = true; // Lock immediately
+
     const submitData = { ...data };
     // Remove email if it's empty or undefined
     if (!submitData.email || submitData.email.trim() === '') {
@@ -305,7 +311,16 @@ export const UserForm: React.FC<UserFormProps> = ({
     if (isEditMode && (!submitData.password || submitData.password.trim() === '')) {
       delete submitData.password;
     }
-    onSubmit(submitData);
+    
+    try {
+      await onSubmit(submitData);
+    } catch (error) {
+       console.error(error);
+    } finally {
+       // Only unlock if we are sure (though parent usually handles isLoading)
+       // We'll rely on parent for state, but local ref prevents double-tap
+       setTimeout(() => { isSubmittingRef.current = false; }, 500); 
+    }
   };
 
 

@@ -18,12 +18,15 @@ export const SessionEndModal: React.FC<SessionEndModalProps> = ({ isOpen, onClos
   const { activeSession, refreshSession } = useSession();
   const [closingBalance, setClosingBalance] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isSubmittingRef = React.useRef(false);
 
   if (!isOpen || !activeSession) return null;
 
   const handleEndSession = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (isSubmittingRef.current) return;
+
     if (!closingBalance) {
       toast.error('Please enter the closing balance');
       return;
@@ -34,6 +37,8 @@ export const SessionEndModal: React.FC<SessionEndModalProps> = ({ isOpen, onClos
     }
 
     setIsSubmitting(true);
+    isSubmittingRef.current = true;
+
     try {
       await api.post(`/sessions/${activeSession.id}/end`, {
         closingBalance: parseFloat(closingBalance) || 0,
@@ -42,12 +47,13 @@ export const SessionEndModal: React.FC<SessionEndModalProps> = ({ isOpen, onClos
       await refreshSession();
       setClosingBalance('');
       onClose();
-      onSessionEnded?.(); // Call the callback if provided
+      onSessionEnded?.(); 
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to end session');
-    } finally {
       setIsSubmitting(false);
-    }
+      isSubmittingRef.current = false;
+    } 
+    // Success case handles cleanup via onClose unmounting
   };
 
   return (

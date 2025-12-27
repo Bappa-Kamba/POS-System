@@ -53,8 +53,13 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
     }
   }, [isOpen, item]);
 
+  /* ... inside StockAdjustmentModal ... */
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const isSubmittingRef = React.useRef(false);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmittingRef.current) return;
 
     if (!item) return;
 
@@ -63,6 +68,9 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
       alert('Please enter a valid quantity change');
       return;
     }
+
+    setIsSubmitting(true);
+    isSubmittingRef.current = true;
 
     try {
       await adjustStockMutation.mutateAsync({
@@ -81,7 +89,10 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
         error?.response?.data?.error?.message ||
           'Failed to adjust stock. Please try again.'
       );
-    }
+      setIsSubmitting(false); // Only reset on error
+      isSubmittingRef.current = false;
+    } 
+    // Success path closes modal
   };
 
   if (!item) return null;
@@ -206,8 +217,8 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
           <Button
             type="submit"
             className="flex-1"
-            isLoading={adjustStockMutation.isPending}
-            disabled={!quantityChange || parseFloat(quantityChange) === 0}
+            isLoading={adjustStockMutation.isPending || isSubmitting}
+            disabled={!quantityChange || parseFloat(quantityChange) === 0 || isSubmitting}
             respectLicense
           >
             Adjust Stock

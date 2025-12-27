@@ -42,7 +42,13 @@ export const CashbackForm: React.FC<CashbackFormProps> = ({
                   serviceCharge >= 0 && 
                   !isNotesRequired;
 
-  const handleSubmit = () => {
+  /* ... inside CashbackForm ... */
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const isSubmittingRef = React.useRef(false);
+
+  const handleSubmit = async () => {
+    if (isSubmittingRef.current) return;
+
     if (!isValid) {
       if (isNotesRequired) {
         alert('Please provide a reason for overriding the standard service rate.');
@@ -53,7 +59,21 @@ export const CashbackForm: React.FC<CashbackFormProps> = ({
       }
       return;
     }
-    onComplete(cashbackAmount, serviceCharge, totalReceived, isRateOverridden ? notes : undefined);
+
+    setIsSubmitting(true);
+    isSubmittingRef.current = true;
+    
+    try {
+      // Assuming onComplete might be async or trigger async process
+      await onComplete(cashbackAmount, serviceCharge, totalReceived, isRateOverridden ? notes : undefined);
+    } catch (error) {
+       console.error(error);
+    } finally {
+        if (isSubmittingRef.current) {
+            setIsSubmitting(false);
+            isSubmittingRef.current = false;
+        }
+    }
   };
 
   return (
@@ -244,11 +264,17 @@ export const CashbackForm: React.FC<CashbackFormProps> = ({
           onClick={handleSubmit}
           className="w-full"
           size="lg"
-          disabled={!isValid}
+          disabled={!isValid || isSubmitting}
           respectLicense
         >
-          <DollarSign className="w-5 h-5 mr-2" />
-          Complete Cashback Transaction
+          {isSubmitting ? (
+              <>Processing...</>
+          ) : (
+            <>
+              <DollarSign className="w-5 h-5 mr-2" />
+              Complete Cashback Transaction
+            </>
+          )}
         </Button>
       </div>
     </div>

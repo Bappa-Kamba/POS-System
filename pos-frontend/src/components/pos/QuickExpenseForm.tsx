@@ -36,6 +36,28 @@ export const QuickExpenseForm: React.FC<QuickExpenseFormProps> = ({
     resolver: zodResolver(quickExpenseSchema),
   });
 
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const isSubmittingRef = React.useRef(false);
+
+  const handleFormSubmit = async (data: QuickExpenseFormData) => {
+    if (isSubmittingRef.current) return;
+    
+    setIsSubmitting(true);
+    isSubmittingRef.current = true;
+    
+    try {
+      await onSubmit(data); // Assuming onSubmit might be async
+    } catch (error) {
+       console.error(error);
+    } finally {
+        if (isSubmittingRef.current) {
+            // Only reset if we are still mounted
+             setIsSubmitting(false);
+             isSubmittingRef.current = false;
+        }
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-2xl max-w-md w-full p-6">
@@ -51,7 +73,7 @@ export const QuickExpenseForm: React.FC<QuickExpenseFormProps> = ({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
           <Input
             label="Title *"
             {...register('title')}
@@ -114,8 +136,8 @@ export const QuickExpenseForm: React.FC<QuickExpenseFormProps> = ({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isLoading} className="flex-1">
-              {isLoading ? 'Recording...' : 'Record Expense'}
+            <Button type="submit" disabled={isLoading || isSubmitting} className="flex-1">
+              {isLoading || isSubmitting ? 'Recording...' : 'Record Expense'}
             </Button>
           </div>
         </form>
