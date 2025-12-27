@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CreditCard, Banknote, Smartphone } from 'lucide-react';
+import { CreditCard, Banknote, Smartphone, Loader2 } from 'lucide-react';
 import { Modal } from '../common/Modal';
 import { Button } from '../common/Button';
 import { Input } from '../common/Input';
@@ -10,7 +10,7 @@ interface PaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
   total: number;
-  onComplete: (payment: Payment) => void;
+  onComplete: (payment: Payment) => Promise<void> | void;
 }
 
 type PaymentMethod = 'CASH' | 'CARD' | 'TRANSFER';
@@ -24,6 +24,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   const [activeMethod, setActiveMethod] = useState<PaymentMethod>('CASH');
   const [amount, setAmount] = useState('');
   const [reference, setReference] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const isSubmittingRef = React.useRef(false);
 
   // Set amount to total when modal opens
   useEffect(() => {
@@ -31,6 +33,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
       setAmount(total.toString());
       setReference('');
       setActiveMethod('CASH');
+      setIsSubmitting(false);
+      isSubmittingRef.current = false;
     }
   }, [isOpen, total]);
 
@@ -48,7 +52,10 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     { value: 'TRANSFER', label: 'Transfer', icon: Smartphone },
   ];
 
-  const handleCompleteSale = () => {
+  const handleCompleteSale = async () => {
+    // Prevent double submission if already in progress (even if UI hasn't updated yet)
+    if (isSubmittingRef.current) return;
+
     if (!isAmountValid) {
       alert(`Insufficient payment. ${formatCurrency(total - paymentAmount)} remaining.`);
       return;
@@ -65,15 +72,33 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
       reference: reference || undefined,
     };
 
-    onComplete(paymentData);
+    setIsSubmitting(true);
+    isSubmittingRef.current = true;
+
+    try {
+      await onComplete(paymentData);
+    } catch (error) {
+      console.error('Payment failed', error);
+      // Keep submitting false if error so user can retry
+      setIsSubmitting(false);
+      isSubmittingRef.current = false;
+    }
+    // Note: If success, the parent will likely close this modal
+    if (isOpen) {
+       setIsSubmitting(false);
+       isSubmittingRef.current = false;
+    }
   };
 
   const quickAmounts = [500, 1000, 2000, 5000, 10000];
 
   const handleClose = () => {
+    if (isSubmittingRef.current) return; // Prevent closing while submitting
     setAmount('');
     setReference('');
     setActiveMethod('CASH');
+    setIsSubmitting(false);
+    isSubmittingRef.current = false;
     onClose();
   };
 
@@ -206,11 +231,18 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
           </Button>
           <Button
             onClick={handleCompleteSale}
-            disabled={!isAmountValid || (activeMethod !== 'CASH' && !reference.trim())}
+            disabled={!isAmountValid || (activeMethod !== 'CASH' && !reference.trim()) || isSubmitting}
             className="flex-1"
             respectLicense
           >
-            Complete Sale
+            {isSubmitting ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Processing...
+              </>
+            ) : (
+              'Complete Sale'
+            )}
           </Button>
         </div>
       </div>
