@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 import App from './App';
 import './index.css';
 import { ErrorBoundary } from './router/ErrorBoundary';
@@ -45,6 +46,7 @@ ReactDOM.createRoot(document.getElementById('app') as HTMLElement).render(
           <SessionProvider>
             <ErrorBoundary>
               <ThemeInitializer />
+              <Toaster position="top-right" />
               <App />
             </ErrorBoundary>
           </SessionProvider>

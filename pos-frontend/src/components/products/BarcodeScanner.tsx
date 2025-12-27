@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Scan, X, Search } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { Button } from '../common/Button';
 import { Input } from '../common/Input';
 import { Modal } from '../common/Modal';
@@ -54,14 +55,14 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({
       if (error && typeof error === 'object' && 'response' in error) {
         const axiosError = error as { response?: { status?: number; data?: any } };
         if (axiosError.response?.status === 404) {
-          alert('Product or variant with this barcode not found');
+          toast.error('Product or variant with this barcode not found');
         } else {
           console.error('Barcode search failed:', error);
-          alert('Failed to search barcode');
+          toast.error('Failed to search barcode');
         }
       } else {
         console.error('Barcode search failed:', error);
-        alert('Failed to search barcode');
+        toast.error('Failed to search barcode');
       }
     } finally {
       setIsScanning(false);
