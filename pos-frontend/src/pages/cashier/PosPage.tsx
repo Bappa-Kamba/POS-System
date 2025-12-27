@@ -93,6 +93,7 @@ export const PosPage: React.FC = () => {
   const { activeSession, isLoading: isSessionLoading } = useSession();
   const [isSessionModalOpen, setIsSessionModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [resetKey, setResetKey] = useState(0);
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
@@ -201,6 +202,7 @@ export const PosPage: React.FC = () => {
         return;
       }
       addItem(productData);
+      setSearchQuery('');
     } else {
       const variant = product as Variant;
       if (variant.product) {
@@ -218,12 +220,15 @@ export const PosPage: React.FC = () => {
           updatedAt: '',
         };
         addItem(parentProduct, variant);
+        setSearchQuery('');
       }
     }
   };
 
   const handleAddToCart = (product: Product, variant?: Variant | null) => {
     addItem(product, variant || null);
+    setSearchQuery('');
+    setResetKey(prev => prev + 1);
   };
 
   const handleCheckout = () => {
@@ -400,6 +405,7 @@ export const PosPage: React.FC = () => {
         <div className="flex-1 flex flex-col overflow-hidden border-r border-neutral-200 dark:border-neutral-700">
           <div className="p-6 border-b border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800">
             <ProductSearch
+              key={resetKey}
               onSearch={handleSearch}
               onProductFound={handleProductFound}
               searchQuery={searchQuery}

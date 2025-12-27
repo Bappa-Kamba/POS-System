@@ -22,12 +22,7 @@ export const ProductSearch: React.FC<ProductSearchProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceTimerRef = useRef<number | null>(null);
 
-  // Auto-focus on mount
-  useEffect(() => {
-    if (inputRef.current) {
-      inputRef.current.focus();
-    }
-  }, []);
+
 
   // Keyboard shortcut: Ctrl+F
   useEffect(() => {

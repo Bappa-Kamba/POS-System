@@ -9,6 +9,8 @@ import type { Product } from '../../services/product.service';
 import { useGenerateBarcode } from '../../hooks/useProducts';
 import { BarcodePrint } from './BarcodePrint';
 import { useCategories } from '../../hooks/useCategories';
+import { useBarcodeScanner } from '../../hooks/useBarcodeScanner';
+
 import { useSubdivisions } from '../../hooks/useSubdivisions';
 
 const productSchema = z.object({
@@ -79,6 +81,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
     formState: { errors },
     watch,
     setValue,
+    setFocus,
   } = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
     defaultValues: product
@@ -103,6 +106,14 @@ export const ProductForm: React.FC<ProductFormProps> = ({
           lowStockThreshold: 10,
           branchId: branchId || '',
         },
+  });
+
+  // Handle global barcode scanner input
+  useBarcodeScanner({
+    onScan: (scannedBarcode) => {
+      setValue('barcode', scannedBarcode, { shouldValidate: true, shouldDirty: true });
+      setFocus('barcode');
+    },
   });
 
   const hasVariants = watch('hasVariants');
