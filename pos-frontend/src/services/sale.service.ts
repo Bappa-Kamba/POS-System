@@ -1,5 +1,6 @@
 import { api } from './api';
 import type { ApiResponse, PaginatedApiResponse } from '../types/api';
+import type { ResolvedReceiptConfig } from '../types/receipt';
 
 export interface SaleItem {
   productId: string;
@@ -120,6 +121,7 @@ export interface ReceiptData {
     footer: string;
     currency: string;
   };
+  config: ResolvedReceiptConfig;
 }
 
 export interface FindAllSalesParams {

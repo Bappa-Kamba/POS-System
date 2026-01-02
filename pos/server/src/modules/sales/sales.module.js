@@ -12,12 +12,13 @@ const sales_service_1 = require("./sales.service");
 const sales_controller_1 = require("./sales.controller");
 const prisma_module_1 = require("../../prisma/prisma.module");
 const sessions_module_1 = require("../sessions/sessions.module");
+const settings_module_1 = require("../settings/settings.module");
 let SalesModule = class SalesModule {
 };
 exports.SalesModule = SalesModule;
 exports.SalesModule = SalesModule = __decorate([
     (0, common_1.Module)({
-        imports: [prisma_module_1.PrismaModule, sessions_module_1.SessionsModule],
+        imports: [prisma_module_1.PrismaModule, sessions_module_1.SessionsModule, settings_module_1.SettingsModule],
         controllers: [sales_controller_1.SalesController],
         providers: [sales_service_1.SalesService],
         exports: [sales_service_1.SalesService],

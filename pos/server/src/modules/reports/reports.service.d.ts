@@ -24,29 +24,29 @@ export declare class ReportsService {
                 cashVariance: number;
             };
             sales: {
-                totalAmount: number;
                 transactionType: import("@prisma/client").$Enums.TransactionType;
+                totalAmount: number;
             }[];
             openedBy: {
+                id: string;
                 username: string;
                 firstName: string | null;
                 lastName: string | null;
-                id: string;
             };
             closedBy: {
+                id: string;
                 username: string;
                 firstName: string | null;
                 lastName: string | null;
-                id: string;
             } | null;
-            branchId: string;
-            name: string;
             id: string;
+            name: string;
+            status: import("@prisma/client").$Enums.SessionStatus;
             createdAt: Date;
             updatedAt: Date;
+            branchId: string;
             startTime: Date;
             endTime: Date | null;
-            status: import("@prisma/client").$Enums.SessionStatus;
             openingBalance: number;
             closingBalance: number | null;
             openedById: string;

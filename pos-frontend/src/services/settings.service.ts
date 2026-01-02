@@ -1,4 +1,5 @@
 import { api } from './api';
+import type { ResolvedReceiptConfig } from '../types/receipt';
 
 export interface Branch {
   id: string;
@@ -43,6 +44,15 @@ export interface AdjustCashbackCapitalData {
 }
 
 export const settingsService = {
+  async getReceiptConfig(subdivisionId?: string): Promise<ResolvedReceiptConfig> {
+    const params = subdivisionId ? { subdivisionId } : {};
+    const response = await api.get<{ success: true; data: ResolvedReceiptConfig }>(
+      '/settings/receipt-config',
+      { params },
+    );
+    return response.data.data;
+  },
+
   async getBranch(): Promise<Branch> {
     const response = await api.get<{ success: true; data: Branch }>(
       '/settings/branch',

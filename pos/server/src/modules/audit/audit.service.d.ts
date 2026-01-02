@@ -31,11 +31,11 @@ export declare class AuditService {
     findAll(params: FindAllAuditLogsDto): Promise<{
         data: ({
             user: {
+                id: string;
                 username: string;
                 firstName: string | null;
                 lastName: string | null;
                 role: import("@prisma/client").$Enums.UserRole;
-                id: string;
             };
         } & {
             id: string;
@@ -58,11 +58,11 @@ export declare class AuditService {
     findOne(id: string): Promise<AuditLogWithUser>;
     findByEntity(entity: string, entityId: string): Promise<({
         user: {
+            id: string;
             username: string;
             firstName: string | null;
             lastName: string | null;
             role: import("@prisma/client").$Enums.UserRole;
-            id: string;
         };
     } & {
         id: string;

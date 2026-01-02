@@ -4,8 +4,10 @@ import { SalesController } from './sales.controller';
 import { PrismaModule } from '../../prisma/prisma.module';
 import { SessionsModule } from '../sessions/sessions.module';
 
+import { SettingsModule } from '../settings/settings.module';
+
 @Module({
-  imports: [PrismaModule, SessionsModule],
+  imports: [PrismaModule, SessionsModule, SettingsModule],
   controllers: [SalesController],
   providers: [SalesService],
   exports: [SalesService],

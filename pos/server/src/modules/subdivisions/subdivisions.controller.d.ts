@@ -1,130 +1,161 @@
 import { SubdivisionsService } from './subdivisions.service';
 import { CreateSubdivisionDto, UpdateSubdivisionDto, AssignSubdivisionDto } from './dto';
+import { ReceiptResolutionService } from '../settings/receipt-resolution.service';
+import type { AuthenticatedRequestUser } from '../auth/types/authenticated-user.type';
 export declare class SubdivisionsController {
     private readonly subdivisionsService;
-    constructor(subdivisionsService: SubdivisionsService);
+    private readonly receiptResolutionService;
+    constructor(subdivisionsService: SubdivisionsService, receiptResolutionService: ReceiptResolutionService);
+    getReceiptConfig(id: string, user: AuthenticatedRequestUser): Promise<{
+        success: boolean;
+        data: import("../settings/dto/receipt-config.dto").ResolvedReceiptConfig;
+    }>;
     findAll(): Promise<{
         success: boolean;
         data: {
-            name: string;
             id: string;
-            createdAt: Date;
-            updatedAt: Date;
-            status: import("@prisma/client").$Enums.SubdivisionStatus;
-            description: string | null;
+            name: string;
             displayName: string;
+            description: string | null;
+            status: import("@prisma/client").$Enums.SubdivisionStatus;
             color: string | null;
             icon: string | null;
+            receiptBusinessName: string | null;
+            receiptAddress: string | null;
+            receiptPhone: string | null;
+            receiptFooter: string | null;
+            createdAt: Date;
+            updatedAt: Date;
         }[];
     }>;
     findByBranch(branchId: string): Promise<{
         success: boolean;
         data: ({
+            categories: {
+                id: string;
+                name: string;
+                description: string | null;
+                createdAt: Date;
+                updatedAt: Date;
+                subdivisionId: string;
+                isActive: boolean;
+                displayOrder: number;
+            }[];
             _count: {
                 categories: number;
             };
-            categories: {
-                isActive: boolean;
-                name: string;
-                id: string;
-                createdAt: Date;
-                updatedAt: Date;
-                description: string | null;
-                subdivisionId: string;
-                displayOrder: number;
-            }[];
         } & {
-            name: string;
             id: string;
-            createdAt: Date;
-            updatedAt: Date;
-            status: import("@prisma/client").$Enums.SubdivisionStatus;
-            description: string | null;
+            name: string;
             displayName: string;
+            description: string | null;
+            status: import("@prisma/client").$Enums.SubdivisionStatus;
             color: string | null;
             icon: string | null;
+            receiptBusinessName: string | null;
+            receiptAddress: string | null;
+            receiptPhone: string | null;
+            receiptFooter: string | null;
+            createdAt: Date;
+            updatedAt: Date;
         })[];
     }>;
     findOne(id: string): Promise<{
         success: boolean;
         data: {
-            name: string;
             id: string;
-            createdAt: Date;
-            updatedAt: Date;
-            status: import("@prisma/client").$Enums.SubdivisionStatus;
-            description: string | null;
+            name: string;
             displayName: string;
+            description: string | null;
+            status: import("@prisma/client").$Enums.SubdivisionStatus;
             color: string | null;
             icon: string | null;
+            receiptBusinessName: string | null;
+            receiptAddress: string | null;
+            receiptPhone: string | null;
+            receiptFooter: string | null;
+            createdAt: Date;
+            updatedAt: Date;
         };
     }>;
     create(createSubdivisionDto: CreateSubdivisionDto): Promise<{
         success: boolean;
         data: {
-            name: string;
             id: string;
-            createdAt: Date;
-            updatedAt: Date;
-            status: import("@prisma/client").$Enums.SubdivisionStatus;
-            description: string | null;
+            name: string;
             displayName: string;
+            description: string | null;
+            status: import("@prisma/client").$Enums.SubdivisionStatus;
             color: string | null;
             icon: string | null;
+            receiptBusinessName: string | null;
+            receiptAddress: string | null;
+            receiptPhone: string | null;
+            receiptFooter: string | null;
+            createdAt: Date;
+            updatedAt: Date;
         };
         message: string;
     }>;
     update(id: string, updateSubdivisionDto: UpdateSubdivisionDto): Promise<{
         success: boolean;
         data: {
-            name: string;
             id: string;
-            createdAt: Date;
-            updatedAt: Date;
-            status: import("@prisma/client").$Enums.SubdivisionStatus;
-            description: string | null;
+            name: string;
             displayName: string;
+            description: string | null;
+            status: import("@prisma/client").$Enums.SubdivisionStatus;
             color: string | null;
             icon: string | null;
+            receiptBusinessName: string | null;
+            receiptAddress: string | null;
+            receiptPhone: string | null;
+            receiptFooter: string | null;
+            createdAt: Date;
+            updatedAt: Date;
         };
         message: string;
     }>;
     toggleStatus(id: string): Promise<{
         success: boolean;
         data: {
-            name: string;
             id: string;
-            createdAt: Date;
-            updatedAt: Date;
-            status: import("@prisma/client").$Enums.SubdivisionStatus;
-            description: string | null;
+            name: string;
             displayName: string;
+            description: string | null;
+            status: import("@prisma/client").$Enums.SubdivisionStatus;
             color: string | null;
             icon: string | null;
+            receiptBusinessName: string | null;
+            receiptAddress: string | null;
+            receiptPhone: string | null;
+            receiptFooter: string | null;
+            createdAt: Date;
+            updatedAt: Date;
         };
         message: string;
     }>;
     assignToBranch(assignSubdivisionDto: AssignSubdivisionDto): Promise<{
         success: boolean;
         data: {
-            branchId: string;
-            isActive: boolean;
             id: string;
             createdAt: Date;
             updatedAt: Date;
+            branchId: string;
             subdivisionId: string;
+            isActive: boolean;
         };
         message: string;
     }>;
     removeFromBranch(subdivisionId: string, branchId: string): Promise<{
         success: boolean;
         data: {
-            branchId: string;
-            isActive: boolean;
             id: string;
             createdAt: Date;
             updatedAt: Date;
+            branchId: string;
             subdivisionId: string;
+            isActive: boolean;
         };
         message: string;
     }>;
@@ -138,24 +169,28 @@ export declare class SubdivisionsController {
                     products: number;
                 };
             } & {
-                isActive: boolean;
-                name: string;
                 id: string;
+                name: string;
+                description: string | null;
                 createdAt: Date;
                 updatedAt: Date;
-                description: string | null;
                 subdivisionId: string;
+                isActive: boolean;
                 displayOrder: number;
             })[];
-            name: string;
             id: string;
-            createdAt: Date;
-            updatedAt: Date;
-            status: import("@prisma/client").$Enums.SubdivisionStatus;
-            description: string | null;
+            name: string;
             displayName: string;
+            description: string | null;
+            status: import("@prisma/client").$Enums.SubdivisionStatus;
             color: string | null;
             icon: string | null;
+            receiptBusinessName: string | null;
+            receiptAddress: string | null;
+            receiptPhone: string | null;
+            receiptFooter: string | null;
+            createdAt: Date;
+            updatedAt: Date;
         }[];
     }>;
 }

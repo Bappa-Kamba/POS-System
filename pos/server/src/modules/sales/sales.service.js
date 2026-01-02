@@ -16,13 +16,16 @@ const prisma_service_1 = require("../../prisma/prisma.service");
 const client_1 = require("@prisma/client");
 const date_fns_1 = require("date-fns");
 const sessions_service_1 = require("../sessions/sessions.service");
+const receipt_resolution_service_1 = require("../settings/receipt-resolution.service");
 let SalesService = SalesService_1 = class SalesService {
     prisma;
     sessionsService;
+    receiptResolutionService;
     logger = new common_1.Logger(SalesService_1.name);
-    constructor(prisma, sessionsService) {
+    constructor(prisma, sessionsService, receiptResolutionService) {
         this.prisma = prisma;
         this.sessionsService = sessionsService;
+        this.receiptResolutionService = receiptResolutionService;
     }
     async generateReceiptNumber(date = new Date()) {
         const dateStr = (0, date_fns_1.format)(date, 'yyyyMMdd');
@@ -42,6 +45,11 @@ let SalesService = SalesService_1 = class SalesService {
     async create(data, cashierId, branchId) {
         const transactionType = data.transactionType || 'PURCHASE';
         const activeSession = await this.sessionsService.getActiveSession(branchId, cashierId);
+        const cashier = await this.prisma.user.findUnique({
+            where: { id: cashierId },
+            select: { assignedSubdivisionId: true },
+        });
+        const subdivisionId = cashier?.assignedSubdivisionId;
         if (transactionType === 'PURCHASE') {
             if (!data.items || data.items.length === 0) {
                 throw new common_1.BadRequestException('Purchase must have at least one item');
@@ -102,6 +110,7 @@ let SalesService = SalesService_1 = class SalesService {
                         amountPaid: totalPaid,
                         amountDue,
                         changeGiven,
+                        subdivisionId,
                         customerName: data.customerName,
                         customerPhone: data.customerPhone,
                         notes: data.notes || `Service Charge: ${serviceCharge.toFixed(2)}`,
@@ -234,6 +243,7 @@ let SalesService = SalesService_1 = class SalesService {
                     amountPaid: totalPaid,
                     amountDue,
                     changeGiven,
+                    subdivisionId,
                     customerName: data.customerName,
                     customerPhone: data.customerPhone,
                     notes: data.notes,
@@ -459,10 +469,6 @@ let SalesService = SalesService_1 = class SalesService {
                     select: {
                         id: true,
                         name: true,
-                        businessName: true,
-                        businessAddress: true,
-                        businessPhone: true,
-                        receiptFooter: true,
                         taxRate: true,
                         currency: true,
                     },
@@ -475,21 +481,45 @@ let SalesService = SalesService_1 = class SalesService {
         return sale;
     }
     async getReceiptData(id) {
-        const sale = await this.findOne(id);
+        const sale = await this.prisma.sale.findUnique({
+            where: { id },
+            include: {
+                items: {
+                    include: {
+                        product: true,
+                        variant: true,
+                    }
+                },
+                payments: true,
+                cashier: {
+                    select: {
+                        id: true,
+                        username: true,
+                        firstName: true,
+                        lastName: true,
+                    },
+                },
+                branch: true,
+            },
+        });
+        if (!sale) {
+            throw new common_1.NotFoundException('Sale not found');
+        }
         if (sale.transactionType === 'CASHBACK') {
             throw new common_1.BadRequestException('Cashback transactions do not generate receipts');
         }
+        const receiptConfig = await this.receiptResolutionService.resolveReceiptConfig(sale.subdivisionId, sale.branchId);
         const cashierName = sale.cashier.firstName
             ? `${sale.cashier.firstName} ${sale.cashier.lastName || ''}`.trim()
             : sale.cashier.username;
         return {
             receipt: {
                 business: {
-                    name: sale.branch.businessName || sale.branch.name,
-                    address: sale.branch.businessAddress || '',
-                    phone: sale.branch.businessPhone || '',
+                    name: receiptConfig.businessName,
+                    address: receiptConfig.businessAddress,
+                    phone: receiptConfig.businessPhone,
                 },
-                branch: sale.branch.name,
+                branch: receiptConfig.branchName,
                 receiptNumber: sale.receiptNumber,
                 transactionType: sale.transactionType,
                 date: sale.createdAt,
@@ -514,8 +544,8 @@ let SalesService = SalesService_1 = class SalesService {
                     reference: payment.reference,
                 })),
                 change: sale.changeGiven,
-                footer: sale.branch.receiptFooter || 'Thank you for your purchase!',
-                currency: sale.branch.currency || 'NGN',
+                footer: receiptConfig.receiptFooter,
+                currency: receiptConfig.currency,
             },
         };
     }
@@ -568,6 +598,7 @@ exports.SalesService = SalesService;
 exports.SalesService = SalesService = SalesService_1 = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
-        sessions_service_1.SessionsService])
+        sessions_service_1.SessionsService,
+        receipt_resolution_service_1.ReceiptResolutionService])
 ], SalesService);
 //# sourceMappingURL=sales.service.js.map

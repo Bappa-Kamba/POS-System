@@ -7,39 +7,39 @@ export declare class UsersController {
     create(createUserDto: CreateUserDto): Promise<{
         success: boolean;
         data: Omit<{
-            username: string;
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
             email: string | null;
+            branchId: string;
+            username: string;
+            passwordHash: string;
+            refreshTokenHash: string | null;
             firstName: string | null;
             lastName: string | null;
             role: import("@prisma/client").$Enums.UserRole;
-            branchId: string;
-            assignedSubdivisionId: string | null;
             isActive: boolean;
-            id: string;
-            passwordHash: string;
-            refreshTokenHash: string | null;
-            createdAt: Date;
-            updatedAt: Date;
+            assignedSubdivisionId: string | null;
         }, "passwordHash" | "refreshTokenHash">;
         message: string;
     }>;
     findAll(findAllUsersDto: FindAllUsersDto, user: AuthenticatedRequestUser): Promise<{
         data: {
             branch: {
-                name: string;
                 id: string;
+                name: string;
             };
-            username: string;
-            email: string | null;
-            firstName: string | null;
-            lastName: string | null;
-            role: import("@prisma/client").$Enums.UserRole;
-            branchId: string;
-            assignedSubdivisionId: string | null;
-            isActive: boolean;
             id: string;
             createdAt: Date;
             updatedAt: Date;
+            email: string | null;
+            branchId: string;
+            username: string;
+            firstName: string | null;
+            lastName: string | null;
+            role: import("@prisma/client").$Enums.UserRole;
+            isActive: boolean;
+            assignedSubdivisionId: string | null;
         }[];
         meta: {
             total: number;
@@ -51,56 +51,56 @@ export declare class UsersController {
     findOne(id: string): Promise<{
         success: boolean;
         data: Omit<{
-            username: string;
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
             email: string | null;
+            branchId: string;
+            username: string;
+            passwordHash: string;
+            refreshTokenHash: string | null;
             firstName: string | null;
             lastName: string | null;
             role: import("@prisma/client").$Enums.UserRole;
-            branchId: string;
-            assignedSubdivisionId: string | null;
             isActive: boolean;
-            id: string;
-            passwordHash: string;
-            refreshTokenHash: string | null;
-            createdAt: Date;
-            updatedAt: Date;
+            assignedSubdivisionId: string | null;
         }, "passwordHash" | "refreshTokenHash">;
     }>;
     update(id: string, updateUserDto: UpdateUserDto): Promise<{
         success: boolean;
         data: Omit<{
-            username: string;
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
             email: string | null;
+            branchId: string;
+            username: string;
+            passwordHash: string;
+            refreshTokenHash: string | null;
             firstName: string | null;
             lastName: string | null;
             role: import("@prisma/client").$Enums.UserRole;
-            branchId: string;
-            assignedSubdivisionId: string | null;
             isActive: boolean;
-            id: string;
-            passwordHash: string;
-            refreshTokenHash: string | null;
-            createdAt: Date;
-            updatedAt: Date;
+            assignedSubdivisionId: string | null;
         }, "passwordHash" | "refreshTokenHash">;
         message: string;
     }>;
     remove(id: string): Promise<{
         success: boolean;
         data: Omit<{
-            username: string;
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
             email: string | null;
+            branchId: string;
+            username: string;
+            passwordHash: string;
+            refreshTokenHash: string | null;
             firstName: string | null;
             lastName: string | null;
             role: import("@prisma/client").$Enums.UserRole;
-            branchId: string;
-            assignedSubdivisionId: string | null;
             isActive: boolean;
-            id: string;
-            passwordHash: string;
-            refreshTokenHash: string | null;
-            createdAt: Date;
-            updatedAt: Date;
+            assignedSubdivisionId: string | null;
         }, "passwordHash" | "refreshTokenHash">;
         message: string;
     }>;

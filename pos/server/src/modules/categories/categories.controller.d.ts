@@ -9,28 +9,28 @@ export declare class CategoriesController {
         data: {
             productCount: number;
             subdivision: {
-                name: string;
                 id: string;
+                name: string;
                 displayName: string;
             };
             _count: {
                 products: number;
             };
-            isActive: boolean;
-            name: string;
             id: string;
+            name: string;
+            description: string | null;
             createdAt: Date;
             updatedAt: Date;
-            description: string | null;
             subdivisionId: string;
+            isActive: boolean;
             displayOrder: number;
         }[];
     }>;
     getBySubdivision(subdivisionId: string): Promise<{
         success: boolean;
         data: {
-            name: string;
             id: string;
+            name: string;
             description: string | null;
             displayOrder: number;
         }[];
@@ -40,8 +40,8 @@ export declare class CategoriesController {
         data: {
             productCount: number;
             subdivision: {
-                name: string;
                 id: string;
+                name: string;
                 displayName: string;
                 color: string | null;
                 icon: string | null;
@@ -49,26 +49,26 @@ export declare class CategoriesController {
             _count: {
                 products: number;
             };
-            isActive: boolean;
-            name: string;
             id: string;
+            name: string;
+            description: string | null;
             createdAt: Date;
             updatedAt: Date;
-            description: string | null;
             subdivisionId: string;
+            isActive: boolean;
             displayOrder: number;
         };
     }>;
     create(createCategoryDto: CreateCategoryDto, user: AuthenticatedRequestUser): Promise<{
         success: boolean;
         data: {
-            isActive: boolean;
-            name: string;
             id: string;
+            name: string;
+            description: string | null;
             createdAt: Date;
             updatedAt: Date;
-            description: string | null;
             subdivisionId: string;
+            isActive: boolean;
             displayOrder: number;
         };
         message: string;
@@ -76,13 +76,13 @@ export declare class CategoriesController {
     update(id: string, updateCategoryDto: UpdateCategoryDto, user: AuthenticatedRequestUser): Promise<{
         success: boolean;
         data: {
-            isActive: boolean;
-            name: string;
             id: string;
+            name: string;
+            description: string | null;
             createdAt: Date;
             updatedAt: Date;
-            description: string | null;
             subdivisionId: string;
+            isActive: boolean;
             displayOrder: number;
         };
         message: string;
@@ -91,24 +91,28 @@ export declare class CategoriesController {
         success: boolean;
         data: {
             subdivision: {
-                name: string;
                 id: string;
-                createdAt: Date;
-                updatedAt: Date;
-                status: import("@prisma/client").$Enums.SubdivisionStatus;
-                description: string | null;
+                name: string;
                 displayName: string;
+                description: string | null;
+                status: import("@prisma/client").$Enums.SubdivisionStatus;
                 color: string | null;
                 icon: string | null;
+                receiptBusinessName: string | null;
+                receiptAddress: string | null;
+                receiptPhone: string | null;
+                receiptFooter: string | null;
+                createdAt: Date;
+                updatedAt: Date;
             };
         } & {
-            isActive: boolean;
-            name: string;
             id: string;
+            name: string;
+            description: string | null;
             createdAt: Date;
             updatedAt: Date;
-            description: string | null;
             subdivisionId: string;
+            isActive: boolean;
             displayOrder: number;
         };
         message: string;

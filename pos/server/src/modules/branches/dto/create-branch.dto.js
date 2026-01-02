@@ -19,9 +19,6 @@ class CreateBranchDto {
     address;
     taxRate;
     currency;
-    businessName;
-    businessAddress;
-    businessPhone;
     receiptFooter;
     cashbackCapital;
     cashbackServiceChargeRate;
@@ -63,21 +60,6 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
 ], CreateBranchDto.prototype, "currency", void 0);
-__decorate([
-    (0, class_validator_1.IsString)(),
-    (0, class_validator_1.IsOptional)(),
-    __metadata("design:type", String)
-], CreateBranchDto.prototype, "businessName", void 0);
-__decorate([
-    (0, class_validator_1.IsString)(),
-    (0, class_validator_1.IsOptional)(),
-    __metadata("design:type", String)
-], CreateBranchDto.prototype, "businessAddress", void 0);
-__decorate([
-    (0, class_validator_1.IsString)(),
-    (0, class_validator_1.IsOptional)(),
-    __metadata("design:type", String)
-], CreateBranchDto.prototype, "businessPhone", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsOptional)(),

@@ -5,108 +5,108 @@ export declare class VariantsService {
     constructor(prisma: PrismaService);
     create(productId: string, data: CreateVariantDto): Promise<{
         product: {
-            category: {
-                name: string;
-                id: string;
-            } | null;
-            name: string;
             id: string;
+            name: string;
+            category: {
+                id: string;
+                name: string;
+            } | null;
         };
     } & {
-        isActive: boolean;
-        name: string;
         id: string;
+        name: string;
         createdAt: Date;
         updatedAt: Date;
+        isActive: boolean;
+        costPrice: number;
+        productId: string;
         sku: string;
         barcode: string | null;
-        costPrice: number;
         sellingPrice: number;
         quantityInStock: number;
         lowStockThreshold: number;
-        productId: string;
         attributes: string | null;
         expiryDate: Date | null;
     }>;
     findAllByProduct(productId: string): Promise<{
-        isActive: boolean;
-        name: string;
         id: string;
+        name: string;
         createdAt: Date;
         updatedAt: Date;
+        isActive: boolean;
+        costPrice: number;
+        productId: string;
         sku: string;
         barcode: string | null;
-        costPrice: number;
         sellingPrice: number;
         quantityInStock: number;
         lowStockThreshold: number;
-        productId: string;
         attributes: string | null;
         expiryDate: Date | null;
     }[]>;
     findOne(id: string): Promise<{
         product: {
-            category: {
-                name: string;
-                id: string;
-            } | null;
-            name: string;
             id: string;
+            name: string;
+            category: {
+                id: string;
+                name: string;
+            } | null;
         };
     } & {
-        isActive: boolean;
-        name: string;
         id: string;
+        name: string;
         createdAt: Date;
         updatedAt: Date;
+        isActive: boolean;
+        costPrice: number;
+        productId: string;
         sku: string;
         barcode: string | null;
-        costPrice: number;
         sellingPrice: number;
         quantityInStock: number;
         lowStockThreshold: number;
-        productId: string;
         attributes: string | null;
         expiryDate: Date | null;
     }>;
     update(id: string, data: UpdateVariantDto): Promise<{
         product: {
-            category: {
-                name: string;
-                id: string;
-            } | null;
-            name: string;
             id: string;
+            name: string;
+            category: {
+                id: string;
+                name: string;
+            } | null;
         };
     } & {
-        isActive: boolean;
-        name: string;
         id: string;
+        name: string;
         createdAt: Date;
         updatedAt: Date;
+        isActive: boolean;
+        costPrice: number;
+        productId: string;
         sku: string;
         barcode: string | null;
-        costPrice: number;
         sellingPrice: number;
         quantityInStock: number;
         lowStockThreshold: number;
-        productId: string;
         attributes: string | null;
         expiryDate: Date | null;
     }>;
     remove(id: string): Promise<{
-        isActive: boolean;
-        name: string;
         id: string;
+        name: string;
         createdAt: Date;
         updatedAt: Date;
+        isActive: boolean;
+        costPrice: number;
+        productId: string;
         sku: string;
         barcode: string | null;
-        costPrice: number;
         sellingPrice: number;
         quantityInStock: number;
         lowStockThreshold: number;
-        productId: string;
         attributes: string | null;
         expiryDate: Date | null;
     }>;
@@ -119,65 +119,65 @@ export declare class VariantsService {
         notes?: string;
         userId: string;
     }): Promise<{
-        isActive: boolean;
-        name: string;
         id: string;
+        name: string;
         createdAt: Date;
         updatedAt: Date;
+        isActive: boolean;
+        costPrice: number;
+        productId: string;
         sku: string;
         barcode: string | null;
-        costPrice: number;
         sellingPrice: number;
         quantityInStock: number;
         lowStockThreshold: number;
-        productId: string;
         attributes: string | null;
         expiryDate: Date | null;
     }>;
     getLowStock(branchId?: string): Promise<({
         product: {
-            branchId: string;
-            name: string;
             id: string;
+            name: string;
+            branchId: string;
         };
     } & {
-        isActive: boolean;
-        name: string;
         id: string;
+        name: string;
         createdAt: Date;
         updatedAt: Date;
+        isActive: boolean;
+        costPrice: number;
+        productId: string;
         sku: string;
         barcode: string | null;
-        costPrice: number;
         sellingPrice: number;
         quantityInStock: number;
         lowStockThreshold: number;
-        productId: string;
         attributes: string | null;
         expiryDate: Date | null;
     })[]>;
     getExpiring(days?: number, branchId?: string): Promise<({
         product: {
-            category: {
-                name: string;
-                id: string;
-            } | null;
-            name: string;
             id: string;
+            name: string;
+            category: {
+                id: string;
+                name: string;
+            } | null;
         };
     } & {
-        isActive: boolean;
-        name: string;
         id: string;
+        name: string;
         createdAt: Date;
         updatedAt: Date;
+        isActive: boolean;
+        costPrice: number;
+        productId: string;
         sku: string;
         barcode: string | null;
-        costPrice: number;
         sellingPrice: number;
         quantityInStock: number;
         lowStockThreshold: number;
-        productId: string;
         attributes: string | null;
         expiryDate: Date | null;
     })[]>;

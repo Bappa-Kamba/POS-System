@@ -63,9 +63,6 @@ model Branch {
   currency String  @default("NGN")
 
   // Business Info for Receipts
-  businessName    String?
-  businessAddress String?
-  businessPhone   String?
   receiptFooter   String?
 
   // Cashback Service Settings
@@ -101,9 +98,16 @@ model Subdivision {
   color       String?           // Hex color for UI
   icon        String?           // Icon name for UI
 
+  // Receipt Configuration Overrides (nullable = inherit from branch)
+  receiptBusinessName String?   // Override branch businessName
+  receiptAddress      String?   // Override branch businessAddress
+  receiptPhone        String?   // Override branch businessPhone
+  receiptFooter       String?   // Override branch receiptFooter
+
   // Relations
   categories         Category[]
   branchSubdivisions BranchSubdivision[]
+  sales              Sale[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -304,6 +308,10 @@ model Sale {
 
   branchId String
   branch   Branch @relation(fields: [branchId], references: [id])
+
+  // Subdivision where sale occurred
+  subdivisionId String?
+  subdivision   Subdivision? @relation(fields: [subdivisionId], references: [id])
 
   // Transaction Type
   transactionType TransactionType @default(PURCHASE)

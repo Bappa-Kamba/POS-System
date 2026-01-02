@@ -8,101 +8,101 @@ export declare class ProductsController {
         success: boolean;
         data: {
             branch: {
-                name: string;
                 id: string;
+                name: string;
             };
         } & {
+            id: string;
             name: string;
             description: string | null;
+            createdAt: Date;
+            updatedAt: Date;
+            branchId: string;
+            isActive: boolean;
+            costPrice: number | null;
             sku: string;
             barcode: string | null;
-            categoryId: string | null;
             hasVariants: boolean;
-            costPrice: number | null;
+            categoryId: string | null;
             sellingPrice: number | null;
             quantityInStock: number | null;
             unitType: import("@prisma/client").$Enums.UnitType;
             lowStockThreshold: number | null;
-            branchId: string;
-            id: string;
             trackInventory: boolean;
-            isActive: boolean;
-            createdAt: Date;
-            updatedAt: Date;
         };
         message: string;
     }>;
     findAll(query: FindAllProductsDto, user: AuthenticatedRequestUser): Promise<{
         variants?: ({
             product: {
-                name: string;
-                branchId: string;
                 id: string;
+                name: string;
                 category: {
-                    name: string;
                     id: string;
+                    name: string;
                 } | null;
+                branchId: string;
             };
         } & {
+            id: string;
             name: string;
+            createdAt: Date;
+            updatedAt: Date;
+            isActive: boolean;
+            costPrice: number;
+            productId: string;
             sku: string;
             barcode: string | null;
-            costPrice: number;
             sellingPrice: number;
             quantityInStock: number;
             lowStockThreshold: number;
-            id: string;
-            isActive: boolean;
-            createdAt: Date;
-            updatedAt: Date;
-            productId: string;
             attributes: string | null;
             expiryDate: Date | null;
         })[] | undefined;
         success: boolean;
         data: ({
             branch: {
-                name: string;
                 id: string;
+                name: string;
             };
             category: {
-                name: string;
                 id: string;
+                name: string;
             } | null;
             variants: {
+                id: string;
                 name: string;
+                createdAt: Date;
+                updatedAt: Date;
+                isActive: boolean;
+                costPrice: number;
+                productId: string;
                 sku: string;
                 barcode: string | null;
-                costPrice: number;
                 sellingPrice: number;
                 quantityInStock: number;
                 lowStockThreshold: number;
-                id: string;
-                isActive: boolean;
-                createdAt: Date;
-                updatedAt: Date;
-                productId: string;
                 attributes: string | null;
                 expiryDate: Date | null;
             }[];
         } & {
+            id: string;
             name: string;
             description: string | null;
+            createdAt: Date;
+            updatedAt: Date;
+            branchId: string;
+            isActive: boolean;
+            costPrice: number | null;
             sku: string;
             barcode: string | null;
-            categoryId: string | null;
             hasVariants: boolean;
-            costPrice: number | null;
+            categoryId: string | null;
             sellingPrice: number | null;
             quantityInStock: number | null;
             unitType: import("@prisma/client").$Enums.UnitType;
             lowStockThreshold: number | null;
-            branchId: string;
-            id: string;
             trackInventory: boolean;
-            isActive: boolean;
-            createdAt: Date;
-            updatedAt: Date;
         })[];
         meta: {
             total: number;
@@ -113,13 +113,13 @@ export declare class ProductsController {
     search(query: string, limit?: number): Promise<{
         success: boolean;
         data: {
+            id: string;
             name: string;
             sku: string;
             barcode: string | null;
             sellingPrice: number | null;
             quantityInStock: number | null;
             unitType: import("@prisma/client").$Enums.UnitType;
-            id: string;
         }[];
     }>;
     generateBarcode(): Promise<{
@@ -143,84 +143,84 @@ export declare class ProductsController {
             type: "product";
             data: {
                 branch: {
-                    name: string;
                     id: string;
+                    name: string;
                 };
                 variants: {
+                    id: string;
                     name: string;
+                    createdAt: Date;
+                    updatedAt: Date;
+                    isActive: boolean;
+                    costPrice: number;
+                    productId: string;
                     sku: string;
                     barcode: string | null;
-                    costPrice: number;
                     sellingPrice: number;
                     quantityInStock: number;
                     lowStockThreshold: number;
-                    id: string;
-                    isActive: boolean;
-                    createdAt: Date;
-                    updatedAt: Date;
-                    productId: string;
                     attributes: string | null;
                     expiryDate: Date | null;
                 }[];
             } & {
+                id: string;
                 name: string;
                 description: string | null;
+                createdAt: Date;
+                updatedAt: Date;
+                branchId: string;
+                isActive: boolean;
+                costPrice: number | null;
                 sku: string;
                 barcode: string | null;
-                categoryId: string | null;
                 hasVariants: boolean;
-                costPrice: number | null;
+                categoryId: string | null;
                 sellingPrice: number | null;
                 quantityInStock: number | null;
                 unitType: import("@prisma/client").$Enums.UnitType;
                 lowStockThreshold: number | null;
-                branchId: string;
-                id: string;
                 trackInventory: boolean;
-                isActive: boolean;
-                createdAt: Date;
-                updatedAt: Date;
             };
         } | {
             type: "variant";
             data: {
                 product: {
                     branch: {
-                        name: string;
                         id: string;
+                        name: string;
                     };
                 } & {
+                    id: string;
                     name: string;
                     description: string | null;
+                    createdAt: Date;
+                    updatedAt: Date;
+                    branchId: string;
+                    isActive: boolean;
+                    costPrice: number | null;
                     sku: string;
                     barcode: string | null;
-                    categoryId: string | null;
                     hasVariants: boolean;
-                    costPrice: number | null;
+                    categoryId: string | null;
                     sellingPrice: number | null;
                     quantityInStock: number | null;
                     unitType: import("@prisma/client").$Enums.UnitType;
                     lowStockThreshold: number | null;
-                    branchId: string;
-                    id: string;
                     trackInventory: boolean;
-                    isActive: boolean;
-                    createdAt: Date;
-                    updatedAt: Date;
                 };
             } & {
+                id: string;
                 name: string;
+                createdAt: Date;
+                updatedAt: Date;
+                isActive: boolean;
+                costPrice: number;
+                productId: string;
                 sku: string;
                 barcode: string | null;
-                costPrice: number;
                 sellingPrice: number;
                 quantityInStock: number;
                 lowStockThreshold: number;
-                id: string;
-                isActive: boolean;
-                createdAt: Date;
-                updatedAt: Date;
-                productId: string;
                 attributes: string | null;
                 expiryDate: Date | null;
             };
@@ -232,74 +232,74 @@ export declare class ProductsController {
         success: boolean;
         data: {
             branch: {
-                name: string;
                 id: string;
+                name: string;
             };
             category: {
-                name: string;
                 id: string;
+                name: string;
             } | null;
             variants: {
+                id: string;
                 name: string;
+                createdAt: Date;
+                updatedAt: Date;
+                isActive: boolean;
+                costPrice: number;
+                productId: string;
                 sku: string;
                 barcode: string | null;
-                costPrice: number;
                 sellingPrice: number;
                 quantityInStock: number;
                 lowStockThreshold: number;
-                id: string;
-                isActive: boolean;
-                createdAt: Date;
-                updatedAt: Date;
-                productId: string;
                 attributes: string | null;
                 expiryDate: Date | null;
             }[];
         } & {
+            id: string;
             name: string;
             description: string | null;
+            createdAt: Date;
+            updatedAt: Date;
+            branchId: string;
+            isActive: boolean;
+            costPrice: number | null;
             sku: string;
             barcode: string | null;
-            categoryId: string | null;
             hasVariants: boolean;
-            costPrice: number | null;
+            categoryId: string | null;
             sellingPrice: number | null;
             quantityInStock: number | null;
             unitType: import("@prisma/client").$Enums.UnitType;
             lowStockThreshold: number | null;
-            branchId: string;
-            id: string;
             trackInventory: boolean;
-            isActive: boolean;
-            createdAt: Date;
-            updatedAt: Date;
         };
     }>;
     update(id: string, updateProductDto: UpdateProductDto, user: AuthenticatedRequestUser): Promise<{
         success: boolean;
         data: {
             branch: {
-                name: string;
                 id: string;
+                name: string;
             };
         } & {
+            id: string;
             name: string;
             description: string | null;
+            createdAt: Date;
+            updatedAt: Date;
+            branchId: string;
+            isActive: boolean;
+            costPrice: number | null;
             sku: string;
             barcode: string | null;
-            categoryId: string | null;
             hasVariants: boolean;
-            costPrice: number | null;
+            categoryId: string | null;
             sellingPrice: number | null;
             quantityInStock: number | null;
             unitType: import("@prisma/client").$Enums.UnitType;
             lowStockThreshold: number | null;
-            branchId: string;
-            id: string;
             trackInventory: boolean;
-            isActive: boolean;
-            createdAt: Date;
-            updatedAt: Date;
         };
         message: string;
     }>;
@@ -307,27 +307,27 @@ export declare class ProductsController {
         success: boolean;
         data: {
             branch: {
-                name: string;
                 id: string;
+                name: string;
             };
         } & {
+            id: string;
             name: string;
             description: string | null;
+            createdAt: Date;
+            updatedAt: Date;
+            branchId: string;
+            isActive: boolean;
+            costPrice: number | null;
             sku: string;
             barcode: string | null;
-            categoryId: string | null;
             hasVariants: boolean;
-            costPrice: number | null;
+            categoryId: string | null;
             sellingPrice: number | null;
             quantityInStock: number | null;
             unitType: import("@prisma/client").$Enums.UnitType;
             lowStockThreshold: number | null;
-            branchId: string;
-            id: string;
             trackInventory: boolean;
-            isActive: boolean;
-            createdAt: Date;
-            updatedAt: Date;
         };
         message: string;
     }>;

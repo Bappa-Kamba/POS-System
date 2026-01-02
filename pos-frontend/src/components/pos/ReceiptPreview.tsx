@@ -40,9 +40,16 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
             <p className="text-sm text-neutral-600 dark:text-neutral-400">
               {receiptData.business.phone}
             </p>
-            <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mt-1">
-              {receiptData.branch}
-            </p>
+            {receiptData.branch && receiptData.branch !== receiptData.business.name && (
+              <>
+                <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mt-1">
+                  A subsidiary of:
+                </p>
+                <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mt-1">
+                  {receiptData.branch}
+                </p>
+              </>
+            )}
           </div>
 
           <div className="border-t border-b border-neutral-200 dark:border-neutral-700 py-4 my-4">
@@ -199,7 +206,7 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
 
           {/* Footer */}
           <div className="mt-6 pt-4 border-t border-neutral-200 dark:border-neutral-700 text-center">
-            <p className="text-sm text-neutral-600 dark:text-neutral-400">
+            <p className="text-sm text-neutral-600 dark:text-neutral-400 whitespace-pre-wrap">
               {receiptData.footer}
             </p>
           </div>

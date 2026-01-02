@@ -2,7 +2,6 @@ import {
   Controller,
   Get,
   Post,
-  Put,
   Delete,
   Patch,
   Body,
@@ -22,10 +21,33 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '@prisma/client';
 
+import { ReceiptResolutionService } from '../settings/receipt-resolution.service';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import type { AuthenticatedRequestUser } from '../auth/types/authenticated-user.type';
+
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('subdivisions')
 export class SubdivisionsController {
-  constructor(private readonly subdivisionsService: SubdivisionsService) {}
+  constructor(
+    private readonly subdivisionsService: SubdivisionsService,
+    private readonly receiptResolutionService: ReceiptResolutionService,
+  ) {}
+
+  @Get(':id/receipt-config')
+  @Roles(UserRole.ADMIN, UserRole.CASHIER)
+  async getReceiptConfig(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedRequestUser,
+  ) {
+    const config = await this.receiptResolutionService.resolveReceiptConfig(
+      id,
+      user.branchId,
+    );
+    return {
+      success: true,
+      data: config,
+    };
+  }
 
   @Get()
   async findAll() {
@@ -67,7 +89,7 @@ export class SubdivisionsController {
     };
   }
 
-  @Put(':id')
+  @Patch(':id')
   @Roles(UserRole.ADMIN)
   async update(
     @Param('id') id: string,

@@ -1,6 +1,13 @@
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
 import { formatCurrency, formatDate } from "../utils/formatters";
+import type { PrintOrderData, ResolvedReceiptConfig } from '../types/receipt';
+
+export interface PrintRequest {
+  order: PrintOrderData;
+  receiptConfig: ResolvedReceiptConfig;
+  printerProfile?: any;
+}
 
 export interface ReceiptData {
   business: {
@@ -41,6 +48,7 @@ export interface ReceiptData {
  * Generate receipt HTML for printing
  */
 export const generateReceiptHTML = (data: ReceiptData): string => {
+  console.log(data);
   return `
 <!DOCTYPE html>
 <html>
@@ -154,7 +162,10 @@ export const generateReceiptHTML = (data: ReceiptData): string => {
     <div class="center bold large">${data.business.name}</div>
     <div class="center">${data.business.address}</div>
     <div class="center">${data.business.phone}</div>
-    <div class="center">${data.branch}</div>
+
+    ${
+      data.branch !== data.business.name ? `<div class="center">A subsidiary of ${data.branch}</div>` : ""
+    }
 
     <div class="divider"></div>
 
@@ -279,195 +290,15 @@ export const generateReceiptHTML = (data: ReceiptData): string => {
 `;
 };
 
-
-
-// export const generateReceiptHTML = (data: ReceiptData): string => {
-//   return `
-//     <!DOCTYPE html>
-//     <html>
-//     <head>
-//       <meta charset="UTF-8">
-//       <style>
-//         * {
-//           margin: 0;
-//           padding: 0;
-//           box-sizing: border-box;
-//           -webkit-print-color-adjust: exact;
-//           print-color-adjust: exact;
-//           image-rendering: crisp-edges;
-//           image-rendering: pixelated;
-//         }
-//         body {
-//           font-family: 'Courier New', monospace;
-//           font-size: 12px;
-//           line-height: 1.2;
-//           width: 72mm;
-//           max-width: 80mm;
-//           margin: 0;
-//           padding: 0;
-//           color: black;
-//           background: white;
-//           font-smooth: never;
-//           -webkit-font-smoothing: none;
-//         }
-//         .center { text-align: center; }
-//         .bold { font-weight: bold; }
-//         .large { font-size: 16px; }
-//         .divider {
-//           border-top: 1px dashed #000;
-//           margin: 8px 0;
-//         }
-//         table { width: 100%; border-collapse: collapse; }
-//         td { padding: 2px 0; vertical-align: top; }
-//         .right { text-align: right; }
-//         /* Optimize column widths for 80mm */
-//         .item-row td:name { width: 10mm; padding-right: 5px; } /* Item Name */
-//         .item-row td.qty { width: 32mm; text-align: left; }
-//         .item-row td:total { width: 20mm; text-align: right; }
-        
-//         @page {
-//             size: 80mm;
-//             margin: 0;
-//         }
-//         @media print {
-//           body { width: 80mm; margin: 0; padding: 0; }
-//           .no-print { display: none; }
-//         }
-//       </style>
-//     </head>
-//     <body>
-//       <div style="height: 2mm;"></div>
-//       <div class="center bold large">${data.business.name}</div>
-//       <div class="center">${data.business.address}</div>
-//       <div class="center">${data.business.phone}</div>
-//       <div class="center">${data.branch}</div>
-      
-//       <div class="divider"></div>
-      
-//       <div class="center" style="margin: 8px 0;">
-//         <span style="padding: 4px 12px; border-radius: 12px; font-weight: bold; font-size: 11px; ${
-//           data.transactionType === 'CASHBACK'
-//             ? 'background-color: #fed7aa; color: #9a3412;'
-//             : 'background-color: #bbf7d0; color: #166534;'
-//         }">
-//           ${data.transactionType === 'CASHBACK' ? 'CASHBACK' : 'PURCHASE'}
-//         </span>
-//       </div>
-      
-//       <table>
-//         <tr>
-//           <td>Receipt #:</td>
-//           <td class="right bold">${data.receiptNumber}</td>
-//         </tr>
-//         <tr>
-//           <td>Date:</td>
-//           <td class="right">${formatDate(data.date, "datetime")}</td>
-//         </tr>
-//         <tr>
-//           <td>Cashier:</td>
-//           <td class="right">${data.cashier}</td>
-//         </tr>
-//       </table>
-      
-//       <div class="divider"></div>
-      
-//       <table>
-//         ${data.items
-//           .map(
-//             (item) => `
-//           <tr class="item-row">
-//             <td class="name" colspan="4" style="text-align: left; font-weight: bold;">${item.name}</td>
-//           </tr>
-//           <tr class="item-row" style="border-bottom: 0px solid #eee; margin-bottom: 5px;">
-//              <td class="name"></td> 
-//              <td class="qty">${item.quantity} x ${formatCurrency(
-//               item.unitPrice,
-//               data.currency
-//             )}</td>
-//             <td class="total bold" style="padding-right: 20px;">${formatCurrency(item.total, data.currency)}</td>
-//           </tr>
-//         `
-//           )
-//           .join("")}
-//       </table>
-      
-//       <div class="divider"></div>
-      
-//       <table>
-//         <tr>
-//           <td>Subtotal:</td>
-//           <td class="right">${formatCurrency(data.subtotal, data.currency)}</td>
-//         </tr>
-//         ${
-//           data.tax > 0
-//             ? `
-//         <tr>
-//           <td>Tax:</td>
-//           <td class="right">${formatCurrency(data.tax, data.currency)}</td>
-//         </tr>
-//         `
-//             : ""
-//         }
-//         ${
-//           data.discount > 0
-//             ? `
-//         <tr>
-//           <td>Discount:</td>
-//           <td class="right">-${formatCurrency(
-//             data.discount,
-//             data.currency
-//           )}</td>
-//         </tr>
-//         `
-//             : ""
-//         }
-//         <tr class="bold large">
-//           <td>TOTAL:</td>
-//           <td class="right">${formatCurrency(data.total, data.currency)}</td>
-//         </tr>
-//       </table>
-      
-//       <div class="divider"></div>
-      
-//       <table>
-//         ${data.payments
-//           .map(
-//             (p) => `
-//           <tr>
-//             <td>${p.method}:</td>
-//             <td class="right">${formatCurrency(p.amount, data.currency)}</td>
-//           </tr>
-//         `
-//           )
-//           .join("")}
-//         ${
-//           data.change > 0
-//             ? `
-//           <tr>
-//             <td>Change:</td>
-//             <td class="right">${formatCurrency(data.change, data.currency)}</td>
-//           </tr>
-//         `
-//             : ""
-//         }
-//       </table>
-      
-//       <div class="divider"></div>
-      
-//       <div class="center">${data.footer}</div>
-      
-//       <br>
-//       <button class="no-print" onclick="window.print()">Print</button>
-//     </body>
-//     </html>
-//   `;
-// };
-
 /**
  * Print receipt using browser print dialog
  */
-export const printReceipt = (data: ReceiptData): void => {
-  const html = generateReceiptHTML(data);
+/**
+ * Print receipt using browser print dialog
+ * Supports legacy ReceiptData or new PrintRequest
+ */
+export const printReceipt = (data: ReceiptData | PrintRequest): void => {
+  const html = generateReceiptHTML(data as ReceiptData);
   const printWindow = window.open("", "_blank");
   if (printWindow) {
     printWindow.document.write(html);

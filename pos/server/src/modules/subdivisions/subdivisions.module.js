@@ -11,12 +11,13 @@ const common_1 = require("@nestjs/common");
 const subdivisions_controller_1 = require("./subdivisions.controller");
 const subdivisions_service_1 = require("./subdivisions.service");
 const prisma_module_1 = require("../../prisma/prisma.module");
+const settings_module_1 = require("../settings/settings.module");
 let SubdivisionsModule = class SubdivisionsModule {
 };
 exports.SubdivisionsModule = SubdivisionsModule;
 exports.SubdivisionsModule = SubdivisionsModule = __decorate([
     (0, common_1.Module)({
-        imports: [prisma_module_1.PrismaModule],
+        imports: [prisma_module_1.PrismaModule, settings_module_1.SettingsModule],
         controllers: [subdivisions_controller_1.SubdivisionsController],
         providers: [subdivisions_service_1.SubdivisionsService],
         exports: [subdivisions_service_1.SubdivisionsService],

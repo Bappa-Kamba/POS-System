@@ -9,28 +9,25 @@ export declare class BranchesService {
     findAll(params: FindAllBranchesDto): Promise<{
         data: ({
             _count: {
-                sales: number;
                 users: number;
                 products: number;
+                sales: number;
             };
         } & {
-            email: string | null;
             name: string;
-            id: string;
-            createdAt: Date;
-            updatedAt: Date;
             location: string | null;
             phone: string | null;
+            email: string | null;
             address: string | null;
             taxRate: number;
             currency: string;
-            businessName: string | null;
-            businessAddress: string | null;
-            businessPhone: string | null;
             receiptFooter: string | null;
             cashbackCapital: number;
             cashbackServiceChargeRate: number;
+            id: string;
             cashbackSubdivisionId: string | null;
+            createdAt: Date;
+            updatedAt: Date;
         })[];
         meta: {
             total: number;
@@ -43,23 +40,20 @@ export declare class BranchesService {
     remove(id: string): Promise<Branch>;
     getStatistics(id: string): Promise<{
         branch: {
-            email: string | null;
             name: string;
-            id: string;
-            createdAt: Date;
-            updatedAt: Date;
             location: string | null;
             phone: string | null;
+            email: string | null;
             address: string | null;
             taxRate: number;
             currency: string;
-            businessName: string | null;
-            businessAddress: string | null;
-            businessPhone: string | null;
             receiptFooter: string | null;
             cashbackCapital: number;
             cashbackServiceChargeRate: number;
+            id: string;
             cashbackSubdivisionId: string | null;
+            createdAt: Date;
+            updatedAt: Date;
         };
         statistics: {
             users: {

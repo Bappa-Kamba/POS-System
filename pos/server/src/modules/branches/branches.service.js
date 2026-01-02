@@ -35,9 +35,6 @@ let BranchesService = BranchesService_1 = class BranchesService {
                 address: data.address,
                 taxRate: data.taxRate ?? 0.075,
                 currency: data.currency ?? 'NGN',
-                businessName: data.businessName,
-                businessAddress: data.businessAddress,
-                businessPhone: data.businessPhone,
                 receiptFooter: data.receiptFooter,
                 cashbackCapital: data.cashbackCapital ?? 0,
                 cashbackServiceChargeRate: data.cashbackServiceChargeRate ?? 0.02,
@@ -124,15 +121,6 @@ let BranchesService = BranchesService_1 = class BranchesService {
                 ...(data.address !== undefined && { address: data.address }),
                 ...(data.taxRate !== undefined && { taxRate: data.taxRate }),
                 ...(data.currency !== undefined && { currency: data.currency }),
-                ...(data.businessName !== undefined && {
-                    businessName: data.businessName,
-                }),
-                ...(data.businessAddress !== undefined && {
-                    businessAddress: data.businessAddress,
-                }),
-                ...(data.businessPhone !== undefined && {
-                    businessPhone: data.businessPhone,
-                }),
                 ...(data.receiptFooter !== undefined && {
                     receiptFooter: data.receiptFooter,
                 }),

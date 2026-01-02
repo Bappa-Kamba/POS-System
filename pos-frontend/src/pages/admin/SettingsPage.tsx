@@ -13,7 +13,7 @@ import {
   Minus,
 } from 'lucide-react';
 import { useBranch, useUpdateBranch, useAdjustCashbackCapital } from '../../hooks/useSettings';
-import { useSubdivisions } from '../../hooks/useSubdivisions';
+import { useSubdivisions, useUpdateSubdivision } from '../../hooks/useSubdivisions';
 import { useThemeStore } from '../../store/themeStore';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
@@ -28,9 +28,6 @@ const branchInfoSchema = z.object({
 });
 
 const receiptSettingsSchema = z.object({
-  businessName: z.string().optional(),
-  businessAddress: z.string().optional(),
-  businessPhone: z.string().optional(),
   receiptFooter: z.string().optional(),
 });
 
@@ -46,10 +43,78 @@ export const SettingsPage = () => {
   const { data: branch, isLoading } = useBranch();
   const { data: subdivisions } = useSubdivisions();
   const updateBranch = useUpdateBranch();
+  const updateSubdivision = useUpdateSubdivision();
   const adjustCapital = useAdjustCashbackCapital();
   const { isDarkMode, toggleTheme } = useThemeStore();
   const [capitalAdjustment, setCapitalAdjustment] = useState('');
   const [adjustmentNotes, setAdjustmentNotes] = useState('');
+  
+  // Subdivision Receipt Settings State
+  const [selectedSubdivisionId, setSelectedSubdivisionId] = useState<string>('');
+  const [isOverridingReceipt, setIsOverridingReceipt] = useState(false);
+  const [subdivisionReceiptForm, setSubdivisionReceiptForm] = useState({
+    businessName: '',
+    businessAddress: '',
+    businessPhone: '',
+    receiptFooter: '',
+  });
+
+  // Load subdivision settings when selection changes
+  const handleSubdivisionChange = (subdivisionId: string) => {
+    setSelectedSubdivisionId(subdivisionId);
+    if (!subdivisionId) {
+      setIsOverridingReceipt(false);
+      return;
+    }
+    
+    // Find the selected subdivision from the list
+    // Note: In a real app, might want to fetch fresh data here
+    const sub = subdivisions && 'data' in subdivisions 
+      ? (subdivisions.data as any[]).find(s => s.id === subdivisionId) 
+      : null;
+      
+    if (sub) {
+      // Check if any receipt field is non-null
+      const hasOverrides = !!(sub.receiptBusinessName || sub.receiptAddress || sub.receiptPhone || sub.receiptFooter);
+      setIsOverridingReceipt(hasOverrides);
+      setSubdivisionReceiptForm({
+        businessName: sub.receiptBusinessName || '',
+        businessAddress: sub.receiptAddress || '',
+        businessPhone: sub.receiptPhone || '',
+        receiptFooter: sub.receiptFooter || '',
+      });
+    }
+  };
+
+  const handleSubdivisionReceiptSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedSubdivisionId) return;
+
+    try {
+      // If not overriding, set all to null
+      const data = isOverridingReceipt ? {
+        receiptBusinessName: subdivisionReceiptForm.businessName || null,
+        receiptAddress: subdivisionReceiptForm.businessAddress || null,
+        receiptPhone: subdivisionReceiptForm.businessPhone || null,
+        receiptFooter: subdivisionReceiptForm.receiptFooter || null,
+      } : {
+        receiptBusinessName: null,
+        receiptAddress: null,
+        receiptPhone: null,
+        receiptFooter: null,
+      };
+
+      await updateSubdivision.mutateAsync({
+        id: selectedSubdivisionId,
+        data: data
+      });
+      
+      alert('Subdivision receipt settings saved successfully');
+    } catch (error) {
+      console.error('Failed to update subdivision receipt settings:', error);
+      alert('Failed to update subdivision receipt settings');
+    }
+  };
 
   const branchForm = useForm({
     resolver: zodResolver(branchInfoSchema),
@@ -74,16 +139,10 @@ export const SettingsPage = () => {
   const receiptForm = useForm({
     resolver: zodResolver(receiptSettingsSchema),
     defaultValues: {
-      businessName: branch?.businessName || '',
-      businessAddress: branch?.businessAddress || '',
-      businessPhone: branch?.businessPhone || '',
       receiptFooter: branch?.receiptFooter || '',
     },
     values: branch
       ? {
-          businessName: branch.businessName || '',
-          businessAddress: branch.businessAddress || '',
-          businessPhone: branch.businessPhone || '',
           receiptFooter: branch.receiptFooter || '',
         }
       : undefined,
@@ -226,53 +285,126 @@ export const SettingsPage = () => {
             </form>
           )}
 
-          {/* Receipt Settings Tab */}
           {activeTab === 'receipt' && (
-            <form
-              onSubmit={receiptForm.handleSubmit(handleReceiptSubmit)}
-              className="space-y-4"
-            >
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Input
-                  label="Business Name"
-                  {...receiptForm.register('businessName')}
-                  error={receiptForm.formState.errors.businessName?.message}
-                />
-                <Input
-                  label="Business Phone"
-                  {...receiptForm.register('businessPhone')}
-                  error={receiptForm.formState.errors.businessPhone?.message}
-                />
-                <Input
-                  label="Business Address"
-                  {...receiptForm.register('businessAddress')}
-                  className="md:col-span-2"
-                  error={receiptForm.formState.errors.businessAddress?.message}
-                />
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                    Receipt Footer
-                  </label>
-                  <textarea
-                    {...receiptForm.register('receiptFooter')}
-                    rows={3}
-                    className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-neutral-800 dark:text-neutral-100"
-                    placeholder="Thank you for your purchase!"
-                  />
-                </div>
-              </div>
-              <div className="flex justify-end">
-                <Button
-                  type="submit"
-                  isLoading={updateBranch.isPending}
-                  disabled={!receiptForm.formState.isDirty}
+            <div className="space-y-8">
+              {/* Branch Level Settings */}
+              <div className="p-6 bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700">
+                <h3 className="text-lg font-medium mb-4 text-neutral-900 dark:text-neutral-100">Branch Receipt Footer</h3>
+                <form
+                  onSubmit={receiptForm.handleSubmit(handleReceiptSubmit)}
+                  className="space-y-4"
                 >
-                  Save Changes
-                </Button>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                        Receipt Footer
+                      </label>
+                      <textarea
+                        {...receiptForm.register('receiptFooter')}
+                        rows={3}
+                        className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-neutral-800 dark:text-neutral-100"
+                        placeholder="Thank you for your purchase!"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex justify-end">
+                    <Button
+                      type="submit"
+                      isLoading={updateBranch.isPending}
+                      disabled={!receiptForm.formState.isDirty}
+                    >
+                      Save Defaults
+                    </Button>
+                  </div>
+                </form>
               </div>
-            </form>
-          )}
 
+              {/* Subdivision Overrides */}
+              <div className="p-6 bg-neutral-50 dark:bg-neutral-900/30 rounded-lg border border-neutral-200 dark:border-neutral-700">
+                <h3 className="text-lg font-medium mb-4 text-neutral-900 dark:text-neutral-100">Subdivision Overrides</h3>
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                    Select Subdivision to Configure
+                  </label>
+                  <select
+                    value={selectedSubdivisionId}
+                    onChange={(e) => handleSubdivisionChange(e.target.value)}
+                    className="w-full max-w-xs px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  >
+                    <option value="">Select a subdivision...</option>
+                    {subdivisions && 'data' in subdivisions && Array.isArray(subdivisions.data) && subdivisions.data.map((subdivision: any) => (
+                      <option key={subdivision.id} value={subdivision.id}>
+                        {subdivision.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {selectedSubdivisionId && (
+                  <form onSubmit={handleSubdivisionReceiptSubmit} className="space-y-4 animate-in fade-in slide-in-from-top-2">
+                    <div className="flex items-center gap-2 mb-4">
+                      <input
+                        type="checkbox"
+                        id="overrideReceipt"
+                        checked={isOverridingReceipt}
+                        onChange={(e) => setIsOverridingReceipt(e.target.checked)}
+                        className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500 border-neutral-300"
+                      />
+                      <label htmlFor="overrideReceipt" className="text-sm font-medium text-neutral-900 dark:text-neutral-100 cursor-pointer">
+                        Override branch receipt settings
+                      </label>
+                    </div>
+
+                    {isOverridingReceipt && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pl-6 border-l-2 border-primary-200 dark:border-primary-800">
+                        <Input
+                          label="Business Name (Override)"
+                          value={subdivisionReceiptForm.businessName}
+                          onChange={e => setSubdivisionReceiptForm(prev => ({ ...prev, businessName: e.target.value }))}
+                          placeholder={branch?.businessName || ''}
+                        />
+                        <Input
+                          label="Business Phone (Override)"
+                          value={subdivisionReceiptForm.businessPhone}
+                          onChange={e => setSubdivisionReceiptForm(prev => ({ ...prev, businessPhone: e.target.value }))}
+                          placeholder={branch?.businessPhone || ''}
+                        />
+                        <Input
+                          label="Business Address (Override)"
+                          value={subdivisionReceiptForm.businessAddress}
+                          onChange={e => setSubdivisionReceiptForm(prev => ({ ...prev, businessAddress: e.target.value }))}
+                          className="md:col-span-2"
+                          placeholder={branch?.businessAddress || ''}
+                        />
+                        <div className="md:col-span-2">
+                          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                            Receipt Footer (Override)
+                          </label>
+                          <textarea
+                            value={subdivisionReceiptForm.receiptFooter}
+                            onChange={e => setSubdivisionReceiptForm(prev => ({ ...prev, receiptFooter: e.target.value }))}
+                            rows={3}
+                            className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-neutral-800 dark:text-neutral-100"
+                            placeholder={branch?.receiptFooter || "Thank you for your purchase!"}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex justify-end pt-4">
+                      <Button
+                        type="submit"
+                        isLoading={updateSubdivision.isPending}
+                        disabled={!selectedSubdivisionId}
+                      >
+                        Save Overrides
+                      </Button>
+                    </div>
+                  </form>
+                )}
+              </div>
+            </div>
+          )}
           {/* Cashback Settings Tab */}
           {activeTab === 'cashback' && (
             <div className="space-y-6">

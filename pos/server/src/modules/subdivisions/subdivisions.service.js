@@ -139,6 +139,10 @@ let SubdivisionsService = SubdivisionsService_1 = class SubdivisionsService {
                 color: data.color,
                 icon: data.icon,
                 status: data.status,
+                receiptBusinessName: data.receiptBusinessName,
+                receiptAddress: data.receiptAddress,
+                receiptPhone: data.receiptPhone,
+                receiptFooter: data.receiptFooter,
             },
         });
         this.logger.log(`Subdivision updated: ${updated.name}`);

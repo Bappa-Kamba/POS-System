@@ -10,6 +10,7 @@ exports.SettingsModule = void 0;
 const common_1 = require("@nestjs/common");
 const settings_controller_1 = require("./settings.controller");
 const settings_service_1 = require("./settings.service");
+const receipt_resolution_service_1 = require("./receipt-resolution.service");
 const prisma_module_1 = require("../../prisma/prisma.module");
 const auth_module_1 = require("../auth/auth.module");
 let SettingsModule = class SettingsModule {
@@ -19,8 +20,8 @@ exports.SettingsModule = SettingsModule = __decorate([
     (0, common_1.Module)({
         imports: [prisma_module_1.PrismaModule, auth_module_1.AuthModule],
         controllers: [settings_controller_1.SettingsController],
-        providers: [settings_service_1.SettingsService],
-        exports: [settings_service_1.SettingsService],
+        providers: [settings_service_1.SettingsService, receipt_resolution_service_1.ReceiptResolutionService],
+        exports: [settings_service_1.SettingsService, receipt_resolution_service_1.ReceiptResolutionService],
     })
 ], SettingsModule);
 //# sourceMappingURL=settings.module.js.map

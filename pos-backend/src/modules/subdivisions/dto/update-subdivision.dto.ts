@@ -7,4 +7,16 @@ export class UpdateSubdivisionDto extends PartialType(CreateSubdivisionDto) {
   @IsEnum(SubdivisionStatus)
   @IsOptional()
   status?: SubdivisionStatus;
+
+  @IsOptional()
+  receiptBusinessName?: string | null;
+
+  @IsOptional()
+  receiptAddress?: string | null;
+
+  @IsOptional()
+  receiptPhone?: string | null;
+
+  @IsOptional()
+  receiptFooter?: string | null;
 }

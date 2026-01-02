@@ -17,10 +17,32 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { UserRole } from '@prisma/client';
 import type { AuthenticatedRequestUser } from '../auth/types/authenticated-user.type';
 
+import { ReceiptResolutionService } from './receipt-resolution.service';
+import { Query } from '@nestjs/common';
+
 @Controller('settings')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class SettingsController {
-  constructor(private readonly settingsService: SettingsService) {}
+  constructor(
+    private readonly settingsService: SettingsService,
+    private readonly receiptResolutionService: ReceiptResolutionService,
+  ) {}
+
+  @Get('receipt-config')
+  @Roles(UserRole.ADMIN, UserRole.CASHIER)
+  async getReceiptConfig(
+    @CurrentUser() user: AuthenticatedRequestUser,
+    @Query('subdivisionId') subdivisionId?: string,
+  ) {
+    const config = await this.receiptResolutionService.resolveReceiptConfig(
+      subdivisionId,
+      user.branchId,
+    );
+    return {
+      success: true,
+      data: config,
+    };
+  }
 
   @Get('branch')
   @Roles(UserRole.ADMIN, UserRole.CASHIER)

@@ -9,27 +9,27 @@ export declare class CategoriesService {
     findAll(subdivisionId?: string): Promise<{
         productCount: number;
         subdivision: {
-            name: string;
             id: string;
+            name: string;
             displayName: string;
         };
         _count: {
             products: number;
         };
-        isActive: boolean;
-        name: string;
         id: string;
+        name: string;
+        description: string | null;
         createdAt: Date;
         updatedAt: Date;
-        description: string | null;
         subdivisionId: string;
+        isActive: boolean;
         displayOrder: number;
     }[]>;
     findOne(id: string): Promise<{
         productCount: number;
         subdivision: {
-            name: string;
             id: string;
+            name: string;
             displayName: string;
             color: string | null;
             icon: string | null;
@@ -37,42 +37,46 @@ export declare class CategoriesService {
         _count: {
             products: number;
         };
-        isActive: boolean;
-        name: string;
         id: string;
+        name: string;
+        description: string | null;
         createdAt: Date;
         updatedAt: Date;
-        description: string | null;
         subdivisionId: string;
+        isActive: boolean;
         displayOrder: number;
     }>;
     create(data: CreateCategoryDto, user: AuthenticatedRequestUser): Promise<Category>;
     update(id: string, data: UpdateCategoryDto, user: AuthenticatedRequestUser): Promise<Category>;
     remove(id: string, user: AuthenticatedRequestUser): Promise<{
         subdivision: {
-            name: string;
             id: string;
-            createdAt: Date;
-            updatedAt: Date;
-            status: import("@prisma/client").$Enums.SubdivisionStatus;
-            description: string | null;
+            name: string;
             displayName: string;
+            description: string | null;
+            status: import("@prisma/client").$Enums.SubdivisionStatus;
             color: string | null;
             icon: string | null;
+            receiptBusinessName: string | null;
+            receiptAddress: string | null;
+            receiptPhone: string | null;
+            receiptFooter: string | null;
+            createdAt: Date;
+            updatedAt: Date;
         };
     } & {
-        isActive: boolean;
-        name: string;
         id: string;
+        name: string;
+        description: string | null;
         createdAt: Date;
         updatedAt: Date;
-        description: string | null;
         subdivisionId: string;
+        isActive: boolean;
         displayOrder: number;
     }>;
     getBySubdivision(subdivisionId: string): Promise<{
-        name: string;
         id: string;
+        name: string;
         description: string | null;
         displayOrder: number;
     }[]>;

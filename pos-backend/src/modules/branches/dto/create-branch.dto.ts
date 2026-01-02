@@ -32,18 +32,6 @@ export class CreateBranchDto {
 
   @IsString()
   @IsOptional()
-  businessName?: string;
-
-  @IsString()
-  @IsOptional()
-  businessAddress?: string;
-
-  @IsString()
-  @IsOptional()
-  businessPhone?: string;
-
-  @IsString()
-  @IsOptional()
   receiptFooter?: string;
 
   @IsNumber()

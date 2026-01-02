@@ -21,6 +21,11 @@ export interface Subdivision {
     categories: number;
     branchSubdivisions: number;
   };
+  // Receipt Configuration Overrides
+  receiptBusinessName?: string | null;
+  receiptAddress?: string | null;
+  receiptPhone?: string | null;
+  receiptFooter?: string | null;
 }
 
 export interface CreateSubdivisionDto {
@@ -33,6 +38,10 @@ export interface CreateSubdivisionDto {
 
 export type UpdateSubdivisionDto = Partial<CreateSubdivisionDto> & {
   status?: SubdivisionStatus;
+  receiptBusinessName?: string | null;
+  receiptAddress?: string | null;
+  receiptPhone?: string | null;
+  receiptFooter?: string | null;
 };
 
 export interface AssignSubdivisionDto {

@@ -48,7 +48,7 @@ type ProductFormValues = z.infer<typeof productSchema>;
 
 interface ProductFormProps {
   product?: Product;
-  onSubmit: (data: ProductFormValues) => void;
+  onSubmit: (data: ProductFormValues) => Promise<void>;
   onCancel: () => void;
   isLoading?: boolean;
   branchId?: string;
@@ -161,27 +161,16 @@ export const ProductForm: React.FC<ProductFormProps> = ({
     }
   }, [hasVariants, setValue]);
 
-  /* ... inside ProductForm ... */
-  // Add state and ref for submission tracking
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const isSubmittingRef = React.useRef(false);
-
-  // ... (previous state declarations)
-
+  // Form submission handler - delegates to parent's async onSubmit
+  // Parent controls loading state via isLoading prop
   const handleFormSubmit = async (data: ProductFormValues) => {
-    // Prevent race condition
-    if (isSubmittingRef.current) return;
-
-    setIsSubmitting(true);
-    isSubmittingRef.current = true;
-
+    // Prevent double submission while loading
+    if (isLoading) return;
     try {
       await onSubmit(data);
-    } catch (error) {
-      console.error('Submission failed', error);
-    } finally {
-      setIsSubmitting(false);
-      isSubmittingRef.current = false;
+    } catch {
+      // Error is already handled by parent (toast shown)
+      // We just prevent the error from bubbling up
     }
   };
 
@@ -411,7 +400,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
         <Button type="button" variant="secondary" onClick={onCancel}>
           Cancel
         </Button>
-        <Button type="submit" isLoading={isLoading || isSubmitting} disabled={isLoading || isSubmitting} respectLicense>
+        <Button type="submit" isLoading={isLoading} disabled={isLoading} respectLicense>
           {product ? 'Update Product' : 'Create Product'}
         </Button>
       </div>

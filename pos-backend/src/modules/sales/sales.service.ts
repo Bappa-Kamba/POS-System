@@ -11,6 +11,8 @@ import { format, startOfDay, endOfDay } from 'date-fns';
 
 import { SessionsService } from '../sessions/sessions.service';
 
+import { ReceiptResolutionService } from '../settings/receipt-resolution.service';
+
 @Injectable()
 export class SalesService {
   private readonly logger = new Logger(SalesService.name);
@@ -18,6 +20,7 @@ export class SalesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly sessionsService: SessionsService,
+    private readonly receiptResolutionService: ReceiptResolutionService,
   ) {}
 
   /**
@@ -55,10 +58,13 @@ export class SalesService {
       branchId,
       cashierId,
     );
-    // Optional: Enforce active session
-    // if (!activeSession) {
-    //   throw new BadRequestException('No active session found. Please start a session first.');
-    // }
+    
+    // Get cashier's assigned subdivision
+    const cashier = await this.prisma.user.findUnique({
+      where: { id: cashierId },
+      select: { assignedSubdivisionId: true },
+    });
+    const subdivisionId = cashier?.assignedSubdivisionId;
 
     // Validate based on transaction type
     if (transactionType === 'PURCHASE') {
@@ -165,6 +171,7 @@ export class SalesService {
             amountPaid: totalPaid,
             amountDue,
             changeGiven,
+            subdivisionId,
             customerName: data.customerName,
             customerPhone: data.customerPhone,
             notes: data.notes || `Service Charge: ${serviceCharge.toFixed(2)}`,
@@ -338,6 +345,7 @@ export class SalesService {
           amountPaid: totalPaid,
           amountDue,
           changeGiven,
+          subdivisionId,
           customerName: data.customerName,
           customerPhone: data.customerPhone,
           notes: data.notes,
@@ -610,9 +618,6 @@ export class SalesService {
           select: {
             id: true,
             name: true,
-            businessName: true,
-            businessAddress: true,
-            businessPhone: true,
             receiptFooter: true,
             taxRate: true,
             currency: true,
@@ -632,7 +637,31 @@ export class SalesService {
    * Get receipt data for printing
    */
   async getReceiptData(id: string) {
-    const sale = await this.findOne(id);
+    const sale = await this.prisma.sale.findUnique({
+      where: { id },
+      include: {
+        items: {
+          include: {
+            product: true,
+            variant: true,
+          }
+        },
+        payments: true,
+        cashier: {
+          select: {
+            id: true,
+            username: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+        branch: true, // Need full branch for currency, etc.
+      },
+    });
+
+    if (!sale) {
+      throw new NotFoundException('Sale not found');
+    }
 
     // Cashback transactions don't generate receipts
     if (sale.transactionType === 'CASHBACK') {
@@ -641,6 +670,12 @@ export class SalesService {
       );
     }
 
+    // Resolve receipt configuration
+    const receiptConfig = await this.receiptResolutionService.resolveReceiptConfig(
+      sale.subdivisionId,
+      sale.branchId,
+    );
+
     const cashierName = sale.cashier.firstName
       ? `${sale.cashier.firstName} ${sale.cashier.lastName || ''}`.trim()
       : sale.cashier.username;
@@ -648,11 +683,11 @@ export class SalesService {
     return {
       receipt: {
         business: {
-          name: sale.branch.businessName || sale.branch.name,
-          address: sale.branch.businessAddress || '',
-          phone: sale.branch.businessPhone || '',
+          name: receiptConfig.businessName,
+          address: receiptConfig.businessAddress,
+          phone: receiptConfig.businessPhone,
         },
-        branch: sale.branch.name,
+        branch: receiptConfig.branchName,
         receiptNumber: sale.receiptNumber,
         transactionType: sale.transactionType,
         date: sale.createdAt,
@@ -677,8 +712,8 @@ export class SalesService {
           reference: payment.reference,
         })),
         change: sale.changeGiven,
-        footer: sale.branch.receiptFooter || 'Thank you for your purchase!',
-        currency: sale.branch.currency || 'NGN',
+        footer: receiptConfig.receiptFooter,
+        currency: receiptConfig.currency,
       },
     };
   }

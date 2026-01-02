@@ -6,24 +6,24 @@ export declare class ExpensesService {
     constructor(prisma: PrismaService);
     create(data: CreateExpenseDto, userId: string): Promise<{
         branch: {
-            name: string;
             id: string;
+            name: string;
         };
         createdBy: {
+            id: string;
             username: string;
             firstName: string | null;
             lastName: string | null;
-            id: string;
         } | null;
     } & {
-        category: string;
-        branchId: string;
         id: string;
+        description: string | null;
         createdAt: Date;
         updatedAt: Date;
-        description: string | null;
-        amount: number;
+        category: string;
+        branchId: string;
         sessionId: string | null;
+        amount: number;
         title: string;
         date: Date;
         createdById: string | null;
@@ -31,24 +31,24 @@ export declare class ExpensesService {
     findAll(params: FindAllExpensesDto): Promise<{
         data: ({
             branch: {
-                name: string;
                 id: string;
+                name: string;
             };
             createdBy: {
+                id: string;
                 username: string;
                 firstName: string | null;
                 lastName: string | null;
-                id: string;
             } | null;
         } & {
-            category: string;
-            branchId: string;
             id: string;
+            description: string | null;
             createdAt: Date;
             updatedAt: Date;
-            description: string | null;
-            amount: number;
+            category: string;
+            branchId: string;
             sessionId: string | null;
+            amount: number;
             title: string;
             date: Date;
             createdById: string | null;
@@ -61,121 +61,121 @@ export declare class ExpensesService {
     }>;
     findOne(id: string): Promise<{
         branch: {
-            name: string;
             id: string;
+            name: string;
         };
         createdBy: {
+            id: string;
             username: string;
             firstName: string | null;
             lastName: string | null;
-            id: string;
         } | null;
     } & {
-        category: string;
-        branchId: string;
         id: string;
+        description: string | null;
         createdAt: Date;
         updatedAt: Date;
-        description: string | null;
-        amount: number;
+        category: string;
+        branchId: string;
         sessionId: string | null;
+        amount: number;
         title: string;
         date: Date;
         createdById: string | null;
     }>;
     update(id: string, data: UpdateExpenseDto, userId: string): Promise<{
         branch: {
-            name: string;
             id: string;
+            name: string;
         };
         createdBy: {
+            id: string;
             username: string;
             firstName: string | null;
             lastName: string | null;
-            id: string;
         } | null;
     } & {
-        category: string;
-        branchId: string;
         id: string;
+        description: string | null;
         createdAt: Date;
         updatedAt: Date;
-        description: string | null;
-        amount: number;
+        category: string;
+        branchId: string;
         sessionId: string | null;
+        amount: number;
         title: string;
         date: Date;
         createdById: string | null;
     }>;
     remove(id: string, userId: string): Promise<{
         branch: {
-            name: string;
             id: string;
+            name: string;
         };
         createdBy: {
+            id: string;
             username: string;
             firstName: string | null;
             lastName: string | null;
-            id: string;
         } | null;
     } & {
-        category: string;
-        branchId: string;
         id: string;
+        description: string | null;
         createdAt: Date;
         updatedAt: Date;
-        description: string | null;
-        amount: number;
+        category: string;
+        branchId: string;
         sessionId: string | null;
+        amount: number;
         title: string;
         date: Date;
         createdById: string | null;
     }>;
     getCategories(branchId: string): Promise<string[]>;
     createCategory(data: CreateExpenseCategoryDto, branchId: string, userId: string): Promise<{
-        branchId: string;
-        isActive: boolean;
-        name: string;
         id: string;
+        name: string;
+        description: string | null;
         createdAt: Date;
         updatedAt: Date;
-        description: string | null;
+        branchId: string;
+        isActive: boolean;
     }>;
     getAllCategories(branchId: string): Promise<{
-        branchId: string;
-        isActive: boolean;
-        name: string;
         id: string;
+        name: string;
+        description: string | null;
         createdAt: Date;
         updatedAt: Date;
-        description: string | null;
+        branchId: string;
+        isActive: boolean;
     }[]>;
     getCategory(id: string, branchId: string): Promise<{
-        branchId: string;
-        isActive: boolean;
-        name: string;
         id: string;
+        name: string;
+        description: string | null;
         createdAt: Date;
         updatedAt: Date;
-        description: string | null;
+        branchId: string;
+        isActive: boolean;
     }>;
     updateCategory(id: string, data: UpdateExpenseCategoryDto, branchId: string, userId: string): Promise<{
-        branchId: string;
-        isActive: boolean;
-        name: string;
         id: string;
+        name: string;
+        description: string | null;
         createdAt: Date;
         updatedAt: Date;
-        description: string | null;
+        branchId: string;
+        isActive: boolean;
     }>;
     deleteCategory(id: string, branchId: string, userId: string): Promise<{
-        branchId: string;
-        isActive: boolean;
-        name: string;
         id: string;
+        name: string;
+        description: string | null;
         createdAt: Date;
         updatedAt: Date;
-        description: string | null;
+        branchId: string;
+        isActive: boolean;
     }>;
     getTotalExpenses(branchId: string, startDate?: Date, endDate?: Date): Promise<number>;
     private logAudit;

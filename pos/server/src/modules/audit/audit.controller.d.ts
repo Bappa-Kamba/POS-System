@@ -6,11 +6,11 @@ export declare class AuditController {
     findAll(findAllAuditLogsDto: FindAllAuditLogsDto): Promise<{
         data: ({
             user: {
+                id: string;
                 username: string;
                 firstName: string | null;
                 lastName: string | null;
                 role: import("@prisma/client").$Enums.UserRole;
-                id: string;
             };
         } & {
             id: string;
@@ -35,11 +35,11 @@ export declare class AuditController {
         success: boolean;
         data: {
             user: {
+                id: string;
                 username: string;
                 firstName: string | null;
                 lastName: string | null;
                 role: import("@prisma/client").$Enums.UserRole;
-                id: string;
             };
         } & {
             id: string;
@@ -58,11 +58,11 @@ export declare class AuditController {
         success: boolean;
         data: ({
             user: {
+                id: string;
                 username: string;
                 firstName: string | null;
                 lastName: string | null;
                 role: import("@prisma/client").$Enums.UserRole;
-                id: string;
             };
         } & {
             id: string;

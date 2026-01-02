@@ -1,26 +1,29 @@
 import { SettingsService } from './settings.service';
 import { UpdateBranchDto, AdjustCashbackCapitalDto } from './dto';
 import type { AuthenticatedRequestUser } from '../auth/types/authenticated-user.type';
+import { ReceiptResolutionService } from './receipt-resolution.service';
 export declare class SettingsController {
     private readonly settingsService;
-    constructor(settingsService: SettingsService);
+    private readonly receiptResolutionService;
+    constructor(settingsService: SettingsService, receiptResolutionService: ReceiptResolutionService);
+    getReceiptConfig(user: AuthenticatedRequestUser, subdivisionId?: string): Promise<{
+        success: boolean;
+        data: import("./dto/receipt-config.dto").ResolvedReceiptConfig;
+    }>;
     getBranch(user: AuthenticatedRequestUser): Promise<{
         success: boolean;
         data: {
-            email: string | null;
-            name: string;
             id: string;
+            name: string;
+            receiptFooter: string | null;
             createdAt: Date;
             updatedAt: Date;
             location: string | null;
             phone: string | null;
+            email: string | null;
             address: string | null;
             taxRate: number;
             currency: string;
-            businessName: string | null;
-            businessAddress: string | null;
-            businessPhone: string | null;
-            receiptFooter: string | null;
             cashbackCapital: number;
             cashbackServiceChargeRate: number;
             cashbackSubdivisionId: string | null;
@@ -29,20 +32,17 @@ export declare class SettingsController {
     updateBranch(user: AuthenticatedRequestUser, updateBranchDto: UpdateBranchDto): Promise<{
         success: boolean;
         data: {
-            email: string | null;
-            name: string;
             id: string;
+            name: string;
+            receiptFooter: string | null;
             createdAt: Date;
             updatedAt: Date;
             location: string | null;
             phone: string | null;
+            email: string | null;
             address: string | null;
             taxRate: number;
             currency: string;
-            businessName: string | null;
-            businessAddress: string | null;
-            businessPhone: string | null;
-            receiptFooter: string | null;
             cashbackCapital: number;
             cashbackServiceChargeRate: number;
             cashbackSubdivisionId: string | null;

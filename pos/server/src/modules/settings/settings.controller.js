@@ -21,10 +21,21 @@ const roles_guard_1 = require("../../common/guards/roles.guard");
 const roles_decorator_1 = require("../../common/decorators/roles.decorator");
 const current_user_decorator_1 = require("../../common/decorators/current-user.decorator");
 const client_1 = require("@prisma/client");
+const receipt_resolution_service_1 = require("./receipt-resolution.service");
+const common_2 = require("@nestjs/common");
 let SettingsController = class SettingsController {
     settingsService;
-    constructor(settingsService) {
+    receiptResolutionService;
+    constructor(settingsService, receiptResolutionService) {
         this.settingsService = settingsService;
+        this.receiptResolutionService = receiptResolutionService;
+    }
+    async getReceiptConfig(user, subdivisionId) {
+        const config = await this.receiptResolutionService.resolveReceiptConfig(subdivisionId, user.branchId);
+        return {
+            success: true,
+            data: config,
+        };
     }
     async getBranch(user) {
         const branch = await this.settingsService.getBranch(user.branchId);
@@ -51,6 +62,15 @@ let SettingsController = class SettingsController {
     }
 };
 exports.SettingsController = SettingsController;
+__decorate([
+    (0, common_1.Get)('receipt-config'),
+    (0, roles_decorator_1.Roles)(client_1.UserRole.ADMIN, client_1.UserRole.CASHIER),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_2.Query)('subdivisionId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", Promise)
+], SettingsController.prototype, "getReceiptConfig", null);
 __decorate([
     (0, common_1.Get)('branch'),
     (0, roles_decorator_1.Roles)(client_1.UserRole.ADMIN, client_1.UserRole.CASHIER),
@@ -82,6 +102,7 @@ __decorate([
 exports.SettingsController = SettingsController = __decorate([
     (0, common_1.Controller)('settings'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
-    __metadata("design:paramtypes", [settings_service_1.SettingsService])
+    __metadata("design:paramtypes", [settings_service_1.SettingsService,
+        receipt_resolution_service_1.ReceiptResolutionService])
 ], SettingsController);
 //# sourceMappingURL=settings.controller.js.map

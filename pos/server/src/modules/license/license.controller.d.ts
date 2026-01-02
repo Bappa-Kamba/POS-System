@@ -5,7 +5,7 @@ export declare class LicenseController {
     getStatus(): Promise<{
         success: boolean;
         data: {
-            status: "TRIAL" | "ACTIVE" | "EXPIRED";
+            status: "ACTIVE" | "TRIAL" | "EXPIRED";
             trialExpiresAt: Date | undefined;
             isReadOnly: boolean;
         };

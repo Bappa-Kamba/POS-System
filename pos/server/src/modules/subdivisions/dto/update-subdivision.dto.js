@@ -16,6 +16,10 @@ const mapped_types_1 = require("@nestjs/mapped-types");
 const create_subdivision_dto_1 = require("./create-subdivision.dto");
 class UpdateSubdivisionDto extends (0, mapped_types_1.PartialType)(create_subdivision_dto_1.CreateSubdivisionDto) {
     status;
+    receiptBusinessName;
+    receiptAddress;
+    receiptPhone;
+    receiptFooter;
 }
 exports.UpdateSubdivisionDto = UpdateSubdivisionDto;
 __decorate([
@@ -23,4 +27,20 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
 ], UpdateSubdivisionDto.prototype, "status", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Object)
+], UpdateSubdivisionDto.prototype, "receiptBusinessName", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Object)
+], UpdateSubdivisionDto.prototype, "receiptAddress", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Object)
+], UpdateSubdivisionDto.prototype, "receiptPhone", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Object)
+], UpdateSubdivisionDto.prototype, "receiptFooter", void 0);
 //# sourceMappingURL=update-subdivision.dto.js.map

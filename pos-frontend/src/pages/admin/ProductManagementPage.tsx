@@ -19,6 +19,7 @@ import { useDashboardStats, useLowStockItems } from '../../hooks/useReports';
 import { useCategories } from '../../hooks/useCategories';
 import { useAuth } from '../../hooks/useAuth';
 import { formatDate } from '../../utils/formatters';
+import toast from 'react-hot-toast';
 import type { Product } from '../../services/product.service';
 import type { InventoryItem } from '../../services/inventory.service';
 
@@ -159,20 +160,24 @@ export const ProductManagementPage: React.FC = () => {
     setPage(1);
   };
 
-  const handleCreate = async (formData: any) => {
+  const handleCreate = async (formData: any): Promise<void> => {
     try {
       await createProduct.mutateAsync({
         ...formData,
         branchId: user?.branchId || '',
       });
+      toast.success('Product created successfully');
       setIsCreateModalOpen(false);
       refetch();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to create product:', error);
+      const message = error?.response?.data?.message || error?.message || 'Failed to create product';
+      toast.error(message);
+      throw error; // Re-throw so ProductForm knows submission failed
     }
   };
 
-  const handleUpdate = async (formData: any) => {
+  const handleUpdate = async (formData: any): Promise<void> => {
     if (!selectedProduct) return;
 
     try {
@@ -183,11 +188,15 @@ export const ProductManagementPage: React.FC = () => {
           branchId: user?.branchId || '',
         },
       });
+      toast.success('Product updated successfully');
       setIsEditModalOpen(false);
       setSelectedProduct(null);
       refetch();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to update product:', error);
+      const message = error?.response?.data?.error || error?.message || 'Failed to update product';
+      toast.error(message);
+      throw error; // Re-throw so ProductForm knows submission failed
     }
   };
 
@@ -203,9 +212,12 @@ export const ProductManagementPage: React.FC = () => {
 
     try {
       await deleteProduct.mutateAsync(product.id);
+      toast.success('Product deleted successfully');
       refetch();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to delete product:', error);
+      const message = error?.response?.data?.message || error?.message || 'Failed to delete product';
+      toast.error(message);
     }
   };
 
