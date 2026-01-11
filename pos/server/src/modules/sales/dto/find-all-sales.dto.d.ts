@@ -1,4 +1,4 @@
-import { PaymentStatus, TransactionType } from '@prisma/client';
+import { PaymentStatus, TransactionType, CreditStatus } from '@prisma/client';
 export declare class FindAllSalesDto {
     skip?: number;
     take?: number;
@@ -9,4 +9,6 @@ export declare class FindAllSalesDto {
     paymentStatus?: PaymentStatus;
     transactionType?: TransactionType;
     search?: string;
+    creditStatus?: CreditStatus;
+    isCreditSale?: boolean;
 }

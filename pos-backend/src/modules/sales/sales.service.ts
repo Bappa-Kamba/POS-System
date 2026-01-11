@@ -5,7 +5,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { CreateSaleDto, FindAllSalesDto } from './dto';
+import { CreateSaleDto, FindAllSalesDto, AddPaymentDto } from './dto';
 import { PaymentStatus, InventoryChangeType, Prisma } from '@prisma/client';
 import { format, startOfDay, endOfDay } from 'date-fns';
 
@@ -80,8 +80,23 @@ export class SalesService {
       // Cashback doesn't need items
     }
 
-    if (!data.payments || data.payments.length === 0) {
-      throw new BadRequestException('Sale must have at least one payment');
+    // Validate payments based on sale type
+    if (data.isCreditSale) {
+      // Credit sales require customer info
+      if (!data.customerName && !data.customerPhone) {
+        throw new BadRequestException(
+          'Credit sales require at least customer name or phone',
+        );
+      }
+      // Payments can be empty for credit sales
+      if (!data.payments) {
+        data.payments = [];
+      }
+    } else {
+      // Regular sales require payment
+      if (!data.payments || data.payments.length === 0) {
+        throw new BadRequestException('Sale must have at least one payment');
+      }
     }
 
     // Calculate totals and validate stock
@@ -309,7 +324,7 @@ export class SalesService {
       0,
     );
 
-    if (totalPaid < totalAmount) {
+    if (!data.isCreditSale && !data.isSettlement && totalPaid < totalAmount) {
       throw new BadRequestException(
         `Insufficient payment. Total: ${totalAmount}, Paid: ${totalPaid}`,
       );
@@ -349,6 +364,9 @@ export class SalesService {
           customerName: data.customerName,
           customerPhone: data.customerPhone,
           notes: data.notes,
+          isCreditSale: data.isCreditSale || false,
+          creditStatus: data.isCreditSale ? 'OPEN' : null,
+          creditReference: data.creditReference,
           items: {
             create: saleItems.map((item) => ({
               productId: item.productId,
@@ -513,6 +531,85 @@ export class SalesService {
   }
 
   /**
+   * Add payment to a credit sale
+   */
+  async addPayment(saleId: string, paymentData: AddPaymentDto) {
+    const sale = await this.prisma.sale.findUnique({
+      where: { id: saleId },
+      include: { payments: true },
+    });
+
+    if (!sale) {
+      throw new NotFoundException('Sale not found');
+    }
+
+    if (!sale.isCreditSale) {
+      throw new BadRequestException('Can only add payments to credit sales');
+    }
+
+    if (sale.creditStatus === 'SETTLED') {
+      throw new BadRequestException('Credit sale already settled');
+    }
+
+    return await this.prisma.$transaction(async (tx) => {
+      // Create payment
+      await tx.payment.create({
+        data: {
+          saleId,
+          method: paymentData.method as any,
+          amount: paymentData.amount,
+          reference: paymentData.reference,
+          notes: paymentData.notes,
+        },
+      });
+
+      // Recalculate totals
+      const newAmountPaid = sale.amountPaid + paymentData.amount;
+      const newAmountDue = sale.totalAmount - newAmountPaid;
+      
+      const newPaymentStatus = 
+        newAmountDue <= 0 ? PaymentStatus.PAID :
+        newAmountPaid > 0 ? PaymentStatus.PARTIAL : PaymentStatus.PENDING;
+      
+      const newCreditStatus = newAmountDue <= 0 ? 'SETTLED' : 'OPEN';
+
+      // Update sale
+      return await tx.sale.update({
+        where: { id: saleId },
+        data: {
+          amountPaid: newAmountPaid,
+          amountDue: newAmountDue,
+          paymentStatus: newPaymentStatus,
+          creditStatus: newCreditStatus as any,
+        },
+        include: {
+          items: {
+            include: {
+              product: true,
+              variant: true,
+            },
+          },
+          payments: true,
+          cashier: {
+            select: {
+              id: true,
+              username: true,
+              firstName: true,
+              lastName: true,
+            },
+          },
+          branch: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      });
+    });
+  }
+
+  /**
    * Get all sales with filtering and pagination
    */
   async findAll(params: FindAllSalesDto) {
@@ -526,6 +623,8 @@ export class SalesService {
       paymentStatus,
       transactionType,
       search,
+      creditStatus,
+      isCreditSale,
     } = params;
 
     const where: Prisma.SaleWhereInput = {
@@ -533,6 +632,8 @@ export class SalesService {
       ...(cashierId && { cashierId }),
       ...(paymentStatus && { paymentStatus }),
       ...(transactionType && { transactionType }),
+      ...(creditStatus && { creditStatus }),
+      ...(isCreditSale !== undefined && { isCreditSale }),
       ...(startDate &&
         endDate && {
           createdAt: {

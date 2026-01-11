@@ -58,6 +58,14 @@ let SalesController = class SalesController {
             data: sale,
         };
     }
+    async addPayment(id, addPaymentDto, user) {
+        const sale = await this.salesService.addPayment(id, addPaymentDto);
+        return {
+            success: true,
+            data: sale,
+            message: 'Payment added successfully',
+        };
+    }
     async getReceipt(id) {
         const receiptData = await this.salesService.getReceiptData(id);
         return {
@@ -99,6 +107,16 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], SalesController.prototype, "findOne", null);
+__decorate([
+    (0, common_1.Post)(':id/payments'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, dto_1.AddPaymentDto, Object]),
+    __metadata("design:returntype", Promise)
+], SalesController.prototype, "addPayment", null);
 __decorate([
     (0, common_1.Get)(':id/receipt'),
     __param(0, (0, common_1.Param)('id')),

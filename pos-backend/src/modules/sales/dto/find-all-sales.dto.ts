@@ -1,6 +1,6 @@
-import { IsOptional, IsString, IsNumber, Min, IsEnum } from 'class-validator';
+import { IsOptional, IsString, IsNumber, Min, IsEnum, IsBoolean } from 'class-validator';
 import { Type } from 'class-transformer';
-import { PaymentStatus, TransactionType } from '@prisma/client';
+import { PaymentStatus, TransactionType, CreditStatus } from '@prisma/client';
 
 export class FindAllSalesDto {
   @IsOptional()
@@ -42,4 +42,13 @@ export class FindAllSalesDto {
   @IsOptional()
   @IsString()
   search?: string;
+
+  @IsOptional()
+  @IsEnum(CreditStatus)
+  creditStatus?: CreditStatus;
+
+  @IsOptional()
+  @IsBoolean()
+  @Type(() => Boolean)
+  isCreditSale?: boolean;
 }

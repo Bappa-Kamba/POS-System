@@ -10,7 +10,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { SalesService } from './sales.service';
-import { CreateSaleDto, FindAllSalesDto } from './dto';
+import { CreateSaleDto, FindAllSalesDto, AddPaymentDto } from './dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import type { AuthenticatedRequestUser } from '../auth/types/authenticated-user.type';
@@ -84,6 +84,22 @@ export class SalesController {
     return {
       success: true,
       data: sale,
+    };
+  }
+
+  @Post(':id/payments')
+  @HttpCode(HttpStatus.OK)
+  async addPayment(
+    @Param('id') id: string,
+    @Body() addPaymentDto: AddPaymentDto,
+    @CurrentUser() user: AuthenticatedRequestUser,
+  ) {
+    const sale = await this.salesService.addPayment(id, addPaymentDto);
+    
+    return {
+      success: true,
+      data: sale,
+      message: 'Payment added successfully',
     };
   }
 

@@ -430,12 +430,30 @@ export class ReportsService {
     const weekStart = startOfDay(subDays(today, 7));
     const topProducts = await this.getTopSellingProducts(branchId, weekStart);
 
+    // Credit stats (outstanding debt)
+    const creditSales = await this.prisma.sale.findMany({
+      where: {
+        branchId,
+        isCreditSale: true,
+        creditStatus: 'OPEN',
+      },
+      select: {
+        amountDue: true,
+      },
+    });
+
+    const totalCreditDebt = creditSales.reduce((sum, sale) => sum + sale.amountDue, 0);
+
     return {
       salesOverview: {
         todaySalesCount,
         todayRevenue: todayPurchaseRevenue,
         revenueChange,
         salesCountChange,
+      },
+      creditStats: {
+        totalDebt: totalCreditDebt,
+        count: creditSales.length,
       },
       cashbackStats: {
         count: todayCashbackSales.length,

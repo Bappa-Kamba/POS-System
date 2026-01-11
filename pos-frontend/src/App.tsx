@@ -12,6 +12,7 @@ import { ReportsPage } from './pages/admin/ReportsPage';
 import { ExpensesPage } from './pages/admin/ExpensesPage';
 import { AuditLogsPage } from './pages/admin/AuditLogsPage';
 import { SettingsPage } from './pages/admin/SettingsPage';
+import { CreditSalesPage } from './pages/admin/CreditSalesPage';
 import { PosPage } from './pages/cashier/PosPage';
 import { UnauthorizedPage } from './pages/UnauthorizedPage';
 import { ProtectedRoute } from './router/ProtectedRoute';
@@ -128,6 +129,14 @@ export default function App() {
             element={
               <RequireRole role="ADMIN">
                 <SettingsPage />
+              </RequireRole>
+            }
+          />
+          <Route
+            path="/credit-sales"
+            element={
+              <RequireRole role={['ADMIN', 'CASHIER']}>
+                <CreditSalesPage />
               </RequireRole>
             }
           />

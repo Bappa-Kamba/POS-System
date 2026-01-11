@@ -8,18 +8,18 @@ export declare class ProductsController {
         success: boolean;
         data: {
             branch: {
-                id: string;
                 name: string;
+                id: string;
             };
         } & {
-            id: string;
+            branchId: string;
             name: string;
-            description: string | null;
+            id: string;
             createdAt: Date;
             updatedAt: Date;
-            branchId: string;
             isActive: boolean;
             costPrice: number | null;
+            description: string | null;
             sku: string;
             barcode: string | null;
             hasVariants: boolean;
@@ -35,22 +35,22 @@ export declare class ProductsController {
     findAll(query: FindAllProductsDto, user: AuthenticatedRequestUser): Promise<{
         variants?: ({
             product: {
-                id: string;
-                name: string;
-                category: {
-                    id: string;
-                    name: string;
-                } | null;
                 branchId: string;
+                category: {
+                    name: string;
+                    id: string;
+                } | null;
+                name: string;
+                id: string;
             };
         } & {
-            id: string;
+            productId: string;
             name: string;
+            id: string;
             createdAt: Date;
             updatedAt: Date;
             isActive: boolean;
             costPrice: number;
-            productId: string;
             sku: string;
             barcode: string | null;
             sellingPrice: number;
@@ -62,21 +62,21 @@ export declare class ProductsController {
         success: boolean;
         data: ({
             branch: {
-                id: string;
                 name: string;
+                id: string;
             };
             category: {
-                id: string;
                 name: string;
+                id: string;
             } | null;
             variants: {
-                id: string;
+                productId: string;
                 name: string;
+                id: string;
                 createdAt: Date;
                 updatedAt: Date;
                 isActive: boolean;
                 costPrice: number;
-                productId: string;
                 sku: string;
                 barcode: string | null;
                 sellingPrice: number;
@@ -86,14 +86,14 @@ export declare class ProductsController {
                 expiryDate: Date | null;
             }[];
         } & {
-            id: string;
+            branchId: string;
             name: string;
-            description: string | null;
+            id: string;
             createdAt: Date;
             updatedAt: Date;
-            branchId: string;
             isActive: boolean;
             costPrice: number | null;
+            description: string | null;
             sku: string;
             barcode: string | null;
             hasVariants: boolean;
@@ -113,8 +113,8 @@ export declare class ProductsController {
     search(query: string, limit?: number): Promise<{
         success: boolean;
         data: {
-            id: string;
             name: string;
+            id: string;
             sku: string;
             barcode: string | null;
             sellingPrice: number | null;
@@ -143,17 +143,17 @@ export declare class ProductsController {
             type: "product";
             data: {
                 branch: {
-                    id: string;
                     name: string;
+                    id: string;
                 };
                 variants: {
-                    id: string;
+                    productId: string;
                     name: string;
+                    id: string;
                     createdAt: Date;
                     updatedAt: Date;
                     isActive: boolean;
                     costPrice: number;
-                    productId: string;
                     sku: string;
                     barcode: string | null;
                     sellingPrice: number;
@@ -163,14 +163,14 @@ export declare class ProductsController {
                     expiryDate: Date | null;
                 }[];
             } & {
-                id: string;
+                branchId: string;
                 name: string;
-                description: string | null;
+                id: string;
                 createdAt: Date;
                 updatedAt: Date;
-                branchId: string;
                 isActive: boolean;
                 costPrice: number | null;
+                description: string | null;
                 sku: string;
                 barcode: string | null;
                 hasVariants: boolean;
@@ -186,18 +186,18 @@ export declare class ProductsController {
             data: {
                 product: {
                     branch: {
-                        id: string;
                         name: string;
+                        id: string;
                     };
                 } & {
-                    id: string;
+                    branchId: string;
                     name: string;
-                    description: string | null;
+                    id: string;
                     createdAt: Date;
                     updatedAt: Date;
-                    branchId: string;
                     isActive: boolean;
                     costPrice: number | null;
+                    description: string | null;
                     sku: string;
                     barcode: string | null;
                     hasVariants: boolean;
@@ -209,13 +209,13 @@ export declare class ProductsController {
                     trackInventory: boolean;
                 };
             } & {
-                id: string;
+                productId: string;
                 name: string;
+                id: string;
                 createdAt: Date;
                 updatedAt: Date;
                 isActive: boolean;
                 costPrice: number;
-                productId: string;
                 sku: string;
                 barcode: string | null;
                 sellingPrice: number;
@@ -232,21 +232,21 @@ export declare class ProductsController {
         success: boolean;
         data: {
             branch: {
-                id: string;
                 name: string;
+                id: string;
             };
             category: {
-                id: string;
                 name: string;
+                id: string;
             } | null;
             variants: {
-                id: string;
+                productId: string;
                 name: string;
+                id: string;
                 createdAt: Date;
                 updatedAt: Date;
                 isActive: boolean;
                 costPrice: number;
-                productId: string;
                 sku: string;
                 barcode: string | null;
                 sellingPrice: number;
@@ -256,14 +256,14 @@ export declare class ProductsController {
                 expiryDate: Date | null;
             }[];
         } & {
-            id: string;
+            branchId: string;
             name: string;
-            description: string | null;
+            id: string;
             createdAt: Date;
             updatedAt: Date;
-            branchId: string;
             isActive: boolean;
             costPrice: number | null;
+            description: string | null;
             sku: string;
             barcode: string | null;
             hasVariants: boolean;
@@ -279,18 +279,18 @@ export declare class ProductsController {
         success: boolean;
         data: {
             branch: {
-                id: string;
                 name: string;
+                id: string;
             };
         } & {
-            id: string;
+            branchId: string;
             name: string;
-            description: string | null;
+            id: string;
             createdAt: Date;
             updatedAt: Date;
-            branchId: string;
             isActive: boolean;
             costPrice: number | null;
+            description: string | null;
             sku: string;
             barcode: string | null;
             hasVariants: boolean;
@@ -307,18 +307,18 @@ export declare class ProductsController {
         success: boolean;
         data: {
             branch: {
-                id: string;
                 name: string;
+                id: string;
             };
         } & {
-            id: string;
+            branchId: string;
             name: string;
-            description: string | null;
+            id: string;
             createdAt: Date;
             updatedAt: Date;
-            branchId: string;
             isActive: boolean;
             costPrice: number | null;
+            description: string | null;
             sku: string;
             barcode: string | null;
             hasVariants: boolean;

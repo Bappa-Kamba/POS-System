@@ -7,21 +7,21 @@ export declare class VariantsController {
         success: boolean;
         data: {
             product: {
-                id: string;
-                name: string;
                 category: {
-                    id: string;
                     name: string;
+                    id: string;
                 } | null;
+                name: string;
+                id: string;
             };
         } & {
-            id: string;
+            productId: string;
             name: string;
+            id: string;
             createdAt: Date;
             updatedAt: Date;
             isActive: boolean;
             costPrice: number;
-            productId: string;
             sku: string;
             barcode: string | null;
             sellingPrice: number;
@@ -35,13 +35,13 @@ export declare class VariantsController {
     findAll(productId: string): Promise<{
         success: boolean;
         data: {
-            id: string;
+            productId: string;
             name: string;
+            id: string;
             createdAt: Date;
             updatedAt: Date;
             isActive: boolean;
             costPrice: number;
-            productId: string;
             sku: string;
             barcode: string | null;
             sellingPrice: number;
@@ -55,21 +55,21 @@ export declare class VariantsController {
         success: boolean;
         data: {
             product: {
-                id: string;
-                name: string;
                 category: {
-                    id: string;
                     name: string;
+                    id: string;
                 } | null;
+                name: string;
+                id: string;
             };
         } & {
-            id: string;
+            productId: string;
             name: string;
+            id: string;
             createdAt: Date;
             updatedAt: Date;
             isActive: boolean;
             costPrice: number;
-            productId: string;
             sku: string;
             barcode: string | null;
             sellingPrice: number;
@@ -83,21 +83,21 @@ export declare class VariantsController {
         success: boolean;
         data: {
             product: {
-                id: string;
-                name: string;
                 category: {
-                    id: string;
                     name: string;
+                    id: string;
                 } | null;
+                name: string;
+                id: string;
             };
         } & {
-            id: string;
+            productId: string;
             name: string;
+            id: string;
             createdAt: Date;
             updatedAt: Date;
             isActive: boolean;
             costPrice: number;
-            productId: string;
             sku: string;
             barcode: string | null;
             sellingPrice: number;
@@ -111,13 +111,13 @@ export declare class VariantsController {
     remove(id: string): Promise<{
         success: boolean;
         data: {
-            id: string;
+            productId: string;
             name: string;
+            id: string;
             createdAt: Date;
             updatedAt: Date;
             isActive: boolean;
             costPrice: number;
-            productId: string;
             sku: string;
             barcode: string | null;
             sellingPrice: number;
@@ -136,13 +136,13 @@ export declare class VariantsController {
     }, user: any): Promise<{
         success: boolean;
         data: {
-            id: string;
+            productId: string;
             name: string;
+            id: string;
             createdAt: Date;
             updatedAt: Date;
             isActive: boolean;
             costPrice: number;
-            productId: string;
             sku: string;
             barcode: string | null;
             sellingPrice: number;
@@ -161,18 +161,18 @@ export declare class VariantsGlobalController {
         success: boolean;
         data: ({
             product: {
-                id: string;
-                name: string;
                 branchId: string;
+                name: string;
+                id: string;
             };
         } & {
-            id: string;
+            productId: string;
             name: string;
+            id: string;
             createdAt: Date;
             updatedAt: Date;
             isActive: boolean;
             costPrice: number;
-            productId: string;
             sku: string;
             barcode: string | null;
             sellingPrice: number;
@@ -186,21 +186,21 @@ export declare class VariantsGlobalController {
         success: boolean;
         data: ({
             product: {
-                id: string;
-                name: string;
                 category: {
-                    id: string;
                     name: string;
+                    id: string;
                 } | null;
+                name: string;
+                id: string;
             };
         } & {
-            id: string;
+            productId: string;
             name: string;
+            id: string;
             createdAt: Date;
             updatedAt: Date;
             isActive: boolean;
             costPrice: number;
-            productId: string;
             sku: string;
             barcode: string | null;
             sellingPrice: number;

@@ -8,21 +8,21 @@ export declare class InventoryController {
         success: boolean;
         data: {
             product: {
-                id: string;
                 name: string;
+                id: string;
                 sku: string;
             };
             variant: {
-                id: string;
                 name: string;
+                id: string;
                 sku: string;
             } | null;
         } & {
-            id: string;
-            createdAt: Date;
-            notes: string | null;
             productId: string;
             variantId: string | null;
+            notes: string | null;
+            id: string;
+            createdAt: Date;
             saleId: string | null;
             changeType: import("@prisma/client").$Enums.InventoryChangeType;
             quantityChange: number;
@@ -35,21 +35,21 @@ export declare class InventoryController {
     getInventoryLogs(findAllLogsDto: FindAllLogsDto, user: AuthenticatedRequestUser): Promise<{
         data: ({
             product: {
-                id: string;
                 name: string;
+                id: string;
                 sku: string;
             };
             variant: {
-                id: string;
                 name: string;
+                id: string;
                 sku: string;
             } | null;
         } & {
-            id: string;
-            createdAt: Date;
-            notes: string | null;
             productId: string;
             variantId: string | null;
+            notes: string | null;
+            id: string;
+            createdAt: Date;
             saleId: string | null;
             changeType: import("@prisma/client").$Enums.InventoryChangeType;
             quantityChange: number;
@@ -70,8 +70,8 @@ export declare class InventoryController {
             products: {
                 category: string | null;
                 isVariant: boolean;
-                id: string;
                 name: string;
+                id: string;
                 sku: string;
                 quantityInStock: number | null;
                 unitType: import("@prisma/client").$Enums.UnitType;

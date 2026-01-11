@@ -21,6 +21,7 @@ import {
   UserCog,
   ClipboardList,
   KeyRound,
+  CreditCard,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useLicense } from '../../hooks/useLicense';
@@ -121,6 +122,7 @@ export const Navbar = () => {
     { path: '/products', label: 'Products & Inventory', icon: Package },
     { path: '/subdivisions', label: 'Subdivisions', icon: Layers },
     { path: '/categories', label: 'Categories', icon: Tag },
+    { path: '/credit-sales', label: 'Credit Sales', icon: CreditCard },
   ];
 
   const managementItems = [
@@ -336,7 +338,7 @@ export const Navbar = () => {
                   <span className="text-xs">🔒</span>
                 </span>
               ) : (
-                <Link
+            <Link
                   to="/pos"
                   className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                     isActive('/pos')
@@ -552,6 +554,7 @@ export const Navbar = () => {
               POS
             </Link>
           )}
+
         </div>
       </div>
 

@@ -23,6 +23,8 @@ class FindAllSalesDto {
     paymentStatus;
     transactionType;
     search;
+    creditStatus;
+    isCreditSale;
 }
 exports.FindAllSalesDto = FindAllSalesDto;
 __decorate([
@@ -74,4 +76,15 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], FindAllSalesDto.prototype, "search", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsEnum)(client_1.CreditStatus),
+    __metadata("design:type", String)
+], FindAllSalesDto.prototype, "creditStatus", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsBoolean)(),
+    (0, class_transformer_1.Type)(() => Boolean),
+    __metadata("design:type", Boolean)
+], FindAllSalesDto.prototype, "isCreditSale", void 0);
 //# sourceMappingURL=find-all-sales.dto.js.map

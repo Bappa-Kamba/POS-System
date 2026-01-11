@@ -14,6 +14,7 @@ export interface Payment {
   amount: number;
   reference?: string;
   notes?: string;
+  isSettlement?: boolean;
 }
 
 export interface CreateSalePayload {
@@ -25,8 +26,9 @@ export interface CreateSalePayload {
   customerName?: string;
   customerPhone?: string;
   notes?: string;
+  isCreditSale?: boolean;
+  creditReference?: string;
 }
-
 export interface Sale {
   id: string;
   receiptNumber: string;
@@ -44,6 +46,9 @@ export interface Sale {
   customerName?: string;
   customerPhone?: string;
   notes?: string;
+  isCreditSale: boolean;
+  creditStatus?: 'OPEN' | 'SETTLED' | 'WRITTEN_OFF';
+  creditReference?: string;
   items: SaleItemDetail[];
   payments: PaymentDetail[];
   cashier: {
@@ -134,6 +139,16 @@ export interface FindAllSalesParams {
   paymentStatus?: 'PENDING' | 'PARTIAL' | 'PAID' | 'CANCELLED';
   transactionType?: 'PURCHASE' | 'CASHBACK';
   search?: string;
+  creditStatus?: 'OPEN' | 'SETTLED' | 'WRITTEN_OFF';
+  isCreditSale?: boolean;
+}
+
+export interface AddPaymentPayload {
+  method: 'CASH' | 'CARD' | 'TRANSFER';
+  amount: number;
+  reference?: string;
+  notes?: string;
+  isSettlement?: boolean;
 }
 
 const saleService = {
@@ -191,6 +206,21 @@ const saleService = {
     >('/sales/daily-summary', {
       params: date ? { date } : undefined,
     });
+    return response.data;
+  },
+
+  async addPayment(
+    saleId: string,
+    payment: AddPaymentPayload,
+    isSettlement?: boolean
+  ): Promise<ApiResponse<Sale>> {
+    const response = await api.post<ApiResponse<Sale>>(
+      `/sales/${saleId}/payments`,
+      {
+        ...payment,
+        isSettlement,
+      }
+    );
     return response.data;
   },
 };

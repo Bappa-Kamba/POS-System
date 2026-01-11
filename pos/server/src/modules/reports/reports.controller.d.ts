@@ -14,6 +14,10 @@ export declare class ReportsController {
                 revenueChange: number;
                 salesCountChange: number;
             };
+            creditStats: {
+                totalDebt: number;
+                count: number;
+            };
             cashbackStats: {
                 count: number;
                 totalGiven: number;

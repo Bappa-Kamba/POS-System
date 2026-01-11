@@ -9,25 +9,25 @@ export declare class BranchesService {
     findAll(params: FindAllBranchesDto): Promise<{
         data: ({
             _count: {
+                sales: number;
                 users: number;
                 products: number;
-                sales: number;
             };
         } & {
             name: string;
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            email: string | null;
             location: string | null;
             phone: string | null;
-            email: string | null;
             address: string | null;
             taxRate: number;
             currency: string;
             receiptFooter: string | null;
             cashbackCapital: number;
             cashbackServiceChargeRate: number;
-            id: string;
             cashbackSubdivisionId: string | null;
-            createdAt: Date;
-            updatedAt: Date;
         })[];
         meta: {
             total: number;
@@ -41,19 +41,19 @@ export declare class BranchesService {
     getStatistics(id: string): Promise<{
         branch: {
             name: string;
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            email: string | null;
             location: string | null;
             phone: string | null;
-            email: string | null;
             address: string | null;
             taxRate: number;
             currency: string;
             receiptFooter: string | null;
             cashbackCapital: number;
             cashbackServiceChargeRate: number;
-            id: string;
             cashbackSubdivisionId: string | null;
-            createdAt: Date;
-            updatedAt: Date;
         };
         statistics: {
             users: {

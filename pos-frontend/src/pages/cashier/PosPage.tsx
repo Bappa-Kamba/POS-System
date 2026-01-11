@@ -270,6 +270,39 @@ export const PosPage: React.FC = () => {
     }
   };
 
+  const handleCreditSale = async (customerInfo: { name?: string; phone?: string }) => {
+    try {
+      const saleItems = items.map((item) => ({
+        productId: item.productId,
+        variantId: item.variantId,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+      }));
+
+      const response = await createSaleMutation.mutateAsync({
+        items: saleItems,
+        payments: [],
+        transactionType: 'PURCHASE',
+        isCreditSale: true,
+        customerName: customerInfo.name,
+        customerPhone: customerInfo.phone,
+      });
+
+      if (response.success && response.data) {
+        clearCart();
+        setIsPaymentModalOpen(false);
+        toast.success(`Credit sale created for ${customerInfo.name || customerInfo.phone}`);
+      }
+    } catch (error: any) {
+      console.error('Credit sale creation failed:', error);
+      toast.error(
+        error?.response?.data?.error?.message ||
+          'Failed to create credit sale. Please try again.'
+      );
+      throw error;
+    }
+  };
+
   const handleCompleteCashback = async (
     amount: number,
     serviceCharge: number,
@@ -286,7 +319,7 @@ export const PosPage: React.FC = () => {
         serviceCharge,
         payments: [
           {
-            method: 'TRANSFER',
+            method: 'CARD',
             amount: totalReceived,
             reference: `Cashback-${Date.now()}`,
             notes: transactionNotes,
@@ -454,6 +487,8 @@ export const PosPage: React.FC = () => {
         onClose={() => setIsPaymentModalOpen(false)}
         total={total}
         onComplete={handleCompletePurchase}
+        allowCreditSale={true}
+        onCreditSale={handleCreditSale}
       />
 
       <ReceiptPreview

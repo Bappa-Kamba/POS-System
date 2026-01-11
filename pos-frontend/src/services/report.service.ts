@@ -13,6 +13,10 @@ export interface DashboardStats {
     totalGiven: number;
     totalProfit: number;
   };
+  creditStats: {
+    totalDebt: number;
+    count: number;
+  };
   profit: {
     grossProfit: number;
     netProfit: number;

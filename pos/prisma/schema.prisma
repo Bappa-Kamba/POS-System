@@ -333,6 +333,11 @@ model Sale {
   customerName  String?
   customerPhone String?
 
+  // Credit Sales
+  isCreditSale    Boolean       @default(false)
+  creditStatus    CreditStatus?
+  creditReference String?
+
   // Session
   sessionId String?
   session   Session? @relation(fields: [sessionId], references: [id])
@@ -394,6 +399,12 @@ enum PaymentStatus {
 enum TransactionType {
   PURCHASE
   CASHBACK
+}
+
+enum CreditStatus {
+  OPEN
+  SETTLED
+  WRITTEN_OFF
 }
 
 model Payment {

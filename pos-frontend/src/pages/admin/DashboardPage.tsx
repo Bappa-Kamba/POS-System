@@ -98,6 +98,18 @@ export const DashboardPage = () => {
           variant="default"
         />
         <div
+          onClick={() => navigate('/credit-sales')}
+          className="cursor-pointer"
+        >
+          <StatCard
+            title="Total Credit Debt"
+            value={formatCurrency(stats.creditStats.totalDebt)}
+            subtitle={`${stats.creditStats.count} active loans`}
+            icon={<DollarSign className="w-6 h-6 text-red-600" />}
+            variant="warning"
+          />
+        </div>
+        <div
           onClick={() => navigate('/inventory')}
           className="cursor-pointer"
         >

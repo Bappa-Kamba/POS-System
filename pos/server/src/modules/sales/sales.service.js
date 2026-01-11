@@ -60,8 +60,18 @@ let SalesService = SalesService_1 = class SalesService {
                 throw new common_1.BadRequestException('Cashback amount is required and must be greater than 0');
             }
         }
-        if (!data.payments || data.payments.length === 0) {
-            throw new common_1.BadRequestException('Sale must have at least one payment');
+        if (data.isCreditSale) {
+            if (!data.customerName && !data.customerPhone) {
+                throw new common_1.BadRequestException('Credit sales require at least customer name or phone');
+            }
+            if (!data.payments) {
+                data.payments = [];
+            }
+        }
+        else {
+            if (!data.payments || data.payments.length === 0) {
+                throw new common_1.BadRequestException('Sale must have at least one payment');
+            }
         }
         const saleItems = [];
         let subtotal = 0;
@@ -216,7 +226,7 @@ let SalesService = SalesService_1 = class SalesService {
         }
         const totalAmount = subtotal + taxAmount;
         const totalPaid = data.payments.reduce((sum, payment) => sum + payment.amount, 0);
-        if (totalPaid < totalAmount) {
+        if (!data.isCreditSale && !data.isSettlement && totalPaid < totalAmount) {
             throw new common_1.BadRequestException(`Insufficient payment. Total: ${totalAmount}, Paid: ${totalPaid}`);
         }
         const changeGiven = totalPaid > totalAmount ? totalPaid - totalAmount : 0;
@@ -247,6 +257,9 @@ let SalesService = SalesService_1 = class SalesService {
                     customerName: data.customerName,
                     customerPhone: data.customerPhone,
                     notes: data.notes,
+                    isCreditSale: data.isCreditSale || false,
+                    creditStatus: data.isCreditSale ? 'OPEN' : null,
+                    creditReference: data.creditReference,
                     items: {
                         create: saleItems.map((item) => ({
                             productId: item.productId,
@@ -383,13 +396,78 @@ let SalesService = SalesService_1 = class SalesService {
         });
         return sale;
     }
+    async addPayment(saleId, paymentData) {
+        const sale = await this.prisma.sale.findUnique({
+            where: { id: saleId },
+            include: { payments: true },
+        });
+        if (!sale) {
+            throw new common_1.NotFoundException('Sale not found');
+        }
+        if (!sale.isCreditSale) {
+            throw new common_1.BadRequestException('Can only add payments to credit sales');
+        }
+        if (sale.creditStatus === 'SETTLED') {
+            throw new common_1.BadRequestException('Credit sale already settled');
+        }
+        return await this.prisma.$transaction(async (tx) => {
+            await tx.payment.create({
+                data: {
+                    saleId,
+                    method: paymentData.method,
+                    amount: paymentData.amount,
+                    reference: paymentData.reference,
+                    notes: paymentData.notes,
+                },
+            });
+            const newAmountPaid = sale.amountPaid + paymentData.amount;
+            const newAmountDue = sale.totalAmount - newAmountPaid;
+            const newPaymentStatus = newAmountDue <= 0 ? client_1.PaymentStatus.PAID :
+                newAmountPaid > 0 ? client_1.PaymentStatus.PARTIAL : client_1.PaymentStatus.PENDING;
+            const newCreditStatus = newAmountDue <= 0 ? 'SETTLED' : 'OPEN';
+            return await tx.sale.update({
+                where: { id: saleId },
+                data: {
+                    amountPaid: newAmountPaid,
+                    amountDue: newAmountDue,
+                    paymentStatus: newPaymentStatus,
+                    creditStatus: newCreditStatus,
+                },
+                include: {
+                    items: {
+                        include: {
+                            product: true,
+                            variant: true,
+                        },
+                    },
+                    payments: true,
+                    cashier: {
+                        select: {
+                            id: true,
+                            username: true,
+                            firstName: true,
+                            lastName: true,
+                        },
+                    },
+                    branch: {
+                        select: {
+                            id: true,
+                            name: true,
+                        },
+                    },
+                },
+            });
+        });
+    }
     async findAll(params) {
-        const { skip = 0, take = 20, startDate, endDate, cashierId, branchId, paymentStatus, transactionType, search, } = params;
+        const { skip = 0, take = 20, startDate, endDate, cashierId, branchId, paymentStatus, transactionType, search, creditStatus, isCreditSale, } = params;
         const where = {
             ...(branchId && { branchId }),
             ...(cashierId && { cashierId }),
             ...(paymentStatus && { paymentStatus }),
             ...(transactionType && { transactionType }),
+            ...(creditStatus && { creditStatus }),
+            ...(isCreditSale !== undefined && { isCreditSale }),
             ...(startDate &&
                 endDate && {
                 createdAt: {
@@ -469,6 +547,7 @@ let SalesService = SalesService_1 = class SalesService {
                     select: {
                         id: true,
                         name: true,
+                        receiptFooter: true,
                         taxRate: true,
                         currency: true,
                     },

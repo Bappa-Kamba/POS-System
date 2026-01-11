@@ -6,6 +6,7 @@ import {
   ValidateNested,
   Min,
   IsEnum,
+  IsBoolean,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { PaymentMethod, TransactionType } from '@prisma/client';
@@ -81,4 +82,16 @@ export class CreateSaleDto {
   @IsString()
   @IsOptional()
   notes?: string;
+
+  @IsBoolean()
+  @IsOptional()
+  isCreditSale?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  isSettlement?: boolean;
+
+  @IsString()
+  @IsOptional()
+  creditReference?: string;
 }

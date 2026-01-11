@@ -39,14 +39,14 @@ export declare class ReportsService {
                 firstName: string | null;
                 lastName: string | null;
             } | null;
-            id: string;
             name: string;
-            status: import("@prisma/client").$Enums.SessionStatus;
+            id: string;
+            branchId: string;
             createdAt: Date;
             updatedAt: Date;
-            branchId: string;
             startTime: Date;
             endTime: Date | null;
+            status: import("@prisma/client").$Enums.SessionStatus;
             openingBalance: number;
             closingBalance: number | null;
             openedById: string;
@@ -60,6 +60,10 @@ export declare class ReportsService {
             todayRevenue: number;
             revenueChange: number;
             salesCountChange: number;
+        };
+        creditStats: {
+            totalDebt: number;
+            count: number;
         };
         cashbackStats: {
             count: number;

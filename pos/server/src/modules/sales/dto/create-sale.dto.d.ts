@@ -20,4 +20,7 @@ export declare class CreateSaleDto {
     customerName?: string;
     customerPhone?: string;
     notes?: string;
+    isCreditSale?: boolean;
+    isSettlement?: boolean;
+    creditReference?: string;
 }

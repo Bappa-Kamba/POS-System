@@ -74,6 +74,9 @@ class CreateSaleDto {
     customerName;
     customerPhone;
     notes;
+    isCreditSale;
+    isSettlement;
+    creditReference;
 }
 exports.CreateSaleDto = CreateSaleDto;
 __decorate([
@@ -121,4 +124,19 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
 ], CreateSaleDto.prototype, "notes", void 0);
+__decorate([
+    (0, class_validator_1.IsBoolean)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Boolean)
+], CreateSaleDto.prototype, "isCreditSale", void 0);
+__decorate([
+    (0, class_validator_1.IsBoolean)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Boolean)
+], CreateSaleDto.prototype, "isSettlement", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], CreateSaleDto.prototype, "creditReference", void 0);
 //# sourceMappingURL=create-sale.dto.js.map

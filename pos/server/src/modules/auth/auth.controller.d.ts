@@ -10,12 +10,12 @@ export declare class AuthController {
         success: boolean;
         data: {
             user: Omit<{
+                branchId: string;
                 id: string;
                 createdAt: Date;
                 updatedAt: Date;
-                email: string | null;
-                branchId: string;
                 username: string;
+                email: string | null;
                 passwordHash: string;
                 refreshTokenHash: string | null;
                 firstName: string | null;
