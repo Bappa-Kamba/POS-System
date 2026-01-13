@@ -11,13 +11,14 @@ import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly prisma: PrismaService,
   ) {}
-  private readonly logger = new Logger(AuthService.name);
 
   async login(
     dto: LoginDto,
@@ -42,7 +43,6 @@ export class AuthService {
     });
 
     if (!user || !user.isActive) {
-      // Log failed login attempt
       if (user) {
         await this.logAudit({
           userId: user.id,
@@ -58,7 +58,6 @@ export class AuthService {
 
     const passwordMatches = await bcrypt.compare(password, user.passwordHash);
     if (!passwordMatches) {
-      // Log failed login attempt
       await this.logAudit({
         userId: user.id,
         action: AuditAction.LOGIN_FAILED,
@@ -70,10 +69,34 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    // Lazy Cleanup: Close any lingering open sessions for this user/branch
+    // This prevents "infinite" or "stale" sessions from hanging around for days
+    // SKIP if keepSessionAlive is true (re-authentication flow)
+    if (user.branchId && !dto.keepSessionAlive) {
+      const activeSession = await this.prisma.session.findFirst({
+        where: {
+          branchId: user.branchId,
+          openedById: user.id,
+          status: 'OPEN',
+        },
+      });
+
+      if (activeSession) {
+         this.logger.log(`Auto-closing stale session ${activeSession.id} for user ${user.id} during login`);
+         await this.prisma.session.update({
+           where: { id: activeSession.id },
+           data: {
+             status: 'CLOSED',
+             endTime: new Date(),
+             closedById: user.id,
+           },
+         });
+      }
+    }
+
     const tokens = await this.generateTokens(user);
     await this.updateRefreshToken(user.id, tokens.refreshToken);
 
-    // Log successful login
     await this.logAudit({
       userId: user.id,
       action: AuditAction.LOGIN,
@@ -97,12 +120,23 @@ export class AuthService {
   async refreshTokens(dto: RefreshTokenDto): Promise<AuthTokens> {
     const { refreshToken } = dto;
     try {
-      const payload = await this.jwtService.verifyAsync<{ sub: string }>(
-        refreshToken,
-        {
-          secret: this.configService.getOrThrow<string>('JWT_REFRESH_SECRET'),
-        },
-      );
+      const payload = await this.jwtService.verifyAsync<{
+        sub: string;
+        exp: number;
+      }>(refreshToken, {
+        secret: this.configService.getOrThrow<string>('JWT_REFRESH_SECRET'),
+      });
+
+      // Absolute Timeout Logic
+      const currentExpDate = new Date(payload.exp * 1000);
+      const now = new Date();
+      const remainingMs = currentExpDate.getTime() - now.getTime();
+
+      if (remainingMs <= 0) {
+        throw new UnauthorizedException('Refresh token expired');
+      }
+
+      const remainingSeconds = Math.floor(remainingMs / 1000);
 
       const user = await this.usersService.findById(payload.sub);
 
@@ -112,7 +146,6 @@ export class AuthService {
 
       const refreshMatches = await bcrypt.compare(
         refreshToken,
-
         user.refreshTokenHash,
       );
 
@@ -120,7 +153,7 @@ export class AuthService {
         throw new UnauthorizedException('Invalid refresh token');
       }
 
-      const tokens = await this.generateTokens(user);
+      const tokens = await this.generateTokens(user, remainingSeconds);
       await this.updateRefreshToken(user.id, tokens.refreshToken);
 
       return tokens;
@@ -134,12 +167,10 @@ export class AuthService {
     ipAddress?: string,
     userAgent?: string,
   ): Promise<void> {
-    // Get user to find branchId and end active session
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
     });
 
-    // End any active session for this user's branch
     if (user?.branchId) {
       const activeSession = await this.prisma.session.findFirst({
         where: {
@@ -162,7 +193,6 @@ export class AuthService {
 
     await this.usersService.updateRefreshToken(userId, null);
 
-    // Log logout
     await this.logAudit({
       userId,
       action: AuditAction.LOGOUT,
@@ -173,7 +203,10 @@ export class AuthService {
     });
   }
 
-  private async generateTokens(user: User): Promise<AuthTokens> {
+  private async generateTokens(
+    user: User,
+    refreshExpirySeconds?: number,
+  ): Promise<AuthTokens> {
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(
         {
@@ -194,7 +227,9 @@ export class AuthService {
         },
         {
           secret: this.configService.getOrThrow<string>('JWT_REFRESH_SECRET'),
-          expiresIn: this.configService.get('JWT_REFRESH_EXPIRATION', '7d'),
+          expiresIn: refreshExpirySeconds
+            ? `${refreshExpirySeconds}s`
+            : this.configService.get('JWT_REFRESH_EXPIRATION', '7d'),
         },
       ),
     ]);
@@ -219,9 +254,6 @@ export class AuthService {
     return rest;
   }
 
-  /**
-   * Helper method to log audit trail
-   */
   private async logAudit(data: {
     userId: string;
     action: AuditAction;
@@ -243,7 +275,6 @@ export class AuthService {
       });
     } catch (error) {
       this.logger.error(`Failed to create audit log: ${error}`);
-      // Don't throw - audit logging failure shouldn't break the operation
     }
   }
 }

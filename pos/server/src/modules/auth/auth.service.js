@@ -56,13 +56,13 @@ let AuthService = AuthService_1 = class AuthService {
     jwtService;
     configService;
     prisma;
+    logger = new common_1.Logger(AuthService_1.name);
     constructor(usersService, jwtService, configService, prisma) {
         this.usersService = usersService;
         this.jwtService = jwtService;
         this.configService = configService;
         this.prisma = prisma;
     }
-    logger = new common_1.Logger(AuthService_1.name);
     async login(dto, ipAddress, userAgent) {
         const { username, password } = dto;
         const user = await this.usersService.findByUsername(username);
@@ -96,6 +96,26 @@ let AuthService = AuthService_1 = class AuthService {
             });
             throw new common_1.UnauthorizedException('Invalid credentials');
         }
+        if (user.branchId && !dto.keepSessionAlive) {
+            const activeSession = await this.prisma.session.findFirst({
+                where: {
+                    branchId: user.branchId,
+                    openedById: user.id,
+                    status: 'OPEN',
+                },
+            });
+            if (activeSession) {
+                this.logger.log(`Auto-closing stale session ${activeSession.id} for user ${user.id} during login`);
+                await this.prisma.session.update({
+                    where: { id: activeSession.id },
+                    data: {
+                        status: 'CLOSED',
+                        endTime: new Date(),
+                        closedById: user.id,
+                    },
+                });
+            }
+        }
         const tokens = await this.generateTokens(user);
         await this.updateRefreshToken(user.id, tokens.refreshToken);
         await this.logAudit({
@@ -122,6 +142,13 @@ let AuthService = AuthService_1 = class AuthService {
             const payload = await this.jwtService.verifyAsync(refreshToken, {
                 secret: this.configService.getOrThrow('JWT_REFRESH_SECRET'),
             });
+            const currentExpDate = new Date(payload.exp * 1000);
+            const now = new Date();
+            const remainingMs = currentExpDate.getTime() - now.getTime();
+            if (remainingMs <= 0) {
+                throw new common_1.UnauthorizedException('Refresh token expired');
+            }
+            const remainingSeconds = Math.floor(remainingMs / 1000);
             const user = await this.usersService.findById(payload.sub);
             if (!user || !user.refreshTokenHash) {
                 throw new common_1.UnauthorizedException('Invalid refresh token');
@@ -130,7 +157,7 @@ let AuthService = AuthService_1 = class AuthService {
             if (!refreshMatches) {
                 throw new common_1.UnauthorizedException('Invalid refresh token');
             }
-            const tokens = await this.generateTokens(user);
+            const tokens = await this.generateTokens(user, remainingSeconds);
             await this.updateRefreshToken(user.id, tokens.refreshToken);
             return tokens;
         }
@@ -170,7 +197,7 @@ let AuthService = AuthService_1 = class AuthService {
             userAgent,
         });
     }
-    async generateTokens(user) {
+    async generateTokens(user, refreshExpirySeconds) {
         const [accessToken, refreshToken] = await Promise.all([
             this.jwtService.signAsync({
                 sub: user.id,
@@ -186,7 +213,9 @@ let AuthService = AuthService_1 = class AuthService {
                 username: user.username,
             }, {
                 secret: this.configService.getOrThrow('JWT_REFRESH_SECRET'),
-                expiresIn: this.configService.get('JWT_REFRESH_EXPIRATION', '7d'),
+                expiresIn: refreshExpirySeconds
+                    ? `${refreshExpirySeconds}s`
+                    : this.configService.get('JWT_REFRESH_EXPIRATION', '7d'),
             }),
         ]);
         return { accessToken, refreshToken };

@@ -6,12 +6,14 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { UsersModule } from '../users/users.module';
+import { SessionsModule } from '../sessions/sessions.module';
 import { PrismaModule } from '../../prisma/prisma.module';
 
 @Module({
   imports: [
     ConfigModule,
     UsersModule,
+    SessionsModule,
     PrismaModule,
     PassportModule,
     JwtModule.registerAsync({

@@ -11,8 +11,8 @@ export declare class AuthService {
     private readonly jwtService;
     private readonly configService;
     private readonly prisma;
-    constructor(usersService: UsersService, jwtService: JwtService, configService: ConfigService, prisma: PrismaService);
     private readonly logger;
+    constructor(usersService: UsersService, jwtService: JwtService, configService: ConfigService, prisma: PrismaService);
     login(dto: LoginDto, ipAddress?: string, userAgent?: string): Promise<{
         user: User;
         tokens: AuthTokens;

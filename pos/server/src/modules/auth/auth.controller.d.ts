@@ -10,11 +10,8 @@ export declare class AuthController {
         success: boolean;
         data: {
             user: Omit<{
-                branchId: string;
-                id: string;
-                createdAt: Date;
-                updatedAt: Date;
                 username: string;
+                id: string;
                 email: string | null;
                 passwordHash: string;
                 refreshTokenHash: string | null;
@@ -22,7 +19,10 @@ export declare class AuthController {
                 lastName: string | null;
                 role: import("@prisma/client").$Enums.UserRole;
                 isActive: boolean;
+                branchId: string;
                 assignedSubdivisionId: string | null;
+                createdAt: Date;
+                updatedAt: Date;
             }, "passwordHash" | "refreshTokenHash">;
             tokens: import("./types/auth-tokens.type").AuthTokens;
         };

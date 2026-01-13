@@ -14,6 +14,7 @@ const class_validator_1 = require("class-validator");
 class LoginDto {
     username;
     password;
+    keepSessionAlive;
 }
 exports.LoginDto = LoginDto;
 __decorate([
@@ -26,4 +27,9 @@ __decorate([
     (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
 ], LoginDto.prototype, "password", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], LoginDto.prototype, "keepSessionAlive", void 0);
 //# sourceMappingURL=login.dto.js.map

@@ -15,6 +15,7 @@ const auth_controller_1 = require("./auth.controller");
 const auth_service_1 = require("./auth.service");
 const jwt_strategy_1 = require("./strategies/jwt.strategy");
 const users_module_1 = require("../users/users.module");
+const sessions_module_1 = require("../sessions/sessions.module");
 const prisma_module_1 = require("../../prisma/prisma.module");
 let AuthModule = class AuthModule {
 };
@@ -24,6 +25,7 @@ exports.AuthModule = AuthModule = __decorate([
         imports: [
             config_1.ConfigModule,
             users_module_1.UsersModule,
+            sessions_module_1.SessionsModule,
             prisma_module_1.PrismaModule,
             passport_1.PassportModule,
             jwt_1.JwtModule.registerAsync({
