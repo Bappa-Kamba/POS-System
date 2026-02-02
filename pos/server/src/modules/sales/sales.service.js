@@ -593,6 +593,9 @@ let SalesService = SalesService_1 = class SalesService {
             : sale.cashier.username;
         return {
             receipt: {
+                logoUrl: receiptConfig.logoAssetId
+                    ? `/api/v1/assets/${receiptConfig.logoAssetId}/processed`
+                    : undefined,
                 business: {
                     name: receiptConfig.businessName,
                     address: receiptConfig.businessAddress,

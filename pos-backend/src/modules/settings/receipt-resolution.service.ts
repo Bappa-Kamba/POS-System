@@ -74,6 +74,11 @@ export class ReceiptResolutionService {
       // These are always branch-level for now
       branchName: targetBranch.name,
       currency: targetBranch.currency,
+      logoAssetId:
+        (subdivision as any)?.receiptLogoAssetId ||
+        (targetBranch as any).receiptLogoAssetId ||
+        (mainBranch as any)?.receiptLogoAssetId ||
+        undefined,
     };
   }
 }

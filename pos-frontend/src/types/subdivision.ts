@@ -26,6 +26,7 @@ export interface Subdivision {
   receiptAddress?: string | null;
   receiptPhone?: string | null;
   receiptFooter?: string | null;
+  receiptLogoAssetId?: string | null;
 }
 
 export interface CreateSubdivisionDto {
@@ -42,6 +43,7 @@ export type UpdateSubdivisionDto = Partial<CreateSubdivisionDto> & {
   receiptAddress?: string | null;
   receiptPhone?: string | null;
   receiptFooter?: string | null;
+  receiptLogoAssetId?: string | null;
 };
 
 export interface AssignSubdivisionDto {

@@ -14,15 +14,15 @@ export declare class UsersService {
     findAll(params: FindAllUsersDto): Promise<{
         data: {
             branch: {
-                name: string;
                 id: string;
+                name: string;
             };
-            branchId: string;
             id: string;
             createdAt: Date;
             updatedAt: Date;
-            username: string;
             email: string | null;
+            branchId: string;
+            username: string;
             firstName: string | null;
             lastName: string | null;
             role: import("@prisma/client").$Enums.UserRole;

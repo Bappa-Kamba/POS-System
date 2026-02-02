@@ -31,6 +31,7 @@ const subdivisions_module_1 = require("./modules/subdivisions/subdivisions.modul
 const categories_module_1 = require("./modules/categories/categories.module");
 const license_guard_1 = require("./modules/license/guards/license.guard");
 const license_module_1 = require("./modules/license/license.module");
+const assets_module_1 = require("./modules/assets/assets.module");
 const serve_static_1 = require("@nestjs/serve-static");
 const path_1 = require("path");
 let AppModule = class AppModule {
@@ -66,6 +67,7 @@ exports.AppModule = AppModule = __decorate([
             subdivisions_module_1.SubdivisionsModule,
             categories_module_1.CategoriesModule,
             license_module_1.LicenseModule,
+            assets_module_1.AssetsModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [

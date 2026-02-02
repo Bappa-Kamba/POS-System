@@ -5,21 +5,21 @@ export declare class VariantsService {
     constructor(prisma: PrismaService);
     create(productId: string, data: CreateVariantDto): Promise<{
         product: {
-            category: {
-                name: string;
-                id: string;
-            } | null;
-            name: string;
             id: string;
+            name: string;
+            category: {
+                id: string;
+                name: string;
+            } | null;
         };
     } & {
-        productId: string;
-        name: string;
         id: string;
+        name: string;
         createdAt: Date;
         updatedAt: Date;
         isActive: boolean;
         costPrice: number;
+        productId: string;
         sku: string;
         barcode: string | null;
         sellingPrice: number;
@@ -29,13 +29,13 @@ export declare class VariantsService {
         expiryDate: Date | null;
     }>;
     findAllByProduct(productId: string): Promise<{
-        productId: string;
-        name: string;
         id: string;
+        name: string;
         createdAt: Date;
         updatedAt: Date;
         isActive: boolean;
         costPrice: number;
+        productId: string;
         sku: string;
         barcode: string | null;
         sellingPrice: number;
@@ -46,21 +46,21 @@ export declare class VariantsService {
     }[]>;
     findOne(id: string): Promise<{
         product: {
-            category: {
-                name: string;
-                id: string;
-            } | null;
-            name: string;
             id: string;
+            name: string;
+            category: {
+                id: string;
+                name: string;
+            } | null;
         };
     } & {
-        productId: string;
-        name: string;
         id: string;
+        name: string;
         createdAt: Date;
         updatedAt: Date;
         isActive: boolean;
         costPrice: number;
+        productId: string;
         sku: string;
         barcode: string | null;
         sellingPrice: number;
@@ -71,21 +71,21 @@ export declare class VariantsService {
     }>;
     update(id: string, data: UpdateVariantDto): Promise<{
         product: {
-            category: {
-                name: string;
-                id: string;
-            } | null;
-            name: string;
             id: string;
+            name: string;
+            category: {
+                id: string;
+                name: string;
+            } | null;
         };
     } & {
-        productId: string;
-        name: string;
         id: string;
+        name: string;
         createdAt: Date;
         updatedAt: Date;
         isActive: boolean;
         costPrice: number;
+        productId: string;
         sku: string;
         barcode: string | null;
         sellingPrice: number;
@@ -95,13 +95,13 @@ export declare class VariantsService {
         expiryDate: Date | null;
     }>;
     remove(id: string): Promise<{
-        productId: string;
-        name: string;
         id: string;
+        name: string;
         createdAt: Date;
         updatedAt: Date;
         isActive: boolean;
         costPrice: number;
+        productId: string;
         sku: string;
         barcode: string | null;
         sellingPrice: number;
@@ -119,13 +119,13 @@ export declare class VariantsService {
         notes?: string;
         userId: string;
     }): Promise<{
-        productId: string;
-        name: string;
         id: string;
+        name: string;
         createdAt: Date;
         updatedAt: Date;
         isActive: boolean;
         costPrice: number;
+        productId: string;
         sku: string;
         barcode: string | null;
         sellingPrice: number;
@@ -136,18 +136,18 @@ export declare class VariantsService {
     }>;
     getLowStock(branchId?: string): Promise<({
         product: {
-            branchId: string;
-            name: string;
             id: string;
+            name: string;
+            branchId: string;
         };
     } & {
-        productId: string;
-        name: string;
         id: string;
+        name: string;
         createdAt: Date;
         updatedAt: Date;
         isActive: boolean;
         costPrice: number;
+        productId: string;
         sku: string;
         barcode: string | null;
         sellingPrice: number;
@@ -158,21 +158,21 @@ export declare class VariantsService {
     })[]>;
     getExpiring(days?: number, branchId?: string): Promise<({
         product: {
-            category: {
-                name: string;
-                id: string;
-            } | null;
-            name: string;
             id: string;
+            name: string;
+            category: {
+                id: string;
+                name: string;
+            } | null;
         };
     } & {
-        productId: string;
-        name: string;
         id: string;
+        name: string;
         createdAt: Date;
         updatedAt: Date;
         isActive: boolean;
         costPrice: number;
+        productId: string;
         sku: string;
         barcode: string | null;
         sellingPrice: number;

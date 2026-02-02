@@ -39,14 +39,14 @@ export declare class ReportsService {
                 firstName: string | null;
                 lastName: string | null;
             } | null;
-            name: string;
             id: string;
-            branchId: string;
+            name: string;
+            status: import("@prisma/client").$Enums.SessionStatus;
             createdAt: Date;
             updatedAt: Date;
+            branchId: string;
             startTime: Date;
             endTime: Date | null;
-            status: import("@prisma/client").$Enums.SessionStatus;
             openingBalance: number;
             closingBalance: number | null;
             openedById: string;

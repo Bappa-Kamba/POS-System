@@ -14,6 +14,7 @@ export interface Branch {
   businessAddress?: string | null;
   businessPhone?: string | null;
   receiptFooter?: string | null;
+  receiptLogoAssetId?: string | null;
   cashbackCapital: number;
   cashbackServiceChargeRate: number;
   cashbackSubdivisionId?: string | null;

@@ -13,17 +13,18 @@ export declare class SettingsController {
     getBranch(user: AuthenticatedRequestUser): Promise<{
         success: boolean;
         data: {
-            name: string;
             id: string;
+            name: string;
+            receiptFooter: string | null;
+            receiptLogoAssetId: string | null;
             createdAt: Date;
             updatedAt: Date;
-            email: string | null;
             location: string | null;
             phone: string | null;
+            email: string | null;
             address: string | null;
             taxRate: number;
             currency: string;
-            receiptFooter: string | null;
             cashbackCapital: number;
             cashbackServiceChargeRate: number;
             cashbackSubdivisionId: string | null;
@@ -32,17 +33,18 @@ export declare class SettingsController {
     updateBranch(user: AuthenticatedRequestUser, updateBranchDto: UpdateBranchDto): Promise<{
         success: boolean;
         data: {
-            name: string;
             id: string;
+            name: string;
+            receiptFooter: string | null;
+            receiptLogoAssetId: string | null;
             createdAt: Date;
             updatedAt: Date;
-            email: string | null;
             location: string | null;
             phone: string | null;
+            email: string | null;
             address: string | null;
             taxRate: number;
             currency: string;
-            receiptFooter: string | null;
             cashbackCapital: number;
             cashbackServiceChargeRate: number;
             cashbackSubdivisionId: string | null;

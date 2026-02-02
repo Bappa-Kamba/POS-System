@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Printer } from 'lucide-react';
 import { Modal } from '../common/Modal';
 import { Button } from '../common/Button';
 import { formatCurrency, formatDate } from '../../utils/formatters';
-import { printReceipt, type ReceiptData } from '../../services/print.service';
+import { printReceipt, loadSvgFromUrl, type ReceiptData } from '../../services/print.service';
 
 interface ReceiptPreviewProps {
   isOpen: boolean;
@@ -16,6 +16,34 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
   onClose,
   receiptData,
 }) => {
+  const [processedLogoUrl, setProcessedLogoUrl] = useState<string | null>(null);
+  const [isLoadingLogo, setIsLoadingLogo] = useState(false);
+
+  // Load and process logo when receipt data changes
+  // The loadSvgFromUrl function handles caching internally
+  useEffect(() => {
+    const loadLogo = async () => {
+      if (!receiptData?.logoUrl) {
+        setProcessedLogoUrl(null);
+        return;
+      }
+
+      setIsLoadingLogo(true);
+      try {
+        // loadSvgFromUrl now handles caching globally
+        const processedUrl = await loadSvgFromUrl(receiptData.logoUrl);
+        setProcessedLogoUrl(processedUrl);
+      } catch (error) {
+        console.error('Failed to load logo:', error);
+        setProcessedLogoUrl(null);
+      } finally {
+        setIsLoadingLogo(false);
+      }
+    };
+
+    loadLogo();
+  }, [receiptData?.logoUrl]);
+
   if (!receiptData) {
     return null;
   }
@@ -31,6 +59,20 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
         <div className="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 p-6 max-w-md mx-auto">
           {/* Business Header */}
           <div className="text-center mb-6">
+            {/* Logo */}
+            {isLoadingLogo && (
+              <div className="block mx-auto mb-4 h-20 flex items-center justify-center">
+                <div className="animate-pulse text-neutral-400">Loading logo...</div>
+              </div>
+            )}
+            {!isLoadingLogo && processedLogoUrl && (
+              <img 
+                src={processedLogoUrl} 
+                alt="Business Logo" 
+                className="block mx-auto mb-2 max-w-full w-full h-auto"
+                style={{ maxHeight: '80px', objectFit: 'contain' }}
+              />
+            )}
             <h2 className="text-xl font-bold text-neutral-900 dark:text-neutral-100 mb-2">
               {receiptData.business.name}
             </h2>

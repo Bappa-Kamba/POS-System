@@ -14,17 +14,18 @@ export declare class BranchesService {
                 products: number;
             };
         } & {
-            name: string;
             id: string;
+            name: string;
+            receiptFooter: string | null;
+            receiptLogoAssetId: string | null;
             createdAt: Date;
             updatedAt: Date;
-            email: string | null;
             location: string | null;
             phone: string | null;
+            email: string | null;
             address: string | null;
             taxRate: number;
             currency: string;
-            receiptFooter: string | null;
             cashbackCapital: number;
             cashbackServiceChargeRate: number;
             cashbackSubdivisionId: string | null;
@@ -40,17 +41,18 @@ export declare class BranchesService {
     remove(id: string): Promise<Branch>;
     getStatistics(id: string): Promise<{
         branch: {
-            name: string;
             id: string;
+            name: string;
+            receiptFooter: string | null;
+            receiptLogoAssetId: string | null;
             createdAt: Date;
             updatedAt: Date;
-            email: string | null;
             location: string | null;
             phone: string | null;
+            email: string | null;
             address: string | null;
             taxRate: number;
             currency: string;
-            receiptFooter: string | null;
             cashbackCapital: number;
             cashbackServiceChargeRate: number;
             cashbackSubdivisionId: string | null;

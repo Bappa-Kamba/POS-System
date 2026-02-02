@@ -9,18 +9,18 @@ export declare class ProductsService {
     private verifyProductAccess;
     create(data: CreateProductDto, userId: string, user: AuthenticatedRequestUser): Promise<{
         branch: {
-            name: string;
             id: string;
+            name: string;
         };
     } & {
-        branchId: string;
-        name: string;
         id: string;
+        name: string;
+        description: string | null;
         createdAt: Date;
         updatedAt: Date;
+        branchId: string;
         isActive: boolean;
         costPrice: number | null;
-        description: string | null;
         sku: string;
         barcode: string | null;
         hasVariants: boolean;
@@ -34,21 +34,21 @@ export declare class ProductsService {
     findAll(params: FindAllProductsDto, user?: AuthenticatedRequestUser): Promise<{
         data: ({
             branch: {
-                name: string;
                 id: string;
+                name: string;
             };
             category: {
-                name: string;
                 id: string;
+                name: string;
             } | null;
             variants: {
-                productId: string;
-                name: string;
                 id: string;
+                name: string;
                 createdAt: Date;
                 updatedAt: Date;
                 isActive: boolean;
                 costPrice: number;
+                productId: string;
                 sku: string;
                 barcode: string | null;
                 sellingPrice: number;
@@ -58,14 +58,14 @@ export declare class ProductsService {
                 expiryDate: Date | null;
             }[];
         } & {
-            branchId: string;
-            name: string;
             id: string;
+            name: string;
+            description: string | null;
             createdAt: Date;
             updatedAt: Date;
+            branchId: string;
             isActive: boolean;
             costPrice: number | null;
-            description: string | null;
             sku: string;
             barcode: string | null;
             hasVariants: boolean;
@@ -83,22 +83,22 @@ export declare class ProductsService {
         };
         variants?: ({
             product: {
-                branchId: string;
-                category: {
-                    name: string;
-                    id: string;
-                } | null;
-                name: string;
                 id: string;
+                name: string;
+                category: {
+                    id: string;
+                    name: string;
+                } | null;
+                branchId: string;
             };
         } & {
-            productId: string;
-            name: string;
             id: string;
+            name: string;
             createdAt: Date;
             updatedAt: Date;
             isActive: boolean;
             costPrice: number;
+            productId: string;
             sku: string;
             barcode: string | null;
             sellingPrice: number;
@@ -110,21 +110,21 @@ export declare class ProductsService {
     }>;
     findOne(id: string, user?: AuthenticatedRequestUser): Promise<{
         branch: {
-            name: string;
             id: string;
+            name: string;
         };
         category: {
-            name: string;
             id: string;
+            name: string;
         } | null;
         variants: {
-            productId: string;
-            name: string;
             id: string;
+            name: string;
             createdAt: Date;
             updatedAt: Date;
             isActive: boolean;
             costPrice: number;
+            productId: string;
             sku: string;
             barcode: string | null;
             sellingPrice: number;
@@ -134,14 +134,14 @@ export declare class ProductsService {
             expiryDate: Date | null;
         }[];
     } & {
-        branchId: string;
-        name: string;
         id: string;
+        name: string;
+        description: string | null;
         createdAt: Date;
         updatedAt: Date;
+        branchId: string;
         isActive: boolean;
         costPrice: number | null;
-        description: string | null;
         sku: string;
         barcode: string | null;
         hasVariants: boolean;
@@ -154,18 +154,18 @@ export declare class ProductsService {
     }>;
     update(id: string, data: UpdateProductDto, userId: string, user?: AuthenticatedRequestUser): Promise<{
         branch: {
-            name: string;
             id: string;
+            name: string;
         };
     } & {
-        branchId: string;
-        name: string;
         id: string;
+        name: string;
+        description: string | null;
         createdAt: Date;
         updatedAt: Date;
+        branchId: string;
         isActive: boolean;
         costPrice: number | null;
-        description: string | null;
         sku: string;
         barcode: string | null;
         hasVariants: boolean;
@@ -178,18 +178,18 @@ export declare class ProductsService {
     }>;
     remove(id: string, userId: string, user?: AuthenticatedRequestUser): Promise<{
         branch: {
-            name: string;
             id: string;
+            name: string;
         };
     } & {
-        branchId: string;
-        name: string;
         id: string;
+        name: string;
+        description: string | null;
         createdAt: Date;
         updatedAt: Date;
+        branchId: string;
         isActive: boolean;
         costPrice: number | null;
-        description: string | null;
         sku: string;
         barcode: string | null;
         hasVariants: boolean;
@@ -206,17 +206,17 @@ export declare class ProductsService {
         type: "product";
         data: {
             branch: {
-                name: string;
                 id: string;
+                name: string;
             };
             variants: {
-                productId: string;
-                name: string;
                 id: string;
+                name: string;
                 createdAt: Date;
                 updatedAt: Date;
                 isActive: boolean;
                 costPrice: number;
+                productId: string;
                 sku: string;
                 barcode: string | null;
                 sellingPrice: number;
@@ -226,14 +226,14 @@ export declare class ProductsService {
                 expiryDate: Date | null;
             }[];
         } & {
-            branchId: string;
-            name: string;
             id: string;
+            name: string;
+            description: string | null;
             createdAt: Date;
             updatedAt: Date;
+            branchId: string;
             isActive: boolean;
             costPrice: number | null;
-            description: string | null;
             sku: string;
             barcode: string | null;
             hasVariants: boolean;
@@ -249,18 +249,18 @@ export declare class ProductsService {
         data: {
             product: {
                 branch: {
-                    name: string;
                     id: string;
+                    name: string;
                 };
             } & {
-                branchId: string;
-                name: string;
                 id: string;
+                name: string;
+                description: string | null;
                 createdAt: Date;
                 updatedAt: Date;
+                branchId: string;
                 isActive: boolean;
                 costPrice: number | null;
-                description: string | null;
                 sku: string;
                 barcode: string | null;
                 hasVariants: boolean;
@@ -272,13 +272,13 @@ export declare class ProductsService {
                 trackInventory: boolean;
             };
         } & {
-            productId: string;
-            name: string;
             id: string;
+            name: string;
             createdAt: Date;
             updatedAt: Date;
             isActive: boolean;
             costPrice: number;
+            productId: string;
             sku: string;
             barcode: string | null;
             sellingPrice: number;
@@ -289,8 +289,8 @@ export declare class ProductsService {
         };
     } | null>;
     search(query: string, limit?: number): Promise<{
-        name: string;
         id: string;
+        name: string;
         sku: string;
         barcode: string | null;
         sellingPrice: number | null;

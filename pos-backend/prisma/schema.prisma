@@ -64,6 +64,8 @@ model Branch {
 
   // Business Info for Receipts
   receiptFooter   String?
+  receiptLogoAssetId String?
+  receiptLogo        Asset?  @relation(fields: [receiptLogoAssetId], references: [id])
 
   // Cashback Service Settings
   cashbackCapital           Float   @default(0) // Starting capital for cashback service
@@ -103,6 +105,8 @@ model Subdivision {
   receiptAddress      String?   // Override branch businessAddress
   receiptPhone        String?   // Override branch businessPhone
   receiptFooter       String?   // Override branch receiptFooter
+  receiptLogoAssetId  String?
+  receiptLogo         Asset?    @relation(fields: [receiptLogoAssetId], references: [id])
 
   // Relations
   categories         Category[]
@@ -625,4 +629,26 @@ model AppLicense {
   updatedAt       DateTime      @updatedAt
 
   @@map("app_licenses")
+}
+
+enum AssetKind {
+  RECEIPT_LOGO
+}
+
+model Asset {
+  id            String    @id @default(uuid())
+  kind          AssetKind
+  mimeType      String
+  originalPath  String
+  processedPath String?
+  fileSizeBytes Int
+  sha256        String?   // Optional hash for deduplication/verification
+  
+  branches     Branch[]
+  subdivisions Subdivision[]
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@map("assets")
 }

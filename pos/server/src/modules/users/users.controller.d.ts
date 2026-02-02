@@ -7,12 +7,12 @@ export declare class UsersController {
     create(createUserDto: CreateUserDto): Promise<{
         success: boolean;
         data: Omit<{
-            branchId: string;
             id: string;
             createdAt: Date;
             updatedAt: Date;
-            username: string;
             email: string | null;
+            branchId: string;
+            username: string;
             passwordHash: string;
             refreshTokenHash: string | null;
             firstName: string | null;
@@ -26,15 +26,15 @@ export declare class UsersController {
     findAll(findAllUsersDto: FindAllUsersDto, user: AuthenticatedRequestUser): Promise<{
         data: {
             branch: {
-                name: string;
                 id: string;
+                name: string;
             };
-            branchId: string;
             id: string;
             createdAt: Date;
             updatedAt: Date;
-            username: string;
             email: string | null;
+            branchId: string;
+            username: string;
             firstName: string | null;
             lastName: string | null;
             role: import("@prisma/client").$Enums.UserRole;
@@ -51,12 +51,12 @@ export declare class UsersController {
     findOne(id: string): Promise<{
         success: boolean;
         data: Omit<{
-            branchId: string;
             id: string;
             createdAt: Date;
             updatedAt: Date;
-            username: string;
             email: string | null;
+            branchId: string;
+            username: string;
             passwordHash: string;
             refreshTokenHash: string | null;
             firstName: string | null;
@@ -69,12 +69,12 @@ export declare class UsersController {
     update(id: string, updateUserDto: UpdateUserDto): Promise<{
         success: boolean;
         data: Omit<{
-            branchId: string;
             id: string;
             createdAt: Date;
             updatedAt: Date;
-            username: string;
             email: string | null;
+            branchId: string;
+            username: string;
             passwordHash: string;
             refreshTokenHash: string | null;
             firstName: string | null;
@@ -88,12 +88,12 @@ export declare class UsersController {
     remove(id: string): Promise<{
         success: boolean;
         data: Omit<{
-            branchId: string;
             id: string;
             createdAt: Date;
             updatedAt: Date;
-            username: string;
             email: string | null;
+            branchId: string;
+            username: string;
             passwordHash: string;
             refreshTokenHash: string | null;
             firstName: string | null;

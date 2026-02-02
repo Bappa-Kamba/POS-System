@@ -6,17 +6,18 @@ export declare class BranchesController {
     create(createBranchDto: CreateBranchDto): Promise<{
         success: boolean;
         data: {
-            name: string;
             id: string;
+            name: string;
+            receiptFooter: string | null;
+            receiptLogoAssetId: string | null;
             createdAt: Date;
             updatedAt: Date;
-            email: string | null;
             location: string | null;
             phone: string | null;
+            email: string | null;
             address: string | null;
             taxRate: number;
             currency: string;
-            receiptFooter: string | null;
             cashbackCapital: number;
             cashbackServiceChargeRate: number;
             cashbackSubdivisionId: string | null;
@@ -31,17 +32,18 @@ export declare class BranchesController {
                 products: number;
             };
         } & {
-            name: string;
             id: string;
+            name: string;
+            receiptFooter: string | null;
+            receiptLogoAssetId: string | null;
             createdAt: Date;
             updatedAt: Date;
-            email: string | null;
             location: string | null;
             phone: string | null;
+            email: string | null;
             address: string | null;
             taxRate: number;
             currency: string;
-            receiptFooter: string | null;
             cashbackCapital: number;
             cashbackServiceChargeRate: number;
             cashbackSubdivisionId: string | null;
@@ -56,17 +58,18 @@ export declare class BranchesController {
     findOne(id: string): Promise<{
         success: boolean;
         data: {
-            name: string;
             id: string;
+            name: string;
+            receiptFooter: string | null;
+            receiptLogoAssetId: string | null;
             createdAt: Date;
             updatedAt: Date;
-            email: string | null;
             location: string | null;
             phone: string | null;
+            email: string | null;
             address: string | null;
             taxRate: number;
             currency: string;
-            receiptFooter: string | null;
             cashbackCapital: number;
             cashbackServiceChargeRate: number;
             cashbackSubdivisionId: string | null;
@@ -76,17 +79,18 @@ export declare class BranchesController {
         success: boolean;
         data: {
             branch: {
-                name: string;
                 id: string;
+                name: string;
+                receiptFooter: string | null;
+                receiptLogoAssetId: string | null;
                 createdAt: Date;
                 updatedAt: Date;
-                email: string | null;
                 location: string | null;
                 phone: string | null;
+                email: string | null;
                 address: string | null;
                 taxRate: number;
                 currency: string;
-                receiptFooter: string | null;
                 cashbackCapital: number;
                 cashbackServiceChargeRate: number;
                 cashbackSubdivisionId: string | null;
@@ -110,17 +114,18 @@ export declare class BranchesController {
     update(id: string, updateBranchDto: UpdateBranchDto): Promise<{
         success: boolean;
         data: {
-            name: string;
             id: string;
+            name: string;
+            receiptFooter: string | null;
+            receiptLogoAssetId: string | null;
             createdAt: Date;
             updatedAt: Date;
-            email: string | null;
             location: string | null;
             phone: string | null;
+            email: string | null;
             address: string | null;
             taxRate: number;
             currency: string;
-            receiptFooter: string | null;
             cashbackCapital: number;
             cashbackServiceChargeRate: number;
             cashbackSubdivisionId: string | null;
@@ -130,17 +135,18 @@ export declare class BranchesController {
     remove(id: string): Promise<{
         success: boolean;
         data: {
-            name: string;
             id: string;
+            name: string;
+            receiptFooter: string | null;
+            receiptLogoAssetId: string | null;
             createdAt: Date;
             updatedAt: Date;
-            email: string | null;
             location: string | null;
             phone: string | null;
+            email: string | null;
             address: string | null;
             taxRate: number;
             currency: string;
-            receiptFooter: string | null;
             cashbackCapital: number;
             cashbackServiceChargeRate: number;
             cashbackSubdivisionId: string | null;

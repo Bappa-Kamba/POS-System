@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { useQueryClient } from '@tanstack/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import {
@@ -18,6 +19,7 @@ import { useThemeStore } from '../../store/themeStore';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
 import { formatCurrency } from '../../utils/formatters';
+import { ReceiptLogoUpload } from '../../components/settings/ReceiptLogoUpload';
 
 const branchInfoSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -39,6 +41,7 @@ const cashbackSettingsSchema = z.object({
 type TabType = 'branch' | 'tax' | 'receipt' | 'cashback' | 'system';
 
 export const SettingsPage = () => {
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<TabType>('branch');
   const { data: branch, isLoading } = useBranch();
   const { data: subdivisions } = useSubdivisions();
@@ -289,6 +292,17 @@ export const SettingsPage = () => {
             <div className="space-y-8">
               {/* Branch Level Settings */}
               <div className="p-6 bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700">
+                <div className="mb-8 pb-8 border-b border-neutral-200 dark:border-neutral-700">
+                  <ReceiptLogoUpload
+                    scope="BRANCH"
+                    label="Branch Receipt Logo"
+                    scopeId={branch?.id || ''}
+                    currentLogoAssetId={branch?.receiptLogoAssetId}
+                    onUploadSuccess={() => {
+                      queryClient.invalidateQueries({ queryKey: ['branch'] });
+                    }}
+                  />
+                </div>
                 <h3 className="text-lg font-medium mb-4 text-neutral-900 dark:text-neutral-100">Branch Receipt Footer</h3>
                 <form
                   onSubmit={receiptForm.handleSubmit(handleReceiptSubmit)}
@@ -342,6 +356,21 @@ export const SettingsPage = () => {
 
                 {selectedSubdivisionId && (
                   <form onSubmit={handleSubdivisionReceiptSubmit} className="space-y-4 animate-in fade-in slide-in-from-top-2">
+                    <div className="mb-6 pb-6 border-b border-neutral-200 dark:border-neutral-700">
+                      <ReceiptLogoUpload
+                        scope="SUBDIVISION"
+                        label="Subdivision Receipt Logo (Override)"
+                        scopeId={selectedSubdivisionId}
+                        currentLogoAssetId={
+                          subdivisions && 'data' in subdivisions && Array.isArray(subdivisions.data)
+                            ? (subdivisions.data as any[]).find(s => s.id === selectedSubdivisionId)?.receiptLogoAssetId
+                            : null
+                        }
+                        onUploadSuccess={() => {
+                          queryClient.invalidateQueries({ queryKey: ['subdivisions'] });
+                        }}
+                      />
+                    </div>
                     <div className="flex items-center gap-2 mb-4">
                       <input
                         type="checkbox"

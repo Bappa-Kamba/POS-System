@@ -7,34 +7,9 @@ export declare class SalesController {
     create(createSaleDto: CreateSaleDto, user: AuthenticatedRequestUser): Promise<{
         success: boolean;
         data: ({
-            items: {
-                productId: string;
-                variantId: string | null;
-                quantity: number;
-                unitPrice: number;
-                id: string;
-                subtotal: number;
-                taxAmount: number;
-                createdAt: Date;
-                taxRate: number;
-                itemName: string;
-                itemSku: string;
-                costPrice: number;
-                total: number;
-                saleId: string;
-            }[];
-            payments: {
-                method: import("@prisma/client").$Enums.PaymentMethod;
-                amount: number;
-                reference: string | null;
-                notes: string | null;
-                id: string;
-                createdAt: Date;
-                saleId: string;
-            }[];
             branch: {
-                name: string;
                 id: string;
+                name: string;
             };
             cashier: {
                 id: string;
@@ -42,18 +17,40 @@ export declare class SalesController {
                 firstName: string | null;
                 lastName: string | null;
             };
+            items: {
+                id: string;
+                createdAt: Date;
+                taxRate: number;
+                subtotal: number;
+                taxAmount: number;
+                itemName: string;
+                itemSku: string;
+                quantity: number;
+                unitPrice: number;
+                costPrice: number;
+                total: number;
+                productId: string;
+                variantId: string | null;
+                saleId: string;
+            }[];
+            payments: {
+                id: string;
+                createdAt: Date;
+                notes: string | null;
+                method: import("@prisma/client").$Enums.PaymentMethod;
+                amount: number;
+                reference: string | null;
+                saleId: string;
+            }[];
         } & {
-            notes: string | null;
-            transactionType: import("@prisma/client").$Enums.TransactionType;
-            customerName: string | null;
-            customerPhone: string | null;
-            isCreditSale: boolean;
-            creditReference: string | null;
             id: string;
+            createdAt: Date;
+            updatedAt: Date;
             receiptNumber: string;
             cashierId: string;
             branchId: string;
             subdivisionId: string | null;
+            transactionType: import("@prisma/client").$Enums.TransactionType;
             subtotal: number;
             taxAmount: number;
             discountAmount: number;
@@ -62,25 +59,38 @@ export declare class SalesController {
             amountPaid: number;
             amountDue: number;
             changeGiven: number;
+            notes: string | null;
+            customerName: string | null;
+            customerPhone: string | null;
+            isCreditSale: boolean;
             creditStatus: import("@prisma/client").$Enums.CreditStatus | null;
+            creditReference: string | null;
             sessionId: string | null;
-            createdAt: Date;
-            updatedAt: Date;
         }) | null;
         message: string;
     }>;
     findAll(query: FindAllSalesDto, user: AuthenticatedRequestUser): Promise<{
         data: ({
+            branch: {
+                id: string;
+                name: string;
+            };
+            cashier: {
+                id: string;
+                username: string;
+                firstName: string | null;
+                lastName: string | null;
+            };
             items: ({
                 product: {
-                    name: string;
                     id: string;
-                    branchId: string;
+                    name: string;
+                    description: string | null;
                     createdAt: Date;
                     updatedAt: Date;
+                    branchId: string;
                     isActive: boolean;
                     costPrice: number | null;
-                    description: string | null;
                     sku: string;
                     barcode: string | null;
                     hasVariants: boolean;
@@ -92,13 +102,13 @@ export declare class SalesController {
                     trackInventory: boolean;
                 };
                 variant: {
-                    productId: string;
-                    name: string;
                     id: string;
+                    name: string;
                     createdAt: Date;
                     updatedAt: Date;
                     isActive: boolean;
                     costPrice: number;
+                    productId: string;
                     sku: string;
                     barcode: string | null;
                     sellingPrice: number;
@@ -108,52 +118,39 @@ export declare class SalesController {
                     expiryDate: Date | null;
                 } | null;
             } & {
-                productId: string;
-                variantId: string | null;
-                quantity: number;
-                unitPrice: number;
                 id: string;
-                subtotal: number;
-                taxAmount: number;
                 createdAt: Date;
                 taxRate: number;
+                subtotal: number;
+                taxAmount: number;
                 itemName: string;
                 itemSku: string;
+                quantity: number;
+                unitPrice: number;
                 costPrice: number;
                 total: number;
+                productId: string;
+                variantId: string | null;
                 saleId: string;
             })[];
             payments: {
+                id: string;
+                createdAt: Date;
+                notes: string | null;
                 method: import("@prisma/client").$Enums.PaymentMethod;
                 amount: number;
                 reference: string | null;
-                notes: string | null;
-                id: string;
-                createdAt: Date;
                 saleId: string;
             }[];
-            branch: {
-                name: string;
-                id: string;
-            };
-            cashier: {
-                id: string;
-                username: string;
-                firstName: string | null;
-                lastName: string | null;
-            };
         } & {
-            notes: string | null;
-            transactionType: import("@prisma/client").$Enums.TransactionType;
-            customerName: string | null;
-            customerPhone: string | null;
-            isCreditSale: boolean;
-            creditReference: string | null;
             id: string;
+            createdAt: Date;
+            updatedAt: Date;
             receiptNumber: string;
             cashierId: string;
             branchId: string;
             subdivisionId: string | null;
+            transactionType: import("@prisma/client").$Enums.TransactionType;
             subtotal: number;
             taxAmount: number;
             discountAmount: number;
@@ -162,10 +159,13 @@ export declare class SalesController {
             amountPaid: number;
             amountDue: number;
             changeGiven: number;
+            notes: string | null;
+            customerName: string | null;
+            customerPhone: string | null;
+            isCreditSale: boolean;
             creditStatus: import("@prisma/client").$Enums.CreditStatus | null;
+            creditReference: string | null;
             sessionId: string | null;
-            createdAt: Date;
-            updatedAt: Date;
         })[];
         meta: {
             total: number;
@@ -187,16 +187,29 @@ export declare class SalesController {
     findOne(id: string): Promise<{
         success: boolean;
         data: {
+            branch: {
+                id: string;
+                name: string;
+                receiptFooter: string | null;
+                taxRate: number;
+                currency: string;
+            };
+            cashier: {
+                id: string;
+                username: string;
+                firstName: string | null;
+                lastName: string | null;
+            };
             items: ({
                 product: {
-                    name: string;
                     id: string;
-                    branchId: string;
+                    name: string;
+                    description: string | null;
                     createdAt: Date;
                     updatedAt: Date;
+                    branchId: string;
                     isActive: boolean;
                     costPrice: number | null;
-                    description: string | null;
                     sku: string;
                     barcode: string | null;
                     hasVariants: boolean;
@@ -208,13 +221,13 @@ export declare class SalesController {
                     trackInventory: boolean;
                 };
                 variant: {
-                    productId: string;
-                    name: string;
                     id: string;
+                    name: string;
                     createdAt: Date;
                     updatedAt: Date;
                     isActive: boolean;
                     costPrice: number;
+                    productId: string;
                     sku: string;
                     barcode: string | null;
                     sellingPrice: number;
@@ -224,55 +237,39 @@ export declare class SalesController {
                     expiryDate: Date | null;
                 } | null;
             } & {
-                productId: string;
-                variantId: string | null;
-                quantity: number;
-                unitPrice: number;
                 id: string;
-                subtotal: number;
-                taxAmount: number;
                 createdAt: Date;
                 taxRate: number;
+                subtotal: number;
+                taxAmount: number;
                 itemName: string;
                 itemSku: string;
+                quantity: number;
+                unitPrice: number;
                 costPrice: number;
                 total: number;
+                productId: string;
+                variantId: string | null;
                 saleId: string;
             })[];
             payments: {
+                id: string;
+                createdAt: Date;
+                notes: string | null;
                 method: import("@prisma/client").$Enums.PaymentMethod;
                 amount: number;
                 reference: string | null;
-                notes: string | null;
-                id: string;
-                createdAt: Date;
                 saleId: string;
             }[];
-            branch: {
-                name: string;
-                id: string;
-                taxRate: number;
-                currency: string;
-                receiptFooter: string | null;
-            };
-            cashier: {
-                id: string;
-                username: string;
-                firstName: string | null;
-                lastName: string | null;
-            };
         } & {
-            notes: string | null;
-            transactionType: import("@prisma/client").$Enums.TransactionType;
-            customerName: string | null;
-            customerPhone: string | null;
-            isCreditSale: boolean;
-            creditReference: string | null;
             id: string;
+            createdAt: Date;
+            updatedAt: Date;
             receiptNumber: string;
             cashierId: string;
             branchId: string;
             subdivisionId: string | null;
+            transactionType: import("@prisma/client").$Enums.TransactionType;
             subtotal: number;
             taxAmount: number;
             discountAmount: number;
@@ -281,25 +278,38 @@ export declare class SalesController {
             amountPaid: number;
             amountDue: number;
             changeGiven: number;
+            notes: string | null;
+            customerName: string | null;
+            customerPhone: string | null;
+            isCreditSale: boolean;
             creditStatus: import("@prisma/client").$Enums.CreditStatus | null;
+            creditReference: string | null;
             sessionId: string | null;
-            createdAt: Date;
-            updatedAt: Date;
         };
     }>;
     addPayment(id: string, addPaymentDto: AddPaymentDto, user: AuthenticatedRequestUser): Promise<{
         success: boolean;
         data: {
+            branch: {
+                id: string;
+                name: string;
+            };
+            cashier: {
+                id: string;
+                username: string;
+                firstName: string | null;
+                lastName: string | null;
+            };
             items: ({
                 product: {
-                    name: string;
                     id: string;
-                    branchId: string;
+                    name: string;
+                    description: string | null;
                     createdAt: Date;
                     updatedAt: Date;
+                    branchId: string;
                     isActive: boolean;
                     costPrice: number | null;
-                    description: string | null;
                     sku: string;
                     barcode: string | null;
                     hasVariants: boolean;
@@ -311,13 +321,13 @@ export declare class SalesController {
                     trackInventory: boolean;
                 };
                 variant: {
-                    productId: string;
-                    name: string;
                     id: string;
+                    name: string;
                     createdAt: Date;
                     updatedAt: Date;
                     isActive: boolean;
                     costPrice: number;
+                    productId: string;
                     sku: string;
                     barcode: string | null;
                     sellingPrice: number;
@@ -327,52 +337,39 @@ export declare class SalesController {
                     expiryDate: Date | null;
                 } | null;
             } & {
-                productId: string;
-                variantId: string | null;
-                quantity: number;
-                unitPrice: number;
                 id: string;
-                subtotal: number;
-                taxAmount: number;
                 createdAt: Date;
                 taxRate: number;
+                subtotal: number;
+                taxAmount: number;
                 itemName: string;
                 itemSku: string;
+                quantity: number;
+                unitPrice: number;
                 costPrice: number;
                 total: number;
+                productId: string;
+                variantId: string | null;
                 saleId: string;
             })[];
             payments: {
+                id: string;
+                createdAt: Date;
+                notes: string | null;
                 method: import("@prisma/client").$Enums.PaymentMethod;
                 amount: number;
                 reference: string | null;
-                notes: string | null;
-                id: string;
-                createdAt: Date;
                 saleId: string;
             }[];
-            branch: {
-                name: string;
-                id: string;
-            };
-            cashier: {
-                id: string;
-                username: string;
-                firstName: string | null;
-                lastName: string | null;
-            };
         } & {
-            notes: string | null;
-            transactionType: import("@prisma/client").$Enums.TransactionType;
-            customerName: string | null;
-            customerPhone: string | null;
-            isCreditSale: boolean;
-            creditReference: string | null;
             id: string;
+            createdAt: Date;
+            updatedAt: Date;
             receiptNumber: string;
             cashierId: string;
             branchId: string;
             subdivisionId: string | null;
+            transactionType: import("@prisma/client").$Enums.TransactionType;
             subtotal: number;
             taxAmount: number;
             discountAmount: number;
@@ -381,10 +378,13 @@ export declare class SalesController {
             amountPaid: number;
             amountDue: number;
             changeGiven: number;
+            notes: string | null;
+            customerName: string | null;
+            customerPhone: string | null;
+            isCreditSale: boolean;
             creditStatus: import("@prisma/client").$Enums.CreditStatus | null;
+            creditReference: string | null;
             sessionId: string | null;
-            createdAt: Date;
-            updatedAt: Date;
         };
         message: string;
     }>;
@@ -392,6 +392,7 @@ export declare class SalesController {
         success: boolean;
         data: {
             receipt: {
+                logoUrl: string | undefined;
                 business: {
                     name: string;
                     address: string;

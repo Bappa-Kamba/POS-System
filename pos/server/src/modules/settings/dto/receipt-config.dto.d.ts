@@ -5,4 +5,5 @@ export interface ResolvedReceiptConfig {
     receiptFooter: string;
     branchName: string;
     currency: string;
+    logoAssetId?: string;
 }

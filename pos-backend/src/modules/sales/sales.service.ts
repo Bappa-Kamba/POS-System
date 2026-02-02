@@ -783,6 +783,9 @@ export class SalesService {
 
     return {
       receipt: {
+        logoUrl: receiptConfig.logoAssetId 
+            ? `/api/v1/assets/${receiptConfig.logoAssetId}/processed` 
+            : undefined,
         business: {
           name: receiptConfig.businessName,
           address: receiptConfig.businessAddress,

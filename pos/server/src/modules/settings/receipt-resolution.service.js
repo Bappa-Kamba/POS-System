@@ -55,6 +55,10 @@ let ReceiptResolutionService = class ReceiptResolutionService {
                 '',
             branchName: targetBranch.name,
             currency: targetBranch.currency,
+            logoAssetId: subdivision?.receiptLogoAssetId ||
+                targetBranch.receiptLogoAssetId ||
+                mainBranch?.receiptLogoAssetId ||
+                undefined,
         };
     }
 };

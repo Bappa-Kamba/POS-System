@@ -22,6 +22,7 @@ import { SubdivisionsModule } from './modules/subdivisions/subdivisions.module';
 import { CategoriesModule } from './modules/categories/categories.module';
 import { LicenseGuard } from './modules/license/guards/license.guard';
 import { LicenseModule } from './modules/license/license.module';
+import { AssetsModule } from './modules/assets/assets.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 
@@ -54,6 +55,7 @@ import { join } from 'path';
     SubdivisionsModule,
     CategoriesModule,
     LicenseModule,
+    AssetsModule,
   ],
   controllers: [AppController],
   providers: [

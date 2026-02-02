@@ -15,6 +15,7 @@ export interface ReceiptData {
     address: string;
     phone: string;
   };
+  logoUrl?: string; // Added field
   branch: string;
   receiptNumber: string;
   transactionType: 'PURCHASE' | 'CASHBACK';
@@ -45,8 +46,397 @@ export interface ReceiptData {
 }
 
 /**
- * Generate receipt HTML for printing
+ * Utility functions for handling logo files in receipts
  */
+
+// Global cache for processed logos (shared across the entire app)
+const logoCache = new Map<string, string>();
+
+/**
+ * Optimize SVG for receipt printing by removing unnecessary attributes
+ * and ensuring proper sizing
+ * @param svgContent - The SVG content as a string
+ * @returns Optimized SVG content
+ */
+export const optimizeSvgForReceipt = (svgContent: string): string => {
+  // Create a temporary DOM element to parse the SVG
+  const parser = new DOMParser();
+  const svgDoc = parser.parseFromString(svgContent, 'image/svg+xml');
+  const svgElement = svgDoc.querySelector('svg');
+  
+  if (!svgElement) {
+    return svgContent;
+  }
+  
+  // Ensure viewBox is set for proper scaling
+  if (!svgElement.getAttribute('viewBox')) {
+    const width = svgElement.getAttribute('width') || '100';
+    const height = svgElement.getAttribute('height') || '100';
+    svgElement.setAttribute('viewBox', `0 0 ${width} ${height}`);
+  }
+  
+  // Remove fixed width/height to allow flexible sizing
+  svgElement.removeAttribute('width');
+  svgElement.removeAttribute('height');
+  
+  // Serialize back to string
+  const serializer = new XMLSerializer();
+  return serializer.serializeToString(svgElement);
+};
+
+/**
+ * Utility functions for processing logos for receipt printing
+ * Handles cropping whitespace and resizing
+ */
+
+export interface ImageDimensions {
+  width: number;
+  height: number;
+  croppedDataUrl: string;
+}
+
+/**
+ * Automatically crop whitespace from an image
+ * @param imageUrl - Data URL or regular URL of the image
+ * @param padding - Optional padding to keep around the image (in pixels)
+ * @returns Promise with cropped image data URL and dimensions
+ */
+export const cropImageWhitespace = async (
+  imageUrl: string,
+  padding: number = 10
+): Promise<ImageDimensions> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+
+    img.onload = () => {
+      // Create canvas with original image size
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+
+      if (!ctx) {
+        reject(new Error('Could not get canvas context'));
+        return;
+      }
+
+      canvas.width = img.width;
+      canvas.height = img.height;
+
+      // Draw the image
+      ctx.drawImage(img, 0, 0);
+
+      // Get image data
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const pixels = imageData.data;
+
+      // Find the bounds of non-white pixels
+      let minX = canvas.width;
+      let minY = canvas.height;
+      let maxX = 0;
+      let maxY = 0;
+
+      // Threshold for "white" - adjust if needed (closer to 255 = more strict)
+      const whiteThreshold = 250;
+
+      for (let y = 0; y < canvas.height; y++) {
+        for (let x = 0; x < canvas.width; x++) {
+          const index = (y * canvas.width + x) * 4;
+          const r = pixels[index];
+          const g = pixels[index + 1];
+          const b = pixels[index + 2];
+          const a = pixels[index + 3];
+
+          // Check if pixel is not white and not transparent
+          const isNotWhite = r < whiteThreshold || g < whiteThreshold || b < whiteThreshold;
+          const isVisible = a > 10; // Not transparent
+
+          if (isNotWhite && isVisible) {
+            if (x < minX) minX = x;
+            if (x > maxX) maxX = x;
+            if (y < minY) minY = y;
+            if (y > maxY) maxY = y;
+          }
+        }
+      }
+
+      // If no content found, return original
+      if (minX > maxX || minY > maxY) {
+        console.warn('No content found in image, returning original');
+        resolve({
+          width: canvas.width,
+          height: canvas.height,
+          croppedDataUrl: canvas.toDataURL('image/png')
+        });
+        return;
+      }
+
+      // Add padding
+      minX = Math.max(0, minX - padding);
+      minY = Math.max(0, minY - padding);
+      maxX = Math.min(canvas.width - 1, maxX + padding);
+      maxY = Math.min(canvas.height - 1, maxY + padding);
+
+      // Calculate cropped dimensions
+      const croppedWidth = maxX - minX + 1;
+      const croppedHeight = maxY - minY + 1;
+
+      // Create new canvas with cropped size
+      const croppedCanvas = document.createElement('canvas');
+      croppedCanvas.width = croppedWidth;
+      croppedCanvas.height = croppedHeight;
+
+      const croppedCtx = croppedCanvas.getContext('2d');
+      if (!croppedCtx) {
+        reject(new Error('Could not get cropped canvas context'));
+        return;
+      }
+
+      // Draw cropped image
+      croppedCtx.drawImage(
+        canvas,
+        minX,
+        minY,
+        croppedWidth,
+        croppedHeight,
+        0,
+        0,
+        croppedWidth,
+        croppedHeight
+      );
+
+      // Convert to data URL
+      const croppedDataUrl = croppedCanvas.toDataURL('image/png');
+
+      resolve({
+        width: croppedWidth,
+        height: croppedHeight,
+        croppedDataUrl
+      });
+    };
+
+    img.onerror = () => {
+      reject(new Error('Failed to load image'));
+    };
+
+    img.src = imageUrl;
+  });
+};
+
+/**
+ * Resize image to fit within maximum dimensions while maintaining aspect ratio
+ * @param imageUrl - Data URL or regular URL of the image
+ * @param maxWidth - Maximum width in pixels
+ * @param maxHeight - Maximum height in pixels
+ * @returns Promise with resized image data URL and dimensions
+ */
+export const resizeImage = async (
+  imageUrl: string,
+  maxWidth: number,
+  maxHeight: number
+): Promise<ImageDimensions> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+
+    img.onload = () => {
+      let width = img.width;
+      let height = img.height;
+
+      // Calculate scaling factor
+      const widthScale = maxWidth / width;
+      const heightScale = maxHeight / height;
+      const scale = Math.min(widthScale, heightScale, 1); // Don't upscale
+
+      width = Math.round(width * scale);
+      height = Math.round(height * scale);
+
+      // Create canvas
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        reject(new Error('Could not get canvas context'));
+        return;
+      }
+
+      // Use better image smoothing
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+
+      // Draw resized image
+      ctx.drawImage(img, 0, 0, width, height);
+
+      // Convert to data URL
+      const resizedDataUrl = canvas.toDataURL('image/png');
+
+      resolve({
+        width,
+        height,
+        croppedDataUrl: resizedDataUrl
+      });
+    };
+
+    img.onerror = () => {
+      reject(new Error('Failed to load image'));
+    };
+
+    img.src = imageUrl;
+  });
+};
+
+/**
+ * Crop whitespace AND resize image for receipt printing
+ * This is the recommended function to use for processing receipt logos
+ * @param imageUrl - Data URL or regular URL of the image
+ * @param maxWidthMm - Maximum width in millimeters (default: 50mm for 72mm receipt)
+ * @param maxHeightMm - Maximum height in millimeters (default: 20mm)
+ * @param dpi - DPI for conversion (default: 203 for thermal printers)
+ * @returns Promise with processed image data URL
+ */
+export const processLogoForReceipt = async (
+  imageUrl: string,
+  maxWidthMm: number = 50,
+  maxHeightMm: number = 20,
+  dpi: number = 203
+): Promise<string> => {
+  try {
+    // Convert mm to pixels (at specified DPI)
+    const mmToPixels = (mm: number) => Math.round((mm / 25.4) * dpi);
+    
+    const maxWidthPx = mmToPixels(maxWidthMm);
+    const maxHeightPx = mmToPixels(maxHeightMm);
+
+    // Step 1: Crop whitespace
+    const cropped = await cropImageWhitespace(imageUrl, 5);
+
+    // Step 2: Resize to fit receipt dimensions
+    const resized = await resizeImage(
+      cropped.croppedDataUrl,
+      maxWidthPx,
+      maxHeightPx
+    );
+
+    return resized.croppedDataUrl;
+  } catch (error) {
+    console.error('Failed to process logo for receipt:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get image dimensions without loading into DOM
+ * @param imageUrl - Data URL or regular URL
+ * @returns Promise with width and height
+ */
+export const getImageDimensions = (imageUrl: string): Promise<{ width: number; height: number }> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      resolve({ width: img.width, height: img.height });
+    };
+    img.onerror = reject;
+    img.src = imageUrl;
+  });
+};
+
+/**
+ * Convert mm to pixels for a given DPI
+ * @param mm - Size in millimeters
+ * @param dpi - Dots per inch (default: 203 for thermal printers)
+ * @returns Size in pixels
+ */
+export const mmToPixels = (mm: number, dpi: number = 203): number => {
+  return Math.round((mm / 25.4) * dpi);
+};
+
+/**
+ * Convert pixels to mm for a given DPI
+ * @param pixels - Size in pixels
+ * @param dpi - Dots per inch (default: 203 for thermal printers)
+ * @returns Size in millimeters
+ */
+export const pixelsToMm = (pixels: number, dpi: number = 203): number => {
+  return (pixels * 25.4) / dpi;
+};
+
+/**
+ * Load Logo from URL and convert to optimized PNG data URL
+ * Uses a global cache to avoid redundant API calls
+ * Automatically crops whitespace and sizes for receipt printing
+ * @param url - URL of the logo file
+ * @returns Promise resolving to processed data URL
+ */
+export const loadSvgFromUrl = async (url: string): Promise<string> => {
+  // Check cache first
+  if (logoCache.has(url)) {
+    return logoCache.get(url)!;
+  }
+
+  try {
+    const response = await fetch(url);
+    const contentType = response.headers.get('content-type');
+    
+    let imageDataUrl: string;
+    
+    // Check if it's an SVG
+    if (contentType?.includes('image/svg+xml') || url.toLowerCase().endsWith('.svg')) {
+        const svgText = await response.text();
+        const optimized = optimizeSvgForReceipt(svgText);
+        
+        // Convert SVG to blob URL
+        const svgBlob = new Blob([optimized], { type: 'image/svg+xml' });
+        const svgUrl = URL.createObjectURL(svgBlob);
+        
+        try {
+            // Convert SVG to PNG and process (crop + resize)
+            const img = new Image();
+            img.src = svgUrl;
+            await new Promise((resolve, reject) => {
+              img.onload = resolve;
+              img.onerror = reject;
+            });
+            
+            // Convert to data URL first
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) throw new Error('Canvas context not found');
+            ctx.drawImage(img, 0, 0);
+            const pngDataUrl = canvas.toDataURL('image/png');
+            
+            URL.revokeObjectURL(svgUrl);
+            
+            // Process the PNG (crop whitespace and resize)
+            imageDataUrl = await processLogoForReceipt(pngDataUrl);
+        } catch (e) {
+            URL.revokeObjectURL(svgUrl);
+            throw e;
+        }
+    } else {
+        // Handle non-SVG images (PNG, JPG, etc.)
+        const blob = await response.blob();
+        const rawDataUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+        
+        // Process the image (crop whitespace and resize)
+        imageDataUrl = await processLogoForReceipt(rawDataUrl);
+    }
+    
+    // Store in cache before returning
+    logoCache.set(url, imageDataUrl);
+    return imageDataUrl;
+  } catch (error) {
+    console.error('Failed to load and process logo from URL:', error);
+    throw error;
+  }
+};
 export const generateReceiptHTML = (data: ReceiptData): string => {
   console.log(data);
   return `
@@ -152,6 +542,12 @@ export const generateReceiptHTML = (data: ReceiptData): string => {
     .no-print {
       display: none;
     }
+    
+    .receipt-logo {
+      display: block;
+      margin: 0 auto 16px;
+      width: 100%;
+    }
   </style>
 </head>
 
@@ -159,6 +555,7 @@ export const generateReceiptHTML = (data: ReceiptData): string => {
   <div class="receipt">
 
     <!-- HEADER -->
+    ${data.logoUrl ? `<img src="${data.logoUrl}" class="receipt-logo" />` : ''}
     <div class="center bold large">${data.business.name}</div>
     <div class="center">${data.business.address}</div>
     <div class="center">${data.business.phone}</div>
@@ -297,28 +694,65 @@ export const generateReceiptHTML = (data: ReceiptData): string => {
  * Print receipt using browser print dialog
  * Supports legacy ReceiptData or new PrintRequest
  */
-export const printReceipt = (data: ReceiptData | PrintRequest): void => {
-  const html = generateReceiptHTML(data as ReceiptData);
-  const printWindow = window.open("", "_blank");
-  if (printWindow) {
-    printWindow.document.write(html);
-    printWindow.document.close();
-    printWindow.focus();
-    setTimeout(() => {
-      printWindow.print();
-    }, 250);
+export const printReceipt = async (data: ReceiptData | PrintRequest): Promise<void> => {
+  const printWindow = window.open("");
+  if (!printWindow) return;
+
+  const receiptData = { ...(data as ReceiptData) };
+
+  // Optimize logo if available to ensure consistent rendering
+  if (receiptData.logoUrl) {
+    try {
+      receiptData.logoUrl = await loadSvgFromUrl(receiptData.logoUrl);
+    } catch (e) {
+      console.warn('Failed to optimize logo for HTML receipt:', e);
+    }
   }
+
+  const html = generateReceiptHTML(receiptData);
+  
+  printWindow.document.open();
+  printWindow.document.write(html);
+  printWindow.document.close();
+  printWindow.focus();
+  
+  setTimeout(() => {
+    printWindow.print();
+  }, 250);
 };
 
 /**
  * Generate receipt PDF
  */
 export const generateReceiptPDF = async (data: ReceiptData): Promise<Blob> => {
-  const doc = new jsPDF({ format: "a5", unit: "mm" });
+  const doc = new jsPDF({ format: "a4", unit: "mm" });
 
   let y = 20;
 
   // Business Info
+  // Render logo if available
+  if (data.logoUrl) {
+    try {
+        const base64 = await loadSvgFromUrl(data.logoUrl);
+        
+        const imgProps = doc.getImageProperties(base64);
+        const ratio = imgProps.height / imgProps.width;
+        let w = 40; // Max width assumption
+        let h = w * ratio;
+        if (h > 18) {
+            h = 18;
+            w = h / ratio;
+        }
+        // Assuming 105 is center based on existing code logic
+        const x = 105 - (w / 2);
+        doc.addImage(base64, 'PNG', x, y, w, h);
+        y += h + 5;
+        console.log("Logo added to PDF", base64);
+    } catch (e) {
+        console.warn('Failed to embed logo in PDF', e);
+    }
+  }
+
   doc.setFontSize(16);
   doc.text(data.business.name, 105, y, { align: "center" });
 

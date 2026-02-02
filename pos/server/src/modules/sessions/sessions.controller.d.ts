@@ -10,14 +10,14 @@ export declare class SessionsController {
     startSession(req: AuthenticatedRequest, dto: StartSessionDto): Promise<{
         success: boolean;
         data: {
-            branchId: string;
-            name: string;
             id: string;
+            name: string;
+            status: import("@prisma/client").$Enums.SessionStatus;
             createdAt: Date;
             updatedAt: Date;
+            branchId: string;
             startTime: Date;
             endTime: Date | null;
-            status: import("@prisma/client").$Enums.SessionStatus;
             openingBalance: number;
             closingBalance: number | null;
             openedById: string;
@@ -28,14 +28,14 @@ export declare class SessionsController {
     endSession(req: AuthenticatedRequest, id: string, dto: EndSessionDto): Promise<{
         success: boolean;
         data: {
-            branchId: string;
-            name: string;
             id: string;
+            name: string;
+            status: import("@prisma/client").$Enums.SessionStatus;
             createdAt: Date;
             updatedAt: Date;
+            branchId: string;
             startTime: Date;
             endTime: Date | null;
-            status: import("@prisma/client").$Enums.SessionStatus;
             openingBalance: number;
             closingBalance: number | null;
             openedById: string;
@@ -53,14 +53,14 @@ export declare class SessionsController {
                 lastName: string | null;
             };
         } & {
-            branchId: string;
-            name: string;
             id: string;
+            name: string;
+            status: import("@prisma/client").$Enums.SessionStatus;
             createdAt: Date;
             updatedAt: Date;
+            branchId: string;
             startTime: Date;
             endTime: Date | null;
-            status: import("@prisma/client").$Enums.SessionStatus;
             openingBalance: number;
             closingBalance: number | null;
             openedById: string;
@@ -79,14 +79,14 @@ export declare class SessionsController {
                 lastName: string | null;
             } | null;
         } & {
-            branchId: string;
-            name: string;
             id: string;
+            name: string;
+            status: import("@prisma/client").$Enums.SessionStatus;
             createdAt: Date;
             updatedAt: Date;
+            branchId: string;
             startTime: Date;
             endTime: Date | null;
-            status: import("@prisma/client").$Enums.SessionStatus;
             openingBalance: number;
             closingBalance: number | null;
             openedById: string;
@@ -162,87 +162,87 @@ export declare class SessionsController {
             sales: ({
                 items: ({
                     product: {
-                        category: {
-                            name: string;
-                            id: string;
-                        } | null;
-                        name: string;
                         id: string;
+                        name: string;
+                        category: {
+                            id: string;
+                            name: string;
+                        } | null;
                     };
                     variant: {
-                        name: string;
                         id: string;
+                        name: string;
                     } | null;
                 } & {
-                    productId: string;
-                    variantId: string | null;
-                    quantity: number;
-                    unitPrice: number;
                     id: string;
-                    subtotal: number;
-                    taxAmount: number;
                     createdAt: Date;
                     taxRate: number;
+                    subtotal: number;
+                    taxAmount: number;
                     itemName: string;
                     itemSku: string;
+                    quantity: number;
+                    unitPrice: number;
                     costPrice: number;
                     total: number;
+                    productId: string;
+                    variantId: string | null;
                     saleId: string;
                 })[];
                 payments: {
+                    id: string;
+                    createdAt: Date;
+                    notes: string | null;
                     method: import("@prisma/client").$Enums.PaymentMethod;
                     amount: number;
                     reference: string | null;
-                    notes: string | null;
-                    id: string;
-                    createdAt: Date;
                     saleId: string;
                 }[];
             } & {
-                notes: string | null;
-                transactionType: import("@prisma/client").$Enums.TransactionType;
-                customerName: string | null;
-                customerPhone: string | null;
-                isCreditSale: boolean;
-                creditReference: string | null;
+                id: string;
+                createdAt: Date;
+                updatedAt: Date;
+                receiptNumber: string;
                 cashierId: string;
                 branchId: string;
-                paymentStatus: import("@prisma/client").$Enums.PaymentStatus;
-                creditStatus: import("@prisma/client").$Enums.CreditStatus | null;
-                id: string;
-                receiptNumber: string;
                 subdivisionId: string | null;
+                transactionType: import("@prisma/client").$Enums.TransactionType;
                 subtotal: number;
                 taxAmount: number;
                 discountAmount: number;
                 totalAmount: number;
+                paymentStatus: import("@prisma/client").$Enums.PaymentStatus;
                 amountPaid: number;
                 amountDue: number;
                 changeGiven: number;
+                notes: string | null;
+                customerName: string | null;
+                customerPhone: string | null;
+                isCreditSale: boolean;
+                creditStatus: import("@prisma/client").$Enums.CreditStatus | null;
+                creditReference: string | null;
                 sessionId: string | null;
-                createdAt: Date;
-                updatedAt: Date;
             })[];
             expenses: {
-                amount: number;
-                branchId: string;
-                category: string;
                 id: string;
-                sessionId: string | null;
+                description: string | null;
                 createdAt: Date;
                 updatedAt: Date;
-                description: string | null;
+                category: string;
+                branchId: string;
+                sessionId: string | null;
+                amount: number;
                 title: string;
                 date: Date;
                 createdById: string | null;
             }[];
             openedBy: {
-                branchId: string;
                 id: string;
                 createdAt: Date;
                 updatedAt: Date;
-                username: string;
                 email: string | null;
+                branchId: string;
+                username: string;
                 passwordHash: string;
                 refreshTokenHash: string | null;
                 firstName: string | null;
@@ -252,12 +252,12 @@ export declare class SessionsController {
                 assignedSubdivisionId: string | null;
             };
             closedBy: {
-                branchId: string;
                 id: string;
                 createdAt: Date;
                 updatedAt: Date;
-                username: string;
                 email: string | null;
+                branchId: string;
+                username: string;
                 passwordHash: string;
                 refreshTokenHash: string | null;
                 firstName: string | null;
@@ -266,14 +266,14 @@ export declare class SessionsController {
                 isActive: boolean;
                 assignedSubdivisionId: string | null;
             } | null;
-            branchId: string;
-            name: string;
             id: string;
+            name: string;
+            status: import("@prisma/client").$Enums.SessionStatus;
             createdAt: Date;
             updatedAt: Date;
+            branchId: string;
             startTime: Date;
             endTime: Date | null;
-            status: import("@prisma/client").$Enums.SessionStatus;
             openingBalance: number;
             closingBalance: number | null;
             openedById: string;
